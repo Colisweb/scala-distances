@@ -1,0 +1,36 @@
+package com.guizmaii.distances
+
+import squants.space.Length
+import squants.space.LengthConversions._
+
+import scala.concurrent.duration._
+
+object Types {
+
+  private[distances] final case class SerializableDistance(value: Double, duration: Double)
+
+  final case class PostalCode(value: String) extends AnyVal
+
+  final case class LatLong(latitude: Double, longitude: Double)
+
+  final case class Distance(length: Length, duration: Duration) extends Ordered[Distance] {
+    override def compare(that: Distance): Int = this.length.compareTo(that.length)
+  }
+
+  object Distance {
+    private[distances] def apply(s: SerializableDistance): Distance =
+      Distance(length = s.value meters, duration = s.duration seconds)
+
+    final lazy val Inf: Distance = Distance(Double.PositiveInfinity meters, Duration.Inf)
+  }
+
+  final case class DirectedPath(origin: LatLong, destination: LatLong)
+
+  final case class DirectedPathWithDistance(origin: LatLong, destination: LatLong, distance: Distance)
+
+  object DirectedPathWithDistance {
+    def apply(path: DirectedPath, distance: Distance): DirectedPathWithDistance =
+      DirectedPathWithDistance(origin = path.origin, destination = path.destination, distance = distance)
+  }
+
+}
