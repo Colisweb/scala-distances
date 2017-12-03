@@ -1,4 +1,6 @@
 sudo: false
+services:
+  - redis-server
 language: scala
 scala:
 - 2.11.12
