@@ -59,8 +59,8 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     }
 
     "if NOT ALREADY in cache" should {
-      // TODO Jules: Config CI and its Google API key
-      val geoApiContext: GoogleGeoApiContext = GoogleGeoApiContext("TODO")
+      val googleApiKey: String               = System.getenv().get("GOOGLE_API_KEY")
+      val geoApiContext: GoogleGeoApiContext = GoogleGeoApiContext(googleApiKey)
       val geocoder                           = new GoogleGeocoder(geoApiContext, alternativeCache = Some(cache))
 
       def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {

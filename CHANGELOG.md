@@ -6,4 +6,5 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Configure `sbt-release-early`, Travis and Bintray intergration** 
 - **Open source the library**
