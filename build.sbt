@@ -2,8 +2,6 @@ organization := "com.guizmaii"
 
 name := "scala-distances"
 
-version := "0.1"
-
 scalaVersion := "2.12.4"
 crossScalaVersions := Seq("2.11.12", scalaVersion.value)
 
