@@ -56,3 +56,15 @@ libraryDependencies ++= Seq(
   squants % Provided,
   googleMaps
 ) ++ scalacache ++ testKit.map(_ % Test)
+
+// sbt-release-early
+inThisBuild(
+  List(
+    licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
+    homepage := Some(url("https://github.com/guizmaii/scala-distances")),
+    developers := List(Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/"))),
+    pgpPublicRing := file("./travis/local.pubring.asc"),
+    pgpSecretRing := file("./travis/local.secring.asc"),
+    releaseEarlyWith := BintrayPublisher
+  )
+)

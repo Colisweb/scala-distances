@@ -66,3 +66,4 @@ project/plugins/project/
 .cache
 .lib/
 /.idea/
+local.*
