@@ -18,7 +18,6 @@ after_success:
   - if [ $TRAVIS_PULL_REQUEST = 'false' ]; then
       sbt ++$TRAVIS_SCALA_VERSION releaseEarly;
     fi
-after_success:
   - bash <(curl -s https://codecov.io/bash)
 deploy:
   on:
