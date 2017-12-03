@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.1.0] - 2017.12.03
+
 - **Configure Codecov**
 - **Configure `sbt-release-early`, Travis and Bintray intergration** 
 - **Open source the library**
