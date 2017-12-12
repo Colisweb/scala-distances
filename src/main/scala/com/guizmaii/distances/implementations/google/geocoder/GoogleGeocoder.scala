@@ -48,3 +48,10 @@ final class GoogleGeocoder(
   override def geocode(postalCode: PostalCode): CancelableFuture[LatLong] = geocodeT(postalCode).runAsync
 
 }
+
+object GoogleGeocoder {
+  def apply(geoApiContext: GoogleGeoApiContext): GoogleGeocoder = new GoogleGeocoder(geoApiContext)
+
+  def apply(geoApiContext: GoogleGeoApiContext, geoCache: GeoCache[LatLong]): GoogleGeocoder =
+    new GoogleGeocoder(geoApiContext, Some(geoCache))
+}

@@ -5,7 +5,7 @@ import monix.eval.Task
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-private[distances] abstract class GeoCache[E <: Serializable: ClassTag] {
+abstract class GeoCache[E <: Serializable: ClassTag] {
 
   import scalacache._
 
