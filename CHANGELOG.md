@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.2.1] - 2017.12.12
+
 - **Add the possibility to tune the database used in Redis**
 
 ## [v0.2.0] - 2017.12.12
