@@ -64,3 +64,10 @@ final class GoogleDistanceApi(
     distancesT(paths).runAsync
 
 }
+
+object GoogleDistanceApi {
+  def apply(geoApiContext: GoogleGeoApiContext): GoogleDistanceApi = new GoogleDistanceApi(geoApiContext)
+
+  def apply(geoApiContext: GoogleGeoApiContext, geoCache: GeoCache[SerializableDistance]): GoogleDistanceApi =
+    new GoogleDistanceApi(geoApiContext, Some(geoCache))
+}

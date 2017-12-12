@@ -7,7 +7,8 @@ import scala.concurrent.duration._
 
 object Types {
 
-  private[distances] final case class SerializableDistance(value: Double, duration: Double)
+  // TODO Jules: This class should not leak out of this project. // private[distances]
+  final case class SerializableDistance(value: Double, duration: Double)
 
   final case class PostalCode(value: String) extends AnyVal
 
