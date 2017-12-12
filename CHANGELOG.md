@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.2.0] - 2017.12.12
+
 - **Simplify the use of the library**
 - **Add the possibility to use a Redis protected by password**
 - **Add the possibility to tune the connection and the read timeouts of the Google Geo API client**
