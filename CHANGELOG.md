@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Add the possibility to use a Redis protected by password**
+
 ## [v0.1.3] - 2017.12.12
 
 - **Try fix build**
