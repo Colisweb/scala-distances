@@ -21,6 +21,9 @@ object RedisGeoCache {
   def apply[E <: Serializable: ClassTag](host: String, port: Int, password: String, expiration: Duration): RedisGeoCache[E] =
     new RedisGeoCache(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password), expiration)
 
+  def apply[E <: Serializable: ClassTag](host: String, port: Int, expiration: Duration, database: Int): RedisGeoCache[E] =
+    new RedisGeoCache(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, null, database), expiration)
+
   def apply[E <: Serializable: ClassTag](host: String, port: Int, password: String, expiration: Duration, database: Int): RedisGeoCache[E] =
     new RedisGeoCache(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password, database), expiration)
 }
