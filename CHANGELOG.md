@@ -6,6 +6,10 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.1.3] - 2017.12.12
+
+- **Try fix build**
+
 ## [v0.1.2] - 2017.12.12
 
 - **Try fix build by adding scmInfo**
