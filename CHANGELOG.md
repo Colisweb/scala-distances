@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.2.3] - 2018.01.18
+
 - **FIX: Distances should be compared by their durations and not by their lenghts**
 - **Improve `scalacOptions` config**
 - **Update dependencies**
