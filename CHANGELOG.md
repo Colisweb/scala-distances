@@ -6,6 +6,9 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Improve `scalacOptions` config**
+- **Update dependencies**
+
 ## [v0.2.2] - 2017.12.12
 
 - **Add the possibility to tune the database used in Redis without any password**
