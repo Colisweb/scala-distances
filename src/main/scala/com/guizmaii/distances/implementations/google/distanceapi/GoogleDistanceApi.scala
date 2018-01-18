@@ -55,8 +55,10 @@ final class GoogleDistanceApi(
   ): CancelableFuture[Distance] = distanceFromPostalCodesT(geocoder)(origin, destination).runAsync
 
   override def distancesT(paths: Seq[DirectedPath]): Task[Seq[DirectedPathWithDistance]] = Task.sequence {
-    paths.map { path =>
-      distanceT(path.origin, path.destination).map(distance => DirectedPathWithDistance(path, distance))
+    paths.map {
+      case (origin, destination) =>
+        if (origin == destination) Task.now((origin, destination, Distance.zero))
+        else distanceT(origin, destination).map(distance => (origin, destination, distance))
     }
   }
 

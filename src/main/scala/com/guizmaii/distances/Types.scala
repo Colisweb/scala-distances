@@ -22,16 +22,11 @@ object Types {
     private[distances] def apply(s: SerializableDistance): Distance =
       Distance(length = s.value meters, duration = s.duration seconds)
 
-    final lazy val Inf: Distance = Distance(Double.PositiveInfinity meters, Duration.Inf)
+    final lazy val zero: Distance = Distance(0 meters, 0 seconds)
+    final lazy val Inf: Distance  = Distance(Double.PositiveInfinity meters, Duration.Inf)
   }
 
-  final case class DirectedPath(origin: LatLong, destination: LatLong)
-
-  final case class DirectedPathWithDistance(origin: LatLong, destination: LatLong, distance: Distance)
-
-  object DirectedPathWithDistance {
-    def apply(path: DirectedPath, distance: Distance): DirectedPathWithDistance =
-      DirectedPathWithDistance(origin = path.origin, destination = path.destination, distance = distance)
-  }
+  type DirectedPath             = (LatLong, LatLong)
+  type DirectedPathWithDistance = (LatLong, LatLong, Distance)
 
 }
