@@ -41,10 +41,8 @@ final class GoogleDistanceApi(
       origin: PostalCode,
       destination: PostalCode
   ): Task[Distance] =
-    geocoder
-      .geocodeT(origin)
-      .zip(geocoder.geocodeT(destination))
-      .flatMap((distanceT _).tupled)
+    if (origin == destination) geocoder.geocodeT(origin).flatMap(latLong => distanceT(latLong, latLong))
+    else Task.zip2(geocoder.geocodeT(origin), geocoder.geocodeT(destination)).flatMap((distanceT _).tupled)
 
   override def distance(origin: LatLong, destination: LatLong): CancelableFuture[Distance] =
     distanceT(origin, destination).runAsync
