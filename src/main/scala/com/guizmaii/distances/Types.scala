@@ -15,7 +15,7 @@ object Types {
   final case class LatLong(latitude: Double, longitude: Double)
 
   final case class Distance(length: Length, duration: Duration) extends Ordered[Distance] {
-    override def compare(that: Distance): Int = this.length.compareTo(that.length)
+    override def compare(that: Distance): Int = this.duration.compareTo(that.duration)
   }
 
   object Distance {
