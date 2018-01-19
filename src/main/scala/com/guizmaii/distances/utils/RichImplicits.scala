@@ -12,10 +12,6 @@ private[distances] object RichImplicits {
     def toInnerLatLong: LatLong = LatLong(latitude = latLng.lat, longitude = latLng.lng)
   }
 
-  implicit final class RichInnerLatLng(val latLong: LatLong) extends AnyVal {
-    def toGoogleLatLong: LatLng = new LatLng(latLong.latitude, latLong.longitude)
-  }
-
   private[this] final class CallBack[T](promise: Promise[T]) extends PendingResult.Callback[T] {
     override def onResult(t: T): Unit = {
       val _ = promise.success(t)
@@ -37,6 +33,27 @@ private[distances] object RichImplicits {
   implicit final class RichDistanceMatrixElement(val element: DistanceMatrixElement) extends AnyVal {
     def asSerializableDistance: SerializableDistance =
       SerializableDistance(value = element.distance.inMeters.toDouble, duration = element.duration.inSeconds.toDouble)
+  }
+
+  implicit final class RichList[A](val list: List[A]) extends AnyVal {
+
+    /**
+      * https://stackoverflow.com/a/34456552/2431728
+      *
+      * @param f
+      * @tparam E
+      * @return
+      */
+    def distinctBy[E](f: A => E)(fAcc: A => A): List[A] =
+      list
+        .foldLeft((Vector.empty[A], Set.empty[E])) {
+          case ((acc, set), item) =>
+            val key = f(item)
+            if (set.contains(key)) (acc, set)
+            else (acc :+ fAcc(item), set + key)
+        }
+        ._1
+        .toList
   }
 
 }
