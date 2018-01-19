@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.4.0] - 2018.01.19
+
 - **Distance ordering should not be hard coded**
 
 ## [v0.3.1] - 2018.01.19
