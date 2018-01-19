@@ -17,9 +17,9 @@ final class GoogleDistanceApi(
     override protected val alternativeCache: Option[GeoCache[(TravelMode, SerializableDistance)]] = None
 ) extends DistanceApi {
 
+  import TravelMode._
   import com.guizmaii.distances.utils.MonixSchedulers.AlwaysAsyncForkJoinScheduler._
   import com.guizmaii.distances.utils.RichImplicits._
-  import TravelMode._
 
   override def distanceT(
       origin: LatLong,
@@ -86,7 +86,7 @@ final class GoogleDistanceApi(
         .toList
     }
 
-    distinctPathsWithTravelModeAccumulation(paths)
+    distinctPathsWithTravelModeAccumulation(paths.filter(_.travelModes.isEmpty))
       .flatMap {
         case DirectedPath(origin, destination, travelModes) =>
           travelModes.map(
