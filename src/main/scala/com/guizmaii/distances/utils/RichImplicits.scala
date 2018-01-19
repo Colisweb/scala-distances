@@ -5,15 +5,13 @@ import com.google.maps.model.{DistanceMatrixElement, LatLng}
 import com.guizmaii.distances.Types.{LatLong, SerializableDistance}
 import monix.eval.Task
 
+import scala.collection.{IterableLike, TraversableLike}
+import scala.collection.generic.CanBuildFrom
 import scala.concurrent.Promise
 
 private[distances] object RichImplicits {
   implicit final class RichGoogleLatLng(val latLng: LatLng) extends AnyVal {
     def toInnerLatLong: LatLong = LatLong(latitude = latLng.lat, longitude = latLng.lng)
-  }
-
-  implicit final class RichInnerLatLng(val latLong: LatLong) extends AnyVal {
-    def toGoogleLatLong: LatLng = new LatLng(latLong.latitude, latLong.longitude)
   }
 
   private[this] final class CallBack[T](promise: Promise[T]) extends PendingResult.Callback[T] {
@@ -37,6 +35,32 @@ private[distances] object RichImplicits {
   implicit final class RichDistanceMatrixElement(val element: DistanceMatrixElement) extends AnyVal {
     def asSerializableDistance: SerializableDistance =
       SerializableDistance(value = element.distance.inMeters.toDouble, duration = element.duration.inSeconds.toDouble)
+  }
+
+  implicit final class RichCollection[A, Repr](val xs: IterableLike[A, Repr]) extends AnyVal {
+
+    /**
+      * Come from here: https://stackoverflow.com/a/34456552/2431728
+      *
+      * @param f
+      * @param cbf
+      * @tparam B
+      * @return
+      */
+    def distinctBy[B, That](f: A => B)(implicit cbf: CanBuildFrom[Repr, A, That]): That = {
+      val builder = cbf(xs.repr)
+      val i       = xs.toIterator
+      var set     = Set[B]()
+      while (i.hasNext) {
+        val o = i.next
+        val b = f(o)
+        if (!set(b)) {
+          set += b
+          builder += o
+        }
+      }
+      builder.result
+    }
   }
 
 }
