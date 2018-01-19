@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Small optimisation: Do not call the geocoder if origin == destination**
+
 ## [v0.3.0] - 2018.01.18
 
 - **Simplify types thanks to type aliases**
