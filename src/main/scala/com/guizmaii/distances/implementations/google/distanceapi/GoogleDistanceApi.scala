@@ -73,7 +73,7 @@ final class GoogleDistanceApi(
         .map { case (m, serializableDistance) => ((m, origin, destination), Distance.apply(serializableDistance)) }
     }
 
-    def distinctPathsWithTravelModeAccumulation(duplicatedPaths: List[DirectedPath]): List[((LatLong, LatLong), List[TravelMode])] = {
+    def distinctPathsWithTravelModeAccumulation(duplicatedPaths: List[DirectedPath]): Vector[((LatLong, LatLong), List[TravelMode])] = {
       val zero: MutableMap[(LatLong, LatLong), List[TravelMode]] = MutableMap().withDefaultValue(List.empty)
 
       duplicatedPaths
@@ -82,7 +82,7 @@ final class GoogleDistanceApi(
             res((origin, destination)) = res((origin, destination)) ++ travelModes
             res
         }
-        .toList
+        .toVector
     }
 
     distinctPathsWithTravelModeAccumulation(paths.filter(_.travelModes.isEmpty))
