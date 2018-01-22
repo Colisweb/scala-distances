@@ -20,6 +20,4 @@ abstract class GeoCache[E <: Serializable: ClassTag] {
 
   final def getOrTask(keyParts: Any*)(orElse: => Task[E]): Task[E] = cachingF(keyParts)(ttl = Some(expiration))(orElse)
 
-  final def setT(keyParts: Any*)(value: E): Task[Any] = put(keyParts)(value = value, ttl = Some(expiration))
-
 }
