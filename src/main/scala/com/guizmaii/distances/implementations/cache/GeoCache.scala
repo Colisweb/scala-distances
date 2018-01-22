@@ -18,8 +18,8 @@ abstract class GeoCache[E <: Serializable: ClassTag] {
 
   implicit val innerCache: Cache[E]
 
-  def getOrTask(keyParts: Any*)(orElse: => Task[E]): Task[E] = cachingF(keyParts)(ttl = Some(expiration))(orElse)
+  final def getOrTask(keyParts: Any*)(orElse: => Task[E]): Task[E] = cachingF(keyParts)(ttl = Some(expiration))(orElse)
 
-  def setT(keyParts: Any*)(value: E): Task[Any] = put(keyParts)(value = value, ttl = Some(expiration))
+  final def setT(keyParts: Any*)(value: E): Task[Any] = put(keyParts)(value = value, ttl = Some(expiration))
 
 }
