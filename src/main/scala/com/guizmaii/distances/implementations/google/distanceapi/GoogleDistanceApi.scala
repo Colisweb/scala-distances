@@ -102,7 +102,6 @@ object GoogleDistanceApi {
   def apply(
       geoApiContext: GoogleGeoApiContext,
       geoCache: GeoCache[((TravelMode, LatLong, LatLong), SerializableDistance)]
-  ): GoogleDistanceApi =
-    new GoogleDistanceApi(geoApiContext, Some(geoCache))
+  ): GoogleDistanceApi = new GoogleDistanceApi(geoApiContext, Some(geoCache))
 
 }
