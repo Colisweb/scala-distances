@@ -5,7 +5,7 @@ import com.guizmaii.distances.utils.WithCache
 import monix.eval.Task
 import monix.execution.CancelableFuture
 
-trait DistanceApi extends WithCache[(TravelMode, SerializableDistance)] {
+trait DistanceApi extends WithCache[((TravelMode, LatLong, LatLong), SerializableDistance)] {
 
   def distanceT(
       origin: LatLong,

@@ -13,7 +13,7 @@ import monix.execution.CancelableFuture
 
 final class GoogleDistanceApi(
     geoApiContext: GoogleGeoApiContext,
-    override protected val alternativeCache: Option[GeoCache[(TravelMode, SerializableDistance)]] = None
+    override protected val alternativeCache: Option[GeoCache[((TravelMode, LatLong, LatLong), SerializableDistance)]] = None
 ) extends DistanceApi {
 
   import TravelMode._
@@ -59,7 +59,7 @@ final class GoogleDistanceApi(
   }
 
   override def distancesT(paths: List[DirectedPath]): Task[Map[(TravelMode, LatLong, LatLong), Distance]] = {
-    def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): Task[(TravelMode, SerializableDistance)] =
+    def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): Task[((TravelMode, LatLong, LatLong), SerializableDistance)] =
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
         .mode(mode.toGoogleTravelMode)
@@ -67,14 +67,14 @@ final class GoogleDistanceApi(
         .destinations(destination.toGoogleLatLng)
         .units(GoogleDistanceUnit.METRIC)
         .toTask
-        .map(res => mode -> res.rows.head.elements.head.asSerializableDistance)
+        .map(res => (mode, origin, destination) -> res.rows.head.elements.head.asSerializableDistance)
 
     def fetchAndCache(mode: TravelMode, origin: LatLong, destination: LatLong): Task[((TravelMode, LatLong, LatLong), Distance)] = {
       val key = (mode, origin, destination)
 
       cache
         .getOrTask(key)(fetch(mode, origin, destination))
-        .map { case (m, serializableDistance) => ((m, origin, destination), Distance.apply(serializableDistance)) }
+        .map { case (tuple, serializableDistance) => tuple -> Distance.apply(serializableDistance) }
     }
 
     paths
@@ -99,7 +99,10 @@ final class GoogleDistanceApi(
 object GoogleDistanceApi {
   def apply(geoApiContext: GoogleGeoApiContext): GoogleDistanceApi = new GoogleDistanceApi(geoApiContext)
 
-  def apply(geoApiContext: GoogleGeoApiContext, geoCache: GeoCache[(TravelMode, SerializableDistance)]): GoogleDistanceApi =
+  def apply(
+      geoApiContext: GoogleGeoApiContext,
+      geoCache: GeoCache[((TravelMode, LatLong, LatLong), SerializableDistance)]
+  ): GoogleDistanceApi =
     new GoogleDistanceApi(geoApiContext, Some(geoCache))
 
 }
