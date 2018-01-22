@@ -1,16 +1,15 @@
 package com.guizmaii.distances.implementations.google.distanceapi
 
 import cats.implicits._
+import cats.kernel.Semigroup
 import com.google.maps.DistanceMatrixApi
 import com.google.maps.model.{Unit => GoogleDistanceUnit}
-import com.guizmaii.distances.Types._
+import com.guizmaii.distances.Types.{DirectedPath, _}
 import com.guizmaii.distances.implementations.cache.GeoCache
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
 import com.guizmaii.distances.{DistanceApi, Geocoder}
 import monix.eval.Task
 import monix.execution.CancelableFuture
-
-import scala.collection.mutable.{Map => MutableMap}
 
 final class GoogleDistanceApi(
     geoApiContext: GoogleGeoApiContext,
@@ -54,6 +53,11 @@ final class GoogleDistanceApi(
   ): CancelableFuture[Map[TravelMode, Distance]] =
     distanceFromPostalCodesT(geocoder)(origin, destination, travelModes).runAsync
 
+  private[this] val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
+    override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
+      DirectedPath(origin = x.origin, destination = x.destination, x.travelModes ++ y.travelModes)
+  }
+
   override def distancesT(paths: List[DirectedPath]): Task[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): Task[(TravelMode, SerializableDistance)] =
       DistanceMatrixApi
@@ -73,21 +77,11 @@ final class GoogleDistanceApi(
         .map { case (m, serializableDistance) => ((m, origin, destination), Distance.apply(serializableDistance)) }
     }
 
-    def distinctPathsWithTravelModeAccumulation(duplicatedPaths: List[DirectedPath]): Vector[((LatLong, LatLong), List[TravelMode])] = {
-      val zero: MutableMap[(LatLong, LatLong), List[TravelMode]] = MutableMap().withDefaultValue(List.empty)
-
-      duplicatedPaths
-        .foldLeft(zero) {
-          case (res, DirectedPath(origin, destination, travelModes)) =>
-            res((origin, destination)) = res((origin, destination)) ++ travelModes
-            res
-        }
-        .toVector
-    }
-
-    distinctPathsWithTravelModeAccumulation(paths.filter(_.travelModes.isEmpty))
+    paths
+      .filter(_.travelModes.isEmpty)
+      .combineDuplicatesOn { case DirectedPath(origin, destination, _) => (origin, destination) }(directedPathSemiGroup)
       .flatMap {
-        case ((origin, destination), travelModes) =>
+        case DirectedPath(origin, destination, travelModes) =>
           travelModes.map(
             mode =>
               if (origin == destination) Task.now((mode, origin, destination) -> Distance.zero)
@@ -107,4 +101,5 @@ object GoogleDistanceApi {
 
   def apply(geoApiContext: GoogleGeoApiContext, geoCache: GeoCache[(TravelMode, SerializableDistance)]): GoogleDistanceApi =
     new GoogleDistanceApi(geoApiContext, Some(geoCache))
+
 }

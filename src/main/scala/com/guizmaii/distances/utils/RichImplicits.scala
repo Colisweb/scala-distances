@@ -1,10 +1,13 @@
 package com.guizmaii.distances.utils
 
+import cats.implicits._
+import cats.kernel.Semigroup
 import com.google.maps.PendingResult
 import com.google.maps.model.{DistanceMatrixElement, LatLng}
 import com.guizmaii.distances.Types.{LatLong, SerializableDistance}
 import monix.eval.Task
 
+import scala.collection.mutable.{Map => MutableMap}
 import scala.concurrent.Promise
 
 private[distances] object RichImplicits {
@@ -35,25 +38,19 @@ private[distances] object RichImplicits {
       SerializableDistance(value = element.distance.inMeters.toDouble, duration = element.duration.inSeconds.toDouble)
   }
 
-  implicit final class RichList[A](val list: List[A]) extends AnyVal {
+  implicit final class RichList[A](val paths: List[A]) extends AnyVal {
+    def combineDuplicatesOn[K](key: A => K)(implicit sm: Semigroup[A]): Vector[A] = {
+      val zero: MutableMap[K, A] = MutableMap()
 
-    /**
-      * https://stackoverflow.com/a/34456552/2431728
-      *
-      * @param f
-      * @tparam E
-      * @return
-      */
-    def distinctBy[E](f: A => E)(fAcc: A => A): List[A] =
-      list
-        .foldLeft((Vector.empty[A], Set.empty[E])) {
-          case ((acc, set), item) =>
-            val key = f(item)
-            if (set.contains(key)) (acc, set)
-            else (acc :+ fAcc(item), set + key)
+      paths
+        .foldLeft(zero) {
+          case (acc, a) =>
+            val k = key(a)
+            acc += k -> (acc(k) |+| a)
         }
-        ._1
-        .toList
+        .values
+        .toVector
+    }
   }
 
 }
