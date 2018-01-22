@@ -46,7 +46,7 @@ private[distances] object RichImplicits {
         .foldLeft(zero) {
           case (acc, a) =>
             val k = key(a)
-            acc += k -> (acc(k) |+| a)
+            acc += k -> acc.get(k).fold(a)(_ |+| a)
         }
         .values
         .toVector
