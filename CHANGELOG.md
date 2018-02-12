@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.5.1] - 2018.02.12
+
 - **[HOTFIX] The new Distance API implementation was bugged**
 - **Add some tests for the Distance API**
 
