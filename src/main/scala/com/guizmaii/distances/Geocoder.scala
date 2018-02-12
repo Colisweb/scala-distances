@@ -1,7 +1,6 @@
 package com.guizmaii.distances
 
 import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
-import com.guizmaii.distances.implementations.cache.GeoCache
 import monix.eval.Task
 import monix.execution.CancelableFuture
 

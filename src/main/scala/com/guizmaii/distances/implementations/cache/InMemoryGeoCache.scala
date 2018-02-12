@@ -1,5 +1,7 @@
 package com.guizmaii.distances.implementations.cache
 
+import com.guizmaii.distances.GeoCache
+
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 

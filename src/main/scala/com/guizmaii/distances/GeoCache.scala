@@ -1,4 +1,4 @@
-package com.guizmaii.distances.implementations.cache
+package com.guizmaii.distances
 
 import monix.eval.Task
 

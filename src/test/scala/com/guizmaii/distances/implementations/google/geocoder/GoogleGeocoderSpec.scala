@@ -1,7 +1,8 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
+import com.guizmaii.distances.GeoCache
 import com.guizmaii.distances.Types.{LatLong, PostalCode}
-import com.guizmaii.distances.implementations.cache.{GeoCache, InMemoryGeoCache, RedisGeoCache}
+import com.guizmaii.distances.implementations.cache.{InMemoryGeoCache, RedisGeoCache}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures

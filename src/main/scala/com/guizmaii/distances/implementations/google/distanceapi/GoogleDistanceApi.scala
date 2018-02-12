@@ -5,9 +5,8 @@ import cats.kernel.Semigroup
 import com.google.maps.DistanceMatrixApi
 import com.google.maps.model.{Unit => GoogleDistanceUnit}
 import com.guizmaii.distances.Types.{DirectedPath, _}
-import com.guizmaii.distances.implementations.cache.GeoCache
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
-import com.guizmaii.distances.{DistanceApi, Geocoder}
+import com.guizmaii.distances.{DistanceApi, GeoCache, Geocoder}
 import monix.eval.Task
 import monix.execution.CancelableFuture
 

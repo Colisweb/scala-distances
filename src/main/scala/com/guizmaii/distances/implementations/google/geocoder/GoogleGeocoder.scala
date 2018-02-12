@@ -3,9 +3,8 @@ package com.guizmaii.distances.implementations.google.geocoder
 import com.google.maps.model.ComponentFilter
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Types.{LatLong, PostalCode}
-import com.guizmaii.distances.implementations.cache.GeoCache
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
-import com.guizmaii.distances.{Geocoder, Types}
+import com.guizmaii.distances.{GeoCache, Geocoder, Types}
 import monix.eval.Task
 import monix.execution.CancelableFuture
 

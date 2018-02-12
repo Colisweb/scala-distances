@@ -1,5 +1,6 @@
 package com.guizmaii.distances.implementations.cache
 
+import com.guizmaii.distances.GeoCache
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig
 import redis.clients.jedis.JedisPool
 

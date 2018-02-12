@@ -32,7 +32,7 @@ object Types {
     final lazy val Inf: Distance  = Distance(Double.PositiveInfinity meters, Duration.Inf)
   }
 
-  final case class DirectedPath(origin: LatLong, destination: LatLong, travelModes: List[TravelMode] = List(TravelMode.Driving))
+  final case class DirectedPath(origin: LatLong, destination: LatLong, travelModes: List[TravelMode])
 
   sealed trait TravelMode extends EnumEntry
   object TravelMode extends Enum[TravelMode] {
