@@ -24,10 +24,7 @@ import monix.execution.CancelableFuture
   *
   * Seconde astuce, il faut également préciser le "language" sinon un pourcentage élevé de réponses sont fausses.
   */
-final class GoogleGeocoder(
-    geoApiContext: GoogleGeoApiContext,
-    override protected val alternativeCache: Option[GeoCache[LatLong]] = None
-) extends Geocoder {
+final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder {
 
   import com.guizmaii.distances.utils.RichImplicits._
   import monix.execution.Scheduler.Implicits.global
@@ -38,7 +35,7 @@ final class GoogleGeocoder(
       .region("eu")
       .language("fr")
 
-  override def geocodePostalCodeT(postalCode: PostalCode): Task[LatLong] = {
+  override def geocodePostalCodeT(postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): Task[LatLong] = {
     val fetch: Task[LatLong] =
       rawRequest
         .components(ComponentFilter.postalCode(postalCode.value))
@@ -48,9 +45,10 @@ final class GoogleGeocoder(
     cache.getOrTask(postalCode)(fetch)
   }
 
-  override def geocodePostalCode(postalCode: PostalCode): CancelableFuture[LatLong] = geocodePostalCodeT(postalCode).runAsync
+  override def geocodePostalCode(postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): CancelableFuture[LatLong] =
+    geocodePostalCodeT(postalCode).runAsync
 
-  override def geocodeNonAmbigueAddressT(address: Types.Address): Task[LatLong] = {
+  override def geocodeNonAmbigueAddressT(address: Types.Address)(implicit cache: GeoCache[LatLong]): Task[LatLong] = {
     val fetch: Task[LatLong] =
       rawRequest
         .components(ComponentFilter.country(address.country))
@@ -62,12 +60,11 @@ final class GoogleGeocoder(
     cache.getOrTask(address)(fetch)
   }
 
-  override def geocodeNonAmbigueAddress(address: Types.Address): CancelableFuture[LatLong] = geocodeNonAmbigueAddressT(address).runAsync
+  override def geocodeNonAmbigueAddress(address: Types.Address)(implicit cache: GeoCache[LatLong]): CancelableFuture[LatLong] =
+    geocodeNonAmbigueAddressT(address).runAsync
 }
 
 object GoogleGeocoder {
   def apply(geoApiContext: GoogleGeoApiContext): GoogleGeocoder = new GoogleGeocoder(geoApiContext)
 
-  def apply(geoApiContext: GoogleGeoApiContext, geoCache: GeoCache[LatLong]): GoogleGeocoder =
-    new GoogleGeocoder(geoApiContext, Some(geoCache))
 }
