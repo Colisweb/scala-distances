@@ -96,6 +96,6 @@ object GoogleDistanceApi {
 
   private final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
     override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
-      DirectedPath(origin = x.origin, destination = x.destination, x.travelModes ++ y.travelModes)
+      DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
   }
 }

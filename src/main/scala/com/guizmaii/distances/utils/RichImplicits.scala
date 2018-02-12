@@ -38,14 +38,14 @@ private[distances] object RichImplicits {
       SerializableDistance(value = element.distance.inMeters.toDouble, duration = element.duration.inSeconds.toDouble)
   }
 
-  implicit final class RichList[A](val list: List[A]) extends AnyVal {
-    def combineDuplicatesOn[K](key: A => K)(implicit sm: Semigroup[A]): Vector[A] = {
-      val zero: MutableMap[K, A] = MutableMap()
+  implicit final class RichList[Value](val list: List[Value]) extends AnyVal {
+    def combineDuplicatesOn[Key](key: Value => Key)(implicit sm: Semigroup[Value]): Vector[Value] = {
+      val zero: MutableMap[Key, Value] = MutableMap()
 
       list
         .foldLeft(zero) {
           case (acc, a) =>
-            val k = key(a)
+            val k: Key = key(a)
             acc += k -> acc.get(k).fold(a)(_ |+| a)
         }
         .values
