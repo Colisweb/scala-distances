@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.5.0] - 2018.02.12
+
 - **Use the `global` monix Scheduler instead of our own badly crafted one**
 - **Update libs**
 - **Add the possibility to geocode non ambigue addresses**
