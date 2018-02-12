@@ -11,20 +11,17 @@ import com.guizmaii.distances.{DistanceApi, Geocoder}
 import monix.eval.Task
 import monix.execution.CancelableFuture
 
-final class GoogleDistanceApi(
-    geoApiContext: GoogleGeoApiContext,
-    override protected val alternativeCache: Option[GeoCache[((TravelMode, LatLong, LatLong), SerializableDistance)]] = None
-) extends DistanceApi {
+final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends DistanceApi {
 
   import TravelMode._
-  import com.guizmaii.distances.utils.MonixSchedulers.AlwaysAsyncForkJoinScheduler._
   import com.guizmaii.distances.utils.RichImplicits._
+  import monix.execution.Scheduler.Implicits.global
 
   override def distanceT(
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
-  ): Task[Map[TravelMode, Distance]] =
+  )(implicit cache: GeoCache[CacheableDistance]): Task[Map[TravelMode, Distance]] =
     distancesT(DirectedPath(origin = origin, destination = destination, travelModes = travelModes) :: Nil)
       .map(_.map { case ((travelMode, _, _), distance) => travelMode -> distance })
 
@@ -32,17 +29,18 @@ final class GoogleDistanceApi(
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
-  ): CancelableFuture[Map[TravelMode, Distance]] = distanceT(origin, destination, travelModes).runAsync
+  )(implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[TravelMode, Distance]] =
+    distanceT(origin, destination, travelModes).runAsync
 
   override def distanceFromPostalCodesT(geocoder: Geocoder)(
       origin: PostalCode,
       destination: PostalCode,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
-  ): Task[Map[TravelMode, Distance]] = {
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): Task[Map[TravelMode, Distance]] = {
     if (origin == destination) Task.now(travelModes.map(_ -> Distance.zero).toMap)
     else
       Task
-        .zip2(geocoder.geocodeT(origin), geocoder.geocodeT(destination))
+        .zip2(geocoder.geocodePostalCodeT(origin), geocoder.geocodePostalCodeT(destination))
         .flatMap { case (o, d) => distanceT(o, d, travelModes) }
   }
 
@@ -50,7 +48,7 @@ final class GoogleDistanceApi(
       origin: PostalCode,
       destination: PostalCode,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
-  ): CancelableFuture[Map[TravelMode, Distance]] =
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): CancelableFuture[Map[TravelMode, Distance]] =
     distanceFromPostalCodesT(geocoder)(origin, destination, travelModes).runAsync
 
   private[this] val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
@@ -58,7 +56,8 @@ final class GoogleDistanceApi(
       DirectedPath(origin = x.origin, destination = x.destination, x.travelModes ++ y.travelModes)
   }
 
-  override def distancesT(paths: List[DirectedPath]): Task[Map[(TravelMode, LatLong, LatLong), Distance]] = {
+  override def distancesT(paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): Task[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): Task[((TravelMode, LatLong, LatLong), SerializableDistance)] =
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
@@ -91,17 +90,12 @@ final class GoogleDistanceApi(
       .map(_.toMap)
   }
 
-  override def distances(paths: List[DirectedPath]): CancelableFuture[Map[(TravelMode, LatLong, LatLong), Distance]] =
+  override def distances(paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[(TravelMode, LatLong, LatLong), Distance]] =
     distancesT(paths).runAsync
 
 }
 
 object GoogleDistanceApi {
   def apply(geoApiContext: GoogleGeoApiContext): GoogleDistanceApi = new GoogleDistanceApi(geoApiContext)
-
-  def apply(
-      geoApiContext: GoogleGeoApiContext,
-      geoCache: GeoCache[((TravelMode, LatLong, LatLong), SerializableDistance)]
-  ): GoogleDistanceApi = new GoogleDistanceApi(geoApiContext, Some(geoCache))
-
 }

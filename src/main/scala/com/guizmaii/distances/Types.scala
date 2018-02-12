@@ -10,10 +10,13 @@ import scala.concurrent.duration._
 
 object Types {
 
+  type CacheableDistance = ((TravelMode, LatLong, LatLong), SerializableDistance)
+
   // TODO Jules: This class should not leak out of this project. // private[distances]
   final case class SerializableDistance(value: Double, duration: Double)
 
   final case class PostalCode(value: String) extends AnyVal
+  final case class Address(line1: String, line2: String, postalCode: PostalCode, town: String, country: String)
 
   final case class LatLong(latitude: Double, longitude: Double) {
     private[distances] def toGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)
