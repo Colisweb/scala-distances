@@ -12,6 +12,7 @@ import monix.execution.CancelableFuture
 
 final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends DistanceApi {
 
+  import GoogleDistanceApi._
   import TravelMode._
   import com.guizmaii.distances.utils.RichImplicits._
   import monix.execution.Scheduler.Implicits.global
@@ -49,11 +50,6 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
       travelModes: List[TravelMode] = List(TravelMode.Driving)
   )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): CancelableFuture[Map[TravelMode, Distance]] =
     distanceFromPostalCodesT(geocoder)(origin, destination, travelModes).runAsync
-
-  private[this] val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
-    override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
-      DirectedPath(origin = x.origin, destination = x.destination, x.travelModes ++ y.travelModes)
-  }
 
   override def distancesT(paths: List[DirectedPath])(
       implicit cache: GeoCache[CacheableDistance]): Task[Map[(TravelMode, LatLong, LatLong), Distance]] = {
@@ -97,4 +93,9 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
 
 object GoogleDistanceApi {
   def apply(geoApiContext: GoogleGeoApiContext): GoogleDistanceApi = new GoogleDistanceApi(geoApiContext)
+
+  private final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
+    override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
+      DirectedPath(origin = x.origin, destination = x.destination, x.travelModes ++ y.travelModes)
+  }
 }
