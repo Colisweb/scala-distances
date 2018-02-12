@@ -1,9 +1,9 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
-import com.guizmaii.distances.GeoCache
 import com.guizmaii.distances.Types.{LatLong, PostalCode}
 import com.guizmaii.distances.implementations.cache.{InMemoryGeoCache, RedisGeoCache}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
+import com.guizmaii.distances.{GeoCache, Geocoder}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -17,6 +17,12 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
   import monix.execution.Scheduler.Implicits.global
 
   import scalacache.modes.sync._
+
+  lazy val geoContext: GoogleGeoApiContext = {
+    val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
+    GoogleGeoApiContext(googleApiKey)
+  }
+  lazy val geocoder: Geocoder = GoogleGeocoder(geoContext)
 
   override implicit val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(2, Seconds), interval = Span(500, Millis))
@@ -60,10 +66,6 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     }
 
     "if NOT ALREADY in cache" should {
-      val googleApiKey: String               = System.getenv().get("GOOGLE_API_KEY")
-      val geoApiContext: GoogleGeoApiContext = GoogleGeoApiContext(googleApiKey)
-      val geocoder                           = new GoogleGeocoder(geoApiContext)
-
       def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {
         cache.flushAll()
         cache.get(postalCode) shouldBe None
