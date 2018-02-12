@@ -10,6 +10,8 @@ import scala.concurrent.duration._
 
 object Types {
 
+  type CacheableDistance = ((TravelMode, LatLong, LatLong), SerializableDistance)
+
   // TODO Jules: This class should not leak out of this project. // private[distances]
   final case class SerializableDistance(value: Double, duration: Double)
 

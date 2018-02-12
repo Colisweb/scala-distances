@@ -7,30 +7,28 @@ import monix.execution.CancelableFuture
 
 trait DistanceApi {
 
-  type CacheableDistance = ((TravelMode, LatLong, LatLong), SerializableDistance)
-
   def distanceT(
       origin: LatLong,
       destination: LatLong,
-      travelMode: List[TravelMode] = List(TravelMode.Driving)
+      travelMode: List[TravelMode]
   )(implicit cache: GeoCache[CacheableDistance]): Task[Map[TravelMode, Distance]]
 
   def distance(
       origin: LatLong,
       destination: LatLong,
-      travelMode: List[TravelMode] = List(TravelMode.Driving)
+      travelMode: List[TravelMode]
   )(implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[TravelMode, Distance]]
 
   def distanceFromPostalCodesT(geocoder: Geocoder)(
       origin: PostalCode,
       destination: PostalCode,
-      travelMode: List[TravelMode] = List(TravelMode.Driving)
+      travelMode: List[TravelMode]
   )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): Task[Map[TravelMode, Distance]]
 
   def distanceFromPostalCodes(geocoder: Geocoder)(
       origin: PostalCode,
       destination: PostalCode,
-      travelMode: List[TravelMode] = List(TravelMode.Driving)
+      travelMode: List[TravelMode]
   )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): CancelableFuture[Map[TravelMode, Distance]]
 
   def distancesT(paths: List[DirectedPath])(
