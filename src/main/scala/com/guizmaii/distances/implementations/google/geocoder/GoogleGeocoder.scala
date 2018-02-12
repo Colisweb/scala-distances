@@ -1,11 +1,11 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
-import com.google.maps.GeocodingApi
 import com.google.maps.model.ComponentFilter
-import com.guizmaii.distances.Geocoder
+import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Types.{LatLong, PostalCode}
 import com.guizmaii.distances.implementations.cache.GeoCache
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
+import com.guizmaii.distances.{Geocoder, Types}
 import monix.eval.Task
 import monix.execution.CancelableFuture
 
@@ -29,15 +29,18 @@ final class GoogleGeocoder(
     override protected val alternativeCache: Option[GeoCache[LatLong]] = None
 ) extends Geocoder {
 
-  import com.guizmaii.distances.utils.MonixSchedulers.AlwaysAsyncForkJoinScheduler._
   import com.guizmaii.distances.utils.RichImplicits._
+  import monix.execution.Scheduler.Implicits.global
 
-  override def geocodeT(postalCode: PostalCode): Task[LatLong] = {
+  private def rawRequest: GeocodingApiRequest =
+    GeocodingApi
+      .newRequest(geoApiContext.geoApiContext)
+      .region("eu")
+      .language("fr")
+
+  override def geocodePostalCodeT(postalCode: PostalCode): Task[LatLong] = {
     val fetch: Task[LatLong] =
-      GeocodingApi
-        .newRequest(geoApiContext.geoApiContext)
-        .region("eu")
-        .language("fr")
+      rawRequest
         .components(ComponentFilter.postalCode(postalCode.value))
         .toTask
         .map(_.head.geometry.location.toInnerLatLong)
@@ -45,8 +48,21 @@ final class GoogleGeocoder(
     cache.getOrTask(postalCode)(fetch)
   }
 
-  override def geocode(postalCode: PostalCode): CancelableFuture[LatLong] = geocodeT(postalCode).runAsync
+  override def geocodePostalCode(postalCode: PostalCode): CancelableFuture[LatLong] = geocodePostalCodeT(postalCode).runAsync
 
+  override def geocodeNonAmbigueAddressT(address: Types.Address): Task[LatLong] = {
+    val fetch: Task[LatLong] =
+      rawRequest
+        .components(ComponentFilter.country(address.country))
+        .components(ComponentFilter.postalCode(address.postalCode.value))
+        .address(s"${address.line1} ${address.line2} ${address.town}")
+        .toTask
+        .map(_.head.geometry.location.toInnerLatLong)
+
+    cache.getOrTask(address)(fetch)
+  }
+
+  override def geocodeNonAmbigueAddress(address: Types.Address): CancelableFuture[LatLong] = geocodeNonAmbigueAddressT(address).runAsync
 }
 
 object GoogleGeocoder {

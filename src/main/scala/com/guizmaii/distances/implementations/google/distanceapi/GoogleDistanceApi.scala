@@ -17,8 +17,8 @@ final class GoogleDistanceApi(
 ) extends DistanceApi {
 
   import TravelMode._
-  import com.guizmaii.distances.utils.MonixSchedulers.AlwaysAsyncForkJoinScheduler._
   import com.guizmaii.distances.utils.RichImplicits._
+  import monix.execution.Scheduler.Implicits.global
 
   override def distanceT(
       origin: LatLong,
@@ -42,7 +42,7 @@ final class GoogleDistanceApi(
     if (origin == destination) Task.now(travelModes.map(_ -> Distance.zero).toMap)
     else
       Task
-        .zip2(geocoder.geocodeT(origin), geocoder.geocodeT(destination))
+        .zip2(geocoder.geocodePostalCodeT(origin), geocoder.geocodePostalCodeT(destination))
         .flatMap { case (o, d) => distanceT(o, d, travelModes) }
   }
 

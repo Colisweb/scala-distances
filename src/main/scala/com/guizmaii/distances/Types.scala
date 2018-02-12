@@ -14,6 +14,7 @@ object Types {
   final case class SerializableDistance(value: Double, duration: Double)
 
   final case class PostalCode(value: String) extends AnyVal
+  final case class Address(line1: String, line2: String, postalCode: PostalCode, town: String, country: String)
 
   final case class LatLong(latitude: Double, longitude: Double) {
     private[distances] def toGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)

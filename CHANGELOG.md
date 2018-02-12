@@ -6,6 +6,9 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Use the `global` monix Scheduler instead of our own badly crafted one**
+- **Update libs**
+- **Add the possibility to geocode non ambigue addresses**
 - **Handle travel modes**
 
 ## [v0.4.0] - 2018.01.19

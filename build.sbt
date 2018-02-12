@@ -109,7 +109,7 @@ val scalacache = ((version: String) =>
 
 val testKit = Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.5",
-  "org.scalatest"  %% "scalatest"  % "3.0.4"
+  "org.scalatest"  %% "scalatest"  % "3.0.5"
 )
 
 libraryDependencies ++= Seq(
