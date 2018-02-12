@@ -1,19 +1,18 @@
 package com.guizmaii.distances.utils
 
+import cats.implicits._
+import cats.kernel.Semigroup
 import com.google.maps.PendingResult
 import com.google.maps.model.{DistanceMatrixElement, LatLng}
 import com.guizmaii.distances.Types.{LatLong, SerializableDistance}
 import monix.eval.Task
 
+import scala.collection.mutable.{Map => MutableMap}
 import scala.concurrent.Promise
 
 private[distances] object RichImplicits {
   implicit final class RichGoogleLatLng(val latLng: LatLng) extends AnyVal {
     def toInnerLatLong: LatLong = LatLong(latitude = latLng.lat, longitude = latLng.lng)
-  }
-
-  implicit final class RichInnerLatLng(val latLong: LatLong) extends AnyVal {
-    def toGoogleLatLong: LatLng = new LatLng(latLong.latitude, latLong.longitude)
   }
 
   private[this] final class CallBack[T](promise: Promise[T]) extends PendingResult.Callback[T] {
@@ -37,6 +36,21 @@ private[distances] object RichImplicits {
   implicit final class RichDistanceMatrixElement(val element: DistanceMatrixElement) extends AnyVal {
     def asSerializableDistance: SerializableDistance =
       SerializableDistance(value = element.distance.inMeters.toDouble, duration = element.duration.inSeconds.toDouble)
+  }
+
+  implicit final class RichList[Value](val list: List[Value]) extends AnyVal {
+    def combineDuplicatesOn[Key](key: Value => Key)(implicit sm: Semigroup[Value]): Vector[Value] = {
+      val zero: MutableMap[Key, Value] = MutableMap()
+
+      list
+        .foldLeft(zero) {
+          case (acc, a) =>
+            val k: Key = key(a)
+            acc += k -> acc.get(k).fold(a)(_ |+| a)
+        }
+        .values
+        .toVector
+    }
   }
 
 }

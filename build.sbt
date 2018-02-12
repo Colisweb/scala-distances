@@ -96,6 +96,8 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.fu
 val monix      = "io.monix"        %% "monix"               % "3.0.0-M3"
 val googleMaps = "com.google.maps" % "google-maps-services" % "0.2.6"
 val squants    = "org.typelevel"   %% "squants"             % "1.3.0"
+val cats       = "org.typelevel"   %% "cats-core"           % "1.0.1"
+val enumeratum = "com.beachape"    %% "enumeratum"          % "1.5.12"
 
 val scalacache = ((version: String) =>
   Seq(
@@ -107,12 +109,14 @@ val scalacache = ((version: String) =>
 
 val testKit = Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.5",
-  "org.scalatest"  %% "scalatest"  % "3.0.4"
+  "org.scalatest"  %% "scalatest"  % "3.0.5"
 )
 
 libraryDependencies ++= Seq(
   monix   % Provided,
   squants % Provided,
+  cats,
+  enumeratum,
   googleMaps
 ) ++ scalacache ++ testKit.map(_ % Test)
 

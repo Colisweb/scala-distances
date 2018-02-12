@@ -1,7 +1,8 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
+import com.guizmaii.distances.GeoCache
 import com.guizmaii.distances.Types.{LatLong, PostalCode}
-import com.guizmaii.distances.implementations.cache.{GeoCache, InMemoryGeoCache, RedisGeoCache}
+import com.guizmaii.distances.implementations.cache.{InMemoryGeoCache, RedisGeoCache}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -20,10 +21,10 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
   override implicit val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(2, Seconds), interval = Span(500, Millis))
 
-  implicit final class RichGeoCache[E <: Serializable: ClassTag](val geoCache: GeoCache[E]) {
-    def get(keyParts: Any*): Id[Option[E]]     = geoCache.innerCache.get(keyParts)
-    def set(keyParts: Any*)(value: E): Id[Any] = geoCache.innerCache.put(keyParts)(value)
-    def flushAll(): Id[Any]                    = geoCache.innerCache.removeAll()
+  implicit final class RichGeoCache[E <: Serializable: ClassTag](val cache: GeoCache[E]) {
+    def get(keyParts: Any*): Id[Option[E]]     = cache.innerCache.get(keyParts)
+    def set(keyParts: Any*)(value: E): Id[Any] = cache.innerCache.put(keyParts)(value)
+    def flushAll(): Id[Any]                    = cache.innerCache.removeAll()
   }
 
   val lille      = LatLong(latitude = 50.6138111, longitude = 3.0423599)
@@ -47,7 +48,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     }
   }
 
-  def tests(cache: GeoCache[LatLong]): Unit = {
+  def tests(implicit cache: GeoCache[LatLong]): Unit = {
     "cache" should {
       "cache things" in {
         val c     = cache.innerCache
@@ -61,12 +62,12 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     "if NOT ALREADY in cache" should {
       val googleApiKey: String               = System.getenv().get("GOOGLE_API_KEY")
       val geoApiContext: GoogleGeoApiContext = GoogleGeoApiContext(googleApiKey)
-      val geocoder                           = new GoogleGeocoder(geoApiContext, alternativeCache = Some(cache))
+      val geocoder                           = new GoogleGeocoder(geoApiContext)
 
       def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {
         cache.flushAll()
         cache.get(postalCode) shouldBe None
-        whenReady(geocoder.geocodeT(postalCode).runAsync) { result =>
+        whenReady(geocoder.geocodePostalCodeT(postalCode).runAsync) { result =>
           result shouldBe place
           cache.get(postalCode) shouldBe Some(place)
         }
@@ -85,13 +86,13 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     }
     "if ALREADY in cache" should {
       val geoApiContext: GoogleGeoApiContext = GoogleGeoApiContext("WRONG KEY")
-      val geocoder                           = new GoogleGeocoder(geoApiContext, alternativeCache = Some(cache))
+      val geocoder                           = new GoogleGeocoder(geoApiContext)
 
       def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {
         cache.flushAll()
         cache.set(postalCode)(place)
         cache.get(postalCode) shouldBe Some(place)
-        geocoder.geocodeT(postalCode).runAsync.futureValue shouldBe place
+        geocoder.geocodePostalCodeT(postalCode).runAsync.futureValue shouldBe place
       }
       "just return" should {
         "Lille" in {

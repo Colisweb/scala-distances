@@ -1,27 +1,39 @@
 package com.guizmaii.distances
 
 import com.guizmaii.distances.Types._
-import com.guizmaii.distances.utils.WithCache
 import monix.eval.Task
 import monix.execution.CancelableFuture
 
-import scala.collection.immutable.Seq
+trait DistanceApi {
 
-trait DistanceApi extends WithCache[SerializableDistance] {
+  def distanceT(
+      origin: LatLong,
+      destination: LatLong,
+      travelMode: List[TravelMode]
+  )(implicit cache: GeoCache[CacheableDistance]): Task[Map[TravelMode, Distance]]
 
-  def distanceT(origin: LatLong, destination: LatLong): Task[Distance]
+  def distance(
+      origin: LatLong,
+      destination: LatLong,
+      travelMode: List[TravelMode]
+  )(implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[TravelMode, Distance]]
 
-  def distance(origin: LatLong, destination: LatLong): CancelableFuture[Distance]
-
-  def distanceFromPostalCodesT(geocoder: Geocoder)(origin: PostalCode, destination: PostalCode): Task[Distance]
+  def distanceFromPostalCodesT(geocoder: Geocoder)(
+      origin: PostalCode,
+      destination: PostalCode,
+      travelMode: List[TravelMode]
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): Task[Map[TravelMode, Distance]]
 
   def distanceFromPostalCodes(geocoder: Geocoder)(
       origin: PostalCode,
-      destination: PostalCode
-  ): CancelableFuture[Distance]
+      destination: PostalCode,
+      travelMode: List[TravelMode]
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): CancelableFuture[Map[TravelMode, Distance]]
 
-  def distancesT(paths: Seq[DirectedPath]): Task[Seq[DirectedPathWithDistance]]
+  def distancesT(paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): Task[Map[(TravelMode, LatLong, LatLong), Distance]]
 
-  def distances(paths: Seq[DirectedPath]): CancelableFuture[Seq[DirectedPathWithDistance]]
+  def distances(paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[(TravelMode, LatLong, LatLong), Distance]]
 
 }

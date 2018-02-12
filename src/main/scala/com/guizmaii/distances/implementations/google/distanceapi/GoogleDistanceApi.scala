@@ -1,66 +1,92 @@
 package com.guizmaii.distances.implementations.google.distanceapi
 
+import cats.implicits._
+import cats.kernel.Semigroup
 import com.google.maps.DistanceMatrixApi
-import com.guizmaii.distances.Types._
-import com.guizmaii.distances.implementations.cache.GeoCache
+import com.google.maps.model.{Unit => GoogleDistanceUnit}
+import com.guizmaii.distances.Types.{DirectedPath, _}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
-import com.guizmaii.distances.{DistanceApi, Geocoder}
+import com.guizmaii.distances.{DistanceApi, GeoCache, Geocoder}
 import monix.eval.Task
 import monix.execution.CancelableFuture
 
-import scala.collection.immutable.Seq
+final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends DistanceApi {
 
-final class GoogleDistanceApi(
-    geoApiContext: GoogleGeoApiContext,
-    override protected val alternativeCache: Option[GeoCache[SerializableDistance]] = None
-) extends DistanceApi {
-
-  import com.guizmaii.distances.utils.MonixSchedulers.AlwaysAsyncForkJoinScheduler._
+  import GoogleDistanceApi._
+  import TravelMode._
   import com.guizmaii.distances.utils.RichImplicits._
+  import monix.execution.Scheduler.Implicits.global
 
-  private def toGoogleRepresentation(latLong: LatLong): String = s"${latLong.latitude},${latLong.longitude}"
+  override def distanceT(
+      origin: LatLong,
+      destination: LatLong,
+      travelModes: List[TravelMode] = List(TravelMode.Driving)
+  )(implicit cache: GeoCache[CacheableDistance]): Task[Map[TravelMode, Distance]] =
+    distancesT(DirectedPath(origin = origin, destination = destination, travelModes = travelModes) :: Nil)
+      .map(_.map { case ((travelMode, _, _), distance) => travelMode -> distance })
 
-  override def distanceT(origin: LatLong, destination: LatLong): Task[Distance] = {
-    def fetch: Task[SerializableDistance] =
-      DistanceMatrixApi
-        .getDistanceMatrix(
-          geoApiContext.geoApiContext,
-          Array(toGoogleRepresentation(origin)),
-          Array(toGoogleRepresentation(destination))
-        )
-        .toTask
-        .map(_.rows.head.elements.head.asSerializableDistance)
-
-    val key = origin -> destination
-    cache
-      .getOrTask(key)(fetch)
-      .map(Distance.apply)
-  }
+  override def distance(
+      origin: LatLong,
+      destination: LatLong,
+      travelModes: List[TravelMode] = List(TravelMode.Driving)
+  )(implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[TravelMode, Distance]] =
+    distanceT(origin, destination, travelModes).runAsync
 
   override def distanceFromPostalCodesT(geocoder: Geocoder)(
       origin: PostalCode,
-      destination: PostalCode
-  ): Task[Distance] =
-    if (origin == destination) Task.now(Distance.zero)
-    else Task.zip2(geocoder.geocodeT(origin), geocoder.geocodeT(destination)).flatMap((distanceT _).tupled)
-
-  override def distance(origin: LatLong, destination: LatLong): CancelableFuture[Distance] =
-    distanceT(origin, destination).runAsync
+      destination: PostalCode,
+      travelModes: List[TravelMode] = List(TravelMode.Driving)
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): Task[Map[TravelMode, Distance]] = {
+    if (origin == destination) Task.now(travelModes.map(_ -> Distance.zero).toMap)
+    else
+      Task
+        .zip2(geocoder.geocodePostalCodeT(origin), geocoder.geocodePostalCodeT(destination))
+        .flatMap { case (o, d) => distanceT(o, d, travelModes) }
+  }
 
   override def distanceFromPostalCodes(geocoder: Geocoder)(
       origin: PostalCode,
-      destination: PostalCode
-  ): CancelableFuture[Distance] = distanceFromPostalCodesT(geocoder)(origin, destination).runAsync
+      destination: PostalCode,
+      travelModes: List[TravelMode] = List(TravelMode.Driving)
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): CancelableFuture[Map[TravelMode, Distance]] =
+    distanceFromPostalCodesT(geocoder)(origin, destination, travelModes).runAsync
 
-  override def distancesT(paths: Seq[DirectedPath]): Task[Seq[DirectedPathWithDistance]] = Task.sequence {
-    paths.map {
-      case (origin, destination) =>
-        if (origin == destination) Task.now((origin, destination, Distance.zero))
-        else distanceT(origin, destination).map(distance => (origin, destination, distance))
+  override def distancesT(paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): Task[Map[(TravelMode, LatLong, LatLong), Distance]] = {
+    def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): Task[((TravelMode, LatLong, LatLong), SerializableDistance)] =
+      DistanceMatrixApi
+        .newRequest(geoApiContext.geoApiContext)
+        .mode(mode.toGoogleTravelMode)
+        .origins(origin.toGoogleLatLng)
+        .destinations(destination.toGoogleLatLng)
+        .units(GoogleDistanceUnit.METRIC)
+        .toTask
+        .map(res => (mode, origin, destination) -> res.rows.head.elements.head.asSerializableDistance)
+
+    def fetchAndCache(mode: TravelMode, origin: LatLong, destination: LatLong): Task[((TravelMode, LatLong, LatLong), Distance)] = {
+      val key = (mode, origin, destination)
+
+      cache
+        .getOrTask(key)(fetch(mode, origin, destination))
+        .map { case (tuple, serializableDistance) => tuple -> Distance.apply(serializableDistance) }
     }
+
+    paths
+      .filter(_.travelModes.isEmpty)
+      .combineDuplicatesOn { case DirectedPath(origin, destination, _) => (origin, destination) }(directedPathSemiGroup)
+      .flatMap {
+        case DirectedPath(origin, destination, travelModes) =>
+          travelModes.map(
+            mode =>
+              if (origin == destination) Task.now((mode, origin, destination) -> Distance.zero)
+              else fetchAndCache(mode, origin, destination))
+      }
+      .sequence
+      .map(_.toMap)
   }
 
-  override def distances(paths: Seq[DirectedPath]): CancelableFuture[Seq[DirectedPathWithDistance]] =
+  override def distances(paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[(TravelMode, LatLong, LatLong), Distance]] =
     distancesT(paths).runAsync
 
 }
@@ -68,6 +94,8 @@ final class GoogleDistanceApi(
 object GoogleDistanceApi {
   def apply(geoApiContext: GoogleGeoApiContext): GoogleDistanceApi = new GoogleDistanceApi(geoApiContext)
 
-  def apply(geoApiContext: GoogleGeoApiContext, geoCache: GeoCache[SerializableDistance]): GoogleDistanceApi =
-    new GoogleDistanceApi(geoApiContext, Some(geoCache))
+  private final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
+    override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
+      DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
+  }
 }
