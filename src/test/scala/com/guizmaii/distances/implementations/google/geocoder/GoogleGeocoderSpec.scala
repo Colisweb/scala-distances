@@ -137,7 +137,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
 
     final case class TestAddress(line1: String, postalCode: String, town: String, lat: String, long: String)
     object TestAddress {
-      def unapply(addr: TestAddress): (Address, LatLong) =
+      def toAddressAndLatLong(addr: TestAddress): (Address, LatLong) =
         Address(line1 = addr.line1, line2 = "", postalCode = PostalCode(addr.postalCode), town = addr.town, country = "France") -> LatLong(
           latitude = addr.lat.toDouble,
           longitude = addr.long.toDouble)
@@ -168,7 +168,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
         |""".stripMargin.drop(1).dropRight(1)
 
     val data: Seq[(Address, LatLong)] =
-      rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(TestAddress.unapply)
+      rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(TestAddress.toAddressAndLatLong)
 
     def testNonAmbigueAddressGeocoder: ((Address, LatLong)) => Unit = {
       case ((address: Address, latLong: LatLong)) =>
