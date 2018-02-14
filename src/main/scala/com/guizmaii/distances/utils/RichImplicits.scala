@@ -53,4 +53,30 @@ private[distances] object RichImplicits {
     }
   }
 
+  implicit final class RichTaskCompanion(val taskCompanion: Task.type) extends AnyVal {
+
+    /**
+      * Launch the 3 Tasks side effects in parallele but returns the result in order:
+      *
+      * If the first one succeed, it returns its result
+      * else if the second one succeed, it returns its result
+      * else if the last one succeed, it returns its result
+      * else return the error of last one.
+      *
+      * @param ta
+      * @param tb
+      * @param tc
+      * @tparam A
+      * @return
+      */
+    def raceInOrder3[A](ta: Task[A], tb: Task[A], tc: Task[A]): Task[A] = {
+      Task.zip3(ta.attempt, tb.attempt, tc.attempt).flatMap {
+        case (Right(v), _, _)             => Task.now(v)
+        case (Left(_), Right(v), _)       => Task.now(v)
+        case (Left(_), Left(_), Right(v)) => Task.now(v)
+        case (Left(_), Left(_), Left(e))  => Task.raiseError(e)
+      }
+    }
+  }
+
 }

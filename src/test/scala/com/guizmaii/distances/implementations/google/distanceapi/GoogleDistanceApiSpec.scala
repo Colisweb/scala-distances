@@ -17,8 +17,6 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
 
   import monix.execution.Scheduler.Implicits.global
 
-  import scalacache.modes.sync._
-
   lazy val geoContext: GoogleGeoApiContext = {
     val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
     GoogleGeoApiContext(googleApiKey)

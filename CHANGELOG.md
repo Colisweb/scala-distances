@@ -6,6 +6,12 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Improve how `GoogleGeocoder.geocodeNonAmbigueAddressT` retrieves geocoding**
+
+**WARNING**: Read the method documentation before using it !
+
+- **Add tests for `GoogleGeocoder.geocodeNonAmbigueAddressT`**
+
 ## [v0.5.1] - 2018.02.12
 
 - **[HOTFIX] The new Distance API implementation was bugged**

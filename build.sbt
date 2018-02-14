@@ -98,6 +98,12 @@ val googleMaps = "com.google.maps" % "google-maps-services" % "0.2.6"
 val squants    = "org.typelevel"   %% "squants"             % "1.3.0"
 val cats       = "org.typelevel"   %% "cats-core"           % "1.0.1"
 val enumeratum = "com.beachape"    %% "enumeratum"          % "1.5.12"
+val kantancsv = ((version: String) =>
+  Seq(
+    "com.nrinaudo" %% "kantan.csv"         % version,
+    "com.nrinaudo" %% "kantan.csv-cats"    % version,
+    "com.nrinaudo" %% "kantan.csv-generic" % version
+  ))("0.3.1")
 
 val scalacache = ((version: String) =>
   Seq(
@@ -110,7 +116,7 @@ val scalacache = ((version: String) =>
 val testKit = Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.5",
   "org.scalatest"  %% "scalatest"  % "3.0.5"
-)
+) ++ kantancsv
 
 libraryDependencies ++= Seq(
   monix   % Provided,
