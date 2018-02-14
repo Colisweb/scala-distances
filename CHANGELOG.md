@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v0.5.2] - 2018.02.14
+
 - **Improve how `GoogleGeocoder.geocodeNonAmbigueAddressT` retrieves geocoding**
 
 **WARNING**: Read the method documentation before using it !
