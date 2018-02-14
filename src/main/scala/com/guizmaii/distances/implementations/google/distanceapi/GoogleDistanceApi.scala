@@ -72,7 +72,7 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
     }
 
     paths
-      .filterNot(_.travelModes.isEmpty)
+      .filter(_.travelModes.nonEmpty)
       .combineDuplicatesOn { case DirectedPath(origin, destination, _) => (origin, destination) }(directedPathSemiGroup)
       .flatMap {
         case DirectedPath(origin, destination, travelModes) =>
