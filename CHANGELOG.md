@@ -6,6 +6,9 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Update Scala 2.12 version**
+- **Update dependencies**
+
 ## [v0.5.2] - 2018.02.14
 
 - **Improve how `GoogleGeocoder.geocodeNonAmbigueAddressT` retrieves geocoding**
