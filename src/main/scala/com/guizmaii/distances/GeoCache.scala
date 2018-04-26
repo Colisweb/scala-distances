@@ -7,8 +7,8 @@ import scala.reflect.ClassTag
 
 abstract class GeoCache[E <: Serializable: ClassTag] {
 
-  import scalacache._
   import scalacache.Monix.modes._
+  import scalacache._
 
   protected val expiration: Duration
 
