@@ -8,11 +8,7 @@ import scala.reflect.ClassTag
 abstract class GeoCache[E <: Serializable: ClassTag] {
 
   import scalacache._
-
-  // TODO: Wait an answer for: https://twitter.com/guizmaii/status/934923692148232193
-  implicit val task: Mode[Task] = new Mode[Task] {
-    val M: Async[Task] = CatsEffect.asyncForCatsEffectAsync[Task]
-  }
+  import scalacache.Monix.modes._
 
   protected val expiration: Duration
 
