@@ -147,22 +147,22 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
       s"""
         |Line1;PostalCode;Town;Lat;Long
         |5 BOULEVARD DE LA MADELEINE;75001;PARIS;48.8695813;2.3272826
-        |17 rue Francois Miron;75004;Paris;48.85574;2.3570779
+        |17 rue Francois Miron;75004;Paris;48.8557984;2.3570898
         |1 RUE DANTON;75006;PARIS;48.8528005;2.3427676
         |24 rue dauphine;75006;PARIS;48.8549537;2.3393333
-        |30 PLACE DE LA MADELEINE;75008;PARIS;48.8708733;2.325631500000001
+        |30 PLACE DE LA MADELEINE;75008;PARIS;48.8708155;2.325606
         |50 rue du Docteur Blanche;75016;Paris;48.8528274;2.2643836
         |16 RUE SAINT FIACRE  - 75002 PARIS;75002;PARIS;48.8703821;2.3459086
         |4 RUE DE SONTAY;75116;PARIS;48.8703854;2.2846272
         |7 rue Victorien Sardou;75016;Paris;48.8428041;2.2675564
         |62 avenue des champs elysee;75008;Paris;48.8708509;2.3056707
-        |233 Boulevard Voltaire 75011 Paris;75011;Paris 75011;48.8513799;2.3915542
+        |233 Boulevard Voltaire 75011 Paris;75011;Paris 75011;48.8512903;2.3914116
         |13 rue Henri Barbusse;92230;GENNEVILLIERS;48.9182397;2.2967879
-        |35 boulevard d'Exelmans;75016;PARIS;48.8412649;2.2632171
+        |35 boulevard d'Exelmans;75016;PARIS;48.84135999999999;2.2633114
         |95 avenue du General Leclerc;75014;Paris;48.8260975;2.3273668
         |12 rue de l'Assomption;75016;Paris;48.85349;2.2744602
         |108 rue de Richelieu;75002;PARIS;48.8714406;2.3398815
-        |24 AVENUE MARIE ALEXIS;76370;PETIT CAUX;49.96568550000001;1.196322
+        |24 AVENUE MARIE ALEXIS;76370;PETIT CAUX;49.95763789999999;1.2224194
         |8 RUE FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
         |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;${artiguesPresBordeaux.latitude};${artiguesPresBordeaux.longitude}
         |""".stripMargin.drop(1).dropRight(1)
