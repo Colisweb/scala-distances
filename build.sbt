@@ -2,7 +2,7 @@ organization := "com.guizmaii"
 
 name := "scala-distances"
 
-val scala212 = "2.12.4"
+val scala212 = "2.12.5"
 val scala211 = "2.11.12"
 
 scalaVersion := scala212
@@ -50,7 +50,7 @@ def scalacOptionsVersion(scalaVersion: String): Seq[String] = scalaVersion match
       "-language:postfixOps",
       "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
       "-Xcheckinit",                       // Wrap field accessors to throw an exception on uninitialized access.
-      //"-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
+      "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
       "-Xfuture",                          // Turn on future language features.
       "-Xlint:adapted-args",               // Warn if an argument list is modified to match the receiver.
       "-Xlint:by-name-right-associative",  // By-name parameter of right associative operator.
@@ -82,7 +82,7 @@ def scalacOptionsVersion(scalaVersion: String): Seq[String] = scalaVersion match
       "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
       "-Ywarn-unused:locals",              // Warn if a local definition is unused.
       "-Ywarn-unused:params",              // Warn if a value parameter is unused.
-      //"-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused. BUGGED: https://github.com/scala/bug/issues/10394
+      "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused. BUGGED: https://github.com/scala/bug/issues/10394
       "-Ywarn-unused:privates",            // Warn if a private member is unused.
       "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
     )
@@ -93,17 +93,17 @@ scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 
-val monix      = "io.monix"        %% "monix"               % "3.0.0-M3"
-val googleMaps = "com.google.maps" % "google-maps-services" % "0.2.6"
+val monix      = "io.monix"        %% "monix"               % "3.0.0-RC1"
+val googleMaps = "com.google.maps" % "google-maps-services" % "0.2.7"
 val squants    = "org.typelevel"   %% "squants"             % "1.3.0"
-val cats       = "org.typelevel"   %% "cats-core"           % "1.0.1"
-val enumeratum = "com.beachape"    %% "enumeratum"          % "1.5.12"
+val cats       = "org.typelevel"   %% "cats-core"           % "1.1.0"
+val enumeratum = "com.beachape"    %% "enumeratum"          % "1.5.13"
 val kantancsv = ((version: String) =>
   Seq(
     "com.nrinaudo" %% "kantan.csv"         % version,
     "com.nrinaudo" %% "kantan.csv-cats"    % version,
     "com.nrinaudo" %% "kantan.csv-generic" % version
-  ))("0.3.1")
+  ))("0.4.0")
 
 val scalacache = ((version: String) =>
   Seq(
@@ -111,10 +111,10 @@ val scalacache = ((version: String) =>
     "com.github.cb372" %% "scalacache-caffeine" % version,
     "com.github.cb372" %% "scalacache-redis"    % version,
     "com.github.cb372" %% "scalacache-monix"    % version
-  ))("0.22.0")
+  ))("0.24.0")
 
 val testKit = Seq(
-  "org.scalacheck" %% "scalacheck" % "1.13.5",
+  "org.scalacheck" %% "scalacheck" % "1.14.0",
   "org.scalatest"  %% "scalatest"  % "3.0.5"
 ) ++ kantancsv
 
