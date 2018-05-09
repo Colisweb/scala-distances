@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import com.google.maps.GeoApiContext
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 final case class GoogleGeoApiContext(googleApiKey: String, connectTimeout: Duration, readTimeout: Duration) {
 
