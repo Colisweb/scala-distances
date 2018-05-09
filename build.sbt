@@ -47,7 +47,7 @@ lazy val coreDependencies = Seq(
   googleMaps
 ) ++ scalacache ++ testKit.map(_ % Test)
 
-/* Projects */
+/* Modules */
 
 lazy val `scala-distances` = project
   .in(file("."))
@@ -63,7 +63,7 @@ lazy val core = project
   .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
   .settings(libraryDependencies ++= coreDependencies)
 
-/* Publish configurations */
+/* Publishing configurations */
 
 inThisBuild(
   List(
