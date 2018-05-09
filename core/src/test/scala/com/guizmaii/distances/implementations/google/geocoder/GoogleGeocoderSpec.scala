@@ -4,14 +4,15 @@ import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
 import com.guizmaii.distances.implementations.cache.{InMemoryGeoCache, RedisGeoCache}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
 import com.guizmaii.distances.{GeoCache, Geocoder}
+import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest._
+import scalacache.Id
 import shapeless.CNil
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.reflect.ClassTag
-import scalacache.Id
 
 object GoogleGeocoderSpec {
   import scalacache.modes.sync._
@@ -27,7 +28,6 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
 
   import GoogleGeocoderSpec._
   import monix.execution.Scheduler.Implicits.global
-
   import scalacache.modes.sync._
 
   lazy val geoContext: GoogleGeoApiContext = {
@@ -173,7 +173,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     def testNonAmbigueAddressGeocoder: ((Address, LatLong)) => Unit = {
       case ((address: Address, latLong: LatLong)) =>
         s"$address should be located at $latLong}" in {
-          geocoder.geocodeNonAmbigueAddress(address).futureValue shouldBe latLong
+          geocoder.geocodeNonAmbigueAddress(address).runSyncUnsafe(10 seconds) shouldBe latLong
         }
     }
 

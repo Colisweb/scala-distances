@@ -12,6 +12,7 @@ import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import squants.space.LengthConversions._
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
