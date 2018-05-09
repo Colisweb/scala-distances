@@ -31,7 +31,7 @@ lazy val scalacache = ((version: String) =>
     "com.github.cb372" %% "scalacache-caffeine" % version,
     "com.github.cb372" %% "scalacache-redis"    % version,
     "com.github.cb372" %% "scalacache-monix"    % version
-  ))("0.24.0")
+  ))("0.24.1")
 
 lazy val testKit = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.0",
@@ -47,20 +47,25 @@ lazy val coreDependencies = Seq(
   googleMaps
 ) ++ scalacache ++ testKit.map(_ % Test)
 
+lazy val scalaDistancesSettings = Seq(
+  scalaVersion := scala212,
+  crossScalaVersions := Seq(scala211, scala212)
+)
+
 /* Modules */
 
 lazy val `scala-distances` = project
   .in(file("."))
   .settings(moduleName := "scala-distances")
+  .settings(scalaDistancesSettings)
   .aggregate(core)
   .dependsOn(core)
 
 lazy val core = project
   .in(file("core"))
   .settings(moduleName := "scala-distance-core", name := "scala-distance core")
-  .settings(scalaVersion := scala212)
-  .settings(crossScalaVersions := Seq(scala211, scala212))
   .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
+  .settings(scalaDistancesSettings)
   .settings(libraryDependencies ++= coreDependencies)
 
 /* Publishing configurations */
