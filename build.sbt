@@ -11,7 +11,6 @@ scalafmtSbtCheck in ThisBuild := true
 
 /* Dependencies */
 
-lazy val monix         = "io.monix"        %% "monix"               % "3.0.0-RC1"
 lazy val googleMaps    = "com.google.maps" % "google-maps-services" % "0.2.7"
 lazy val squants       = "org.typelevel"   %% "squants"             % "1.3.0"
 lazy val cats          = "org.typelevel"   %% "cats-core"           % "1.1.0"
@@ -27,10 +26,10 @@ lazy val kantancsv = ((version: String) =>
 
 lazy val scalacache = ((version: String) =>
   Seq(
-    "com.github.cb372" %% "scalacache-core"     % version,
-    "com.github.cb372" %% "scalacache-caffeine" % version,
-    "com.github.cb372" %% "scalacache-redis"    % version,
-    "com.github.cb372" %% "scalacache-monix"    % version
+    "com.github.cb372" %% "scalacache-core"        % version,
+    "com.github.cb372" %% "scalacache-caffeine"    % version,
+    "com.github.cb372" %% "scalacache-redis"       % version,
+    "com.github.cb372" %% "scalacache-cats-effect" % version
   ))("0.24.1")
 
 lazy val testKit = Seq(
@@ -39,7 +38,6 @@ lazy val testKit = Seq(
 ) ++ kantancsv
 
 lazy val coreDependencies = Seq(
-  monix   % Provided,
   squants % Provided,
   `cats-effect`,
   cats,
