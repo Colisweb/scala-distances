@@ -2,7 +2,7 @@ import sbt.Keys.{crossScalaVersions, moduleName, scalacOptions}
 
 organization in ThisBuild := "com.guizmaii"
 
-lazy val scala212 = "2.12.5"
+lazy val scala212 = "2.12.6"
 lazy val scala211 = "2.11.12"
 
 scalafmtOnCompile in ThisBuild := true
