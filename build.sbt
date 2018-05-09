@@ -58,17 +58,25 @@ lazy val `scala-distances` = project
   .in(file("."))
   .settings(moduleName := "scala-distances")
   .settings(scalaDistancesSettings)
+  .settings(noPublishSettings)
   .aggregate(core)
   .dependsOn(core)
 
 lazy val core = project
   .in(file("core"))
-  .settings(moduleName := "scala-distance-core", name := "scala-distance core")
+  .settings(moduleName := "scala-distance-core")
   .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
   .settings(scalaDistancesSettings)
   .settings(libraryDependencies ++= coreDependencies)
 
 /* Publishing configurations */
+
+// Copied from Cats
+lazy val noPublishSettings = Seq(
+  publish := {},
+  publishLocal := {},
+  publishArtifact := false
+)
 
 inThisBuild(
   List(
