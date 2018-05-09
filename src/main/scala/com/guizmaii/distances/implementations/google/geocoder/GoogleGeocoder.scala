@@ -6,7 +6,6 @@ import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
 import com.guizmaii.distances.{GeoCache, Geocoder}
 import monix.eval.Task
-import monix.execution.CancelableFuture
 
 /**
   * Remarques:
@@ -26,7 +25,6 @@ import monix.execution.CancelableFuture
 final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder {
 
   import com.guizmaii.distances.utils.RichImplicits._
-  import monix.execution.Scheduler.Implicits.global
 
   private def rawRequest: GeocodingApiRequest =
     GeocodingApi
@@ -34,7 +32,7 @@ final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder 
       .region("eu")
       .language("fr")
 
-  override def geocodePostalCodeT(postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): Task[LatLong] = {
+  override def geocodePostalCode(postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): Task[LatLong] = {
     val fetch: Task[LatLong] =
       rawRequest
         .components(ComponentFilter.postalCode(postalCode.value))
@@ -44,10 +42,7 @@ final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder 
     cache.getOrTask(postalCode)(fetch)
   }
 
-  override def geocodePostalCode(postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): CancelableFuture[LatLong] =
-    geocodePostalCodeT(postalCode).runAsync
-
-  override def geocodeNonAmbigueAddressT(address: Address)(implicit cache: GeoCache[LatLong]): Task[LatLong] = {
+  override def geocodeNonAmbigueAddress(address: Address)(implicit cache: GeoCache[LatLong]): Task[LatLong] = {
     def fetch(addr: Address): Task[LatLong] =
       rawRequest
         .components(ComponentFilter.country(addr.country))
@@ -60,14 +55,12 @@ final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder 
       fetch(addr)
         .onErrorRecoverWith {
           case _: NoSuchElementException =>
-            Task.raceInOrder3(fetch(addr.copy(line2 = "")), fetch(addr.copy(line2 = "", town = "")), geocodePostalCodeT(addr.postalCode))
+            Task.raceInOrder3(fetch(addr.copy(line2 = "")), fetch(addr.copy(line2 = "", town = "")), geocodePostalCode(addr.postalCode))
         }
 
     cache.getOrTask(address)(fallbackFetch(address))
   }
 
-  override def geocodeNonAmbigueAddress(address: Address)(implicit cache: GeoCache[LatLong]): CancelableFuture[LatLong] =
-    geocodeNonAmbigueAddressT(address).runAsync
 }
 
 object GoogleGeocoder {

@@ -69,7 +69,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
         def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {
           cache.flushAll()
           cache.get(postalCode) shouldBe None
-          whenReady(geocoder.geocodePostalCodeT(postalCode).runAsync) { result =>
+          whenReady(geocoder.geocodePostalCode(postalCode).runAsync) { result =>
             result shouldBe place
             cache.get(postalCode) shouldBe Some(place)
           }
@@ -98,7 +98,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
           cache.flushAll()
           cache.set(postalCode)(place)
           cache.get(postalCode) shouldBe Some(place)
-          geocoder.geocodePostalCodeT(postalCode).runAsync.futureValue shouldBe place
+          geocoder.geocodePostalCode(postalCode).runAsync.futureValue shouldBe place
         }
         "just return" should {
           "Lille" in {

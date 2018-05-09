@@ -8,31 +8,22 @@ import com.guizmaii.distances.Types.{DirectedPath, _}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
 import com.guizmaii.distances.{DistanceApi, GeoCache, Geocoder}
 import monix.eval.Task
-import monix.execution.CancelableFuture
 
 final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends DistanceApi {
 
   import GoogleDistanceApi._
   import TravelMode._
   import com.guizmaii.distances.utils.RichImplicits._
-  import monix.execution.Scheduler.Implicits.global
-
-  override def distanceT(
-      origin: LatLong,
-      destination: LatLong,
-      travelModes: List[TravelMode] = List(TravelMode.Driving)
-  )(implicit cache: GeoCache[CacheableDistance]): Task[Map[TravelMode, Distance]] =
-    distancesT(DirectedPath(origin = origin, destination = destination, travelModes = travelModes) :: Nil)
-      .map(_.map { case ((travelMode, _, _), distance) => travelMode -> distance })
 
   override def distance(
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
-  )(implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[TravelMode, Distance]] =
-    distanceT(origin, destination, travelModes).runAsync
+  )(implicit cache: GeoCache[CacheableDistance]): Task[Map[TravelMode, Distance]] =
+    distances(DirectedPath(origin = origin, destination = destination, travelModes = travelModes) :: Nil)
+      .map(_.map { case ((travelMode, _, _), distance) => travelMode -> distance })
 
-  override def distanceFromPostalCodesT(geocoder: Geocoder)(
+  override def distanceFromPostalCodes(geocoder: Geocoder)(
       origin: PostalCode,
       destination: PostalCode,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
@@ -40,18 +31,11 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
     if (origin == destination) Task.now(travelModes.map(_ -> Distance.zero).toMap)
     else
       Task
-        .zip2(geocoder.geocodePostalCodeT(origin), geocoder.geocodePostalCodeT(destination))
-        .flatMap { case (o, d) => distanceT(o, d, travelModes) }
+        .zip2(geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination))
+        .flatMap { case (o, d) => distance(o, d, travelModes) }
   }
 
-  override def distanceFromPostalCodes(geocoder: Geocoder)(
-      origin: PostalCode,
-      destination: PostalCode,
-      travelModes: List[TravelMode] = List(TravelMode.Driving)
-  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): CancelableFuture[Map[TravelMode, Distance]] =
-    distanceFromPostalCodesT(geocoder)(origin, destination, travelModes).runAsync
-
-  override def distancesT(paths: List[DirectedPath])(
+  override def distances(paths: List[DirectedPath])(
       implicit cache: GeoCache[CacheableDistance]): Task[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): Task[((TravelMode, LatLong, LatLong), SerializableDistance)] =
       DistanceMatrixApi
@@ -84,10 +68,6 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
       .sequence
       .map(_.toMap)
   }
-
-  override def distances(paths: List[DirectedPath])(
-      implicit cache: GeoCache[CacheableDistance]): CancelableFuture[Map[(TravelMode, LatLong, LatLong), Distance]] =
-    distancesT(paths).runAsync
 
 }
 

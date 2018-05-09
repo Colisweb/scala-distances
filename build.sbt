@@ -93,11 +93,13 @@ scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 
-val monix      = "io.monix"        %% "monix"               % "3.0.0-RC1"
-val googleMaps = "com.google.maps" % "google-maps-services" % "0.2.7"
-val squants    = "org.typelevel"   %% "squants"             % "1.3.0"
-val cats       = "org.typelevel"   %% "cats-core"           % "1.1.0"
-val enumeratum = "com.beachape"    %% "enumeratum"          % "1.5.13"
+val monix        = "io.monix"        %% "monix"               % "3.0.0-RC1"
+val googleMaps   = "com.google.maps" % "google-maps-services" % "0.2.7"
+val squants      = "org.typelevel"   %% "squants"             % "1.3.0"
+val cats         = "org.typelevel"   %% "cats-core"           % "1.1.0"
+val cats_effects = "org.typelevel"   %% "cats-effect"         % "1.0.0-RC"
+val enumeratum   = "com.beachape"    %% "enumeratum"          % "1.5.13"
+
 val kantancsv = ((version: String) =>
   Seq(
     "com.nrinaudo" %% "kantan.csv"         % version,
@@ -121,6 +123,7 @@ val testKit = Seq(
 libraryDependencies ++= Seq(
   monix   % Provided,
   squants % Provided,
+  cats_effects,
   cats,
   enumeratum,
   googleMaps

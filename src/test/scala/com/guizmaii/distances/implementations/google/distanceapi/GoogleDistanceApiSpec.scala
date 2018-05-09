@@ -32,9 +32,9 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
       implicit val cache: GeoCache[LatLong]               = InMemoryGeoCache[LatLong](1 day)
       implicit val distCache: GeoCache[CacheableDistance] = InMemoryGeoCache[CacheableDistance](1 day)
 
-      val paris01 = geocoder.geocodePostalCodeT(PostalCode("75001")).runAsync
-      val paris02 = geocoder.geocodePostalCodeT(PostalCode("75002")).runAsync
-      val paris18 = geocoder.geocodePostalCodeT(PostalCode("75018")).runAsync
+      val paris01 = geocoder.geocodePostalCode(PostalCode("75001")).runAsync
+      val paris02 = geocoder.geocodePostalCode(PostalCode("75002")).runAsync
+      val paris18 = geocoder.geocodePostalCode(PostalCode("75018")).runAsync
 
       whenReady(paris01.zip(paris02).zip(paris18)) {
         case ((parie01V, parie02V), parie18V) =>
@@ -42,8 +42,8 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
           parie02V shouldBe LatLong(48.8675641, 2.34399)
           parie18V shouldBe LatLong(48.891305, 2.3529867)
 
-          val from01to02 = distanceApi.distanceT(parie01V, parie02V, Driving :: Nil).runAsync
-          val from01to18 = distanceApi.distanceT(parie01V, parie18V, Driving :: Nil).runAsync
+          val from01to02 = distanceApi.distance(parie01V, parie02V, Driving :: Nil).runAsync
+          val from01to18 = distanceApi.distance(parie01V, parie18V, Driving :: Nil).runAsync
 
           whenReady(from01to02.zip(from01to18)) {
             case ((from01to02V, from01to18V)) =>
