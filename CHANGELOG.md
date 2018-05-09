@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Use `sbt-tpolecat` plugin instead of our manually defined scalac options**
+- **Change used scalafmt plugin**
 - **Update Scala 2.12 version**
 - **Update dependencies**
 
