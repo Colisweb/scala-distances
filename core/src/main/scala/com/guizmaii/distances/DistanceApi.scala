@@ -1,22 +1,23 @@
 package com.guizmaii.distances
 
+import cats.effect.Effect
 import com.guizmaii.distances.Types._
-import monix.eval.Task
 
 trait DistanceApi {
 
-  def distance(
+  def distance[E[_]: Effect](
       origin: LatLong,
       destination: LatLong,
       travelMode: List[TravelMode]
-  )(implicit cache: GeoCache[CacheableDistance]): Task[Map[TravelMode, Distance]]
+  )(implicit cache: GeoCache[CacheableDistance]): E[Map[TravelMode, Distance]]
 
-  def distanceFromPostalCodes(geocoder: Geocoder)(
+  def distanceFromPostalCodes[E[_]: Effect](geocoder: Geocoder)(
       origin: PostalCode,
       destination: PostalCode,
       travelMode: List[TravelMode]
-  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): Task[Map[TravelMode, Distance]]
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): E[Map[TravelMode, Distance]]
 
-  def distances(paths: List[DirectedPath])(implicit cache: GeoCache[CacheableDistance]): Task[Map[(TravelMode, LatLong, LatLong), Distance]]
+  def distances[E[_]: Effect](paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): E[Map[(TravelMode, LatLong, LatLong), Distance]]
 
 }

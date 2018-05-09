@@ -1,5 +1,6 @@
 package com.guizmaii.distances.implementations.google.distanceapi
 
+import cats.effect.IO
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types.{CacheableDistance, Distance, LatLong, PostalCode}
 import com.guizmaii.distances.implementations.cache.InMemoryGeoCache
@@ -16,8 +17,6 @@ import scala.language.postfixOps
 
 class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
-  import monix.execution.Scheduler.Implicits.global
-
   lazy val geoContext: GoogleGeoApiContext = {
     val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
     GoogleGeoApiContext(googleApiKey)
@@ -33,28 +32,22 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
       implicit val cache: GeoCache[LatLong]               = InMemoryGeoCache[LatLong](1 day)
       implicit val distCache: GeoCache[CacheableDistance] = InMemoryGeoCache[CacheableDistance](1 day)
 
-      val paris01 = geocoder.geocodePostalCode(PostalCode("75001")).runAsync
-      val paris02 = geocoder.geocodePostalCode(PostalCode("75002")).runAsync
-      val paris18 = geocoder.geocodePostalCode(PostalCode("75018")).runAsync
+      val paris01 = geocoder.geocodePostalCode[IO](PostalCode("75001")).unsafeRunSync()
+      val paris02 = geocoder.geocodePostalCode[IO](PostalCode("75002")).unsafeRunSync()
+      val paris18 = geocoder.geocodePostalCode[IO](PostalCode("75018")).unsafeRunSync()
 
-      whenReady(paris01.zip(paris02).zip(paris18)) {
-        case ((parie01V, parie02V), parie18V) =>
-          parie01V shouldBe LatLong(48.8640493, 2.3310526)
-          parie02V shouldBe LatLong(48.8675641, 2.34399)
-          parie18V shouldBe LatLong(48.891305, 2.3529867)
+      paris01 shouldBe LatLong(48.8640493, 2.3310526)
+      paris02 shouldBe LatLong(48.8675641, 2.34399)
+      paris18 shouldBe LatLong(48.891305, 2.3529867)
 
-          val from01to02 = distanceApi.distance(parie01V, parie02V, Driving :: Nil).runAsync
-          val from01to18 = distanceApi.distance(parie01V, parie18V, Driving :: Nil).runAsync
+      val from01to02 = distanceApi.distance[IO](paris01, paris02, Driving :: Nil).unsafeRunSync()
+      val from01to18 = distanceApi.distance[IO](paris01, paris18, Driving :: Nil).unsafeRunSync()
 
-          whenReady(from01to02.zip(from01to18)) {
-            case ((from01to02V, from01to18V)) =>
-              from01to02V shouldBe Map(Driving -> Distance(1679.0 meters, 503 seconds))
-              from01to18V shouldBe Map(Driving -> Distance(4747.0 meters, 1240 seconds))
+      from01to02 shouldBe Map(Driving -> Distance(1679.0 meters, 503 seconds))
+      from01to18 shouldBe Map(Driving -> Distance(4747.0 meters, 1240 seconds))
 
-              from01to02V(Driving).length should be < from01to18V(Driving).length
-              from01to02V(Driving).duration should be < from01to18V(Driving).duration
-          }
-      }
+      from01to02(Driving).length should be < from01to18(Driving).length
+      from01to02(Driving).duration should be < from01to18(Driving).duration
     }
   }
 

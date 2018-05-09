@@ -1,5 +1,6 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
+import cats.effect.IO
 import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
 import com.guizmaii.distances.implementations.cache.{InMemoryGeoCache, RedisGeoCache}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
@@ -27,7 +28,6 @@ object GoogleGeocoderSpec {
 class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
   import GoogleGeocoderSpec._
-  import monix.execution.Scheduler.Implicits.global
   import scalacache.modes.sync._
 
   lazy val geoContext: GoogleGeoApiContext = {
@@ -69,10 +69,9 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
         def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {
           cache.flushAll()
           cache.get(postalCode) shouldBe None
-          whenReady(geocoder.geocodePostalCode(postalCode).runAsync) { result =>
-            result shouldBe place
-            cache.get(postalCode) shouldBe Some(place)
-          }
+          val result = geocoder.geocodePostalCode[IO](postalCode).unsafeRunSync()
+          result shouldBe place
+          cache.get(postalCode) shouldBe Some(place)
         }
         "cache and return" should {
           "Lille" in {
@@ -98,7 +97,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
           cache.flushAll()
           cache.set(postalCode)(place)
           cache.get(postalCode) shouldBe Some(place)
-          geocoder.geocodePostalCode(postalCode).runAsync.futureValue shouldBe place
+          geocoder.geocodePostalCode[IO](postalCode).unsafeRunSync() shouldBe place
         }
         "just return" should {
           "Lille" in {
@@ -173,7 +172,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     def testNonAmbigueAddressGeocoder: ((Address, LatLong)) => Unit = {
       case ((address: Address, latLong: LatLong)) =>
         s"$address should be located at $latLong}" in {
-          geocoder.geocodeNonAmbigueAddress(address).runSyncUnsafe(10 seconds) shouldBe latLong
+          geocoder.geocodeNonAmbigueAddress[IO](address).unsafeRunSync() shouldBe latLong
         }
     }
 

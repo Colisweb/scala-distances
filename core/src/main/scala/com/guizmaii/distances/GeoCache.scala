@@ -1,19 +1,23 @@
 package com.guizmaii.distances
 
-import monix.eval.Task
+import cats.effect.Async
+import scalacache.CatsEffect.modes.async
+import scalacache.{Cache, cachingF, Async => ScalaCacheAsync}
 
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-abstract class GeoCache[E <: Serializable: ClassTag] {
+abstract class GeoCache[S <: Serializable: ClassTag] {
 
-  import scalacache.Monix.modes._
-  import scalacache._
+  /**
+    * Required by `cachingF`
+    */
+  implicit def scalacacheAsync[F[_]: Async]: ScalaCacheAsync[F] = async.M
 
   protected val expiration: Duration
 
-  implicit val innerCache: Cache[E]
+  implicit val innerCache: Cache[S]
 
-  final def getOrTask(keyParts: Any*)(orElse: => Task[E]): Task[E] = cachingF(keyParts)(ttl = Some(expiration))(orElse)
+  final def getOrDefault[E[_]: Async](keyParts: Any*)(default: => E[S]): E[S] = cachingF(keyParts)(ttl = Some(expiration))(default)
 
 }
