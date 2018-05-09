@@ -9,6 +9,10 @@ More infos about this file : http://keepachangelog.com/
 - **Use `sbt-tpolecat` plugin instead of our manually defined scalac options**
 - **Change used scalafmt plugin**
 - **Update Scala 2.12 version**
+
+## [v0.5.3] - 2018.04.26
+
+- **Update Scala 2.12 version**
 - **Update dependencies**
 
 ## [v0.5.2] - 2018.02.14
