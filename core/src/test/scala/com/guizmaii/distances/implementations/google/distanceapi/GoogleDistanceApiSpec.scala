@@ -52,10 +52,10 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
   }
 
   "GoogleDistanceApi.distance" should {
-    "with cats-effect IO" should {
+    "pass tests with cats-effect IO" should {
       passTests[IO](_.unsafeRunSync())
     }
-    "with Monix Task" should {
+    "pass tests with Monix Task" should {
       import monix.execution.Scheduler.Implicits.global
 
       passTests[Task](_.runSyncUnsafe(10 seconds))
