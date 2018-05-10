@@ -1,14 +1,19 @@
-package com.guizmaii.distances.implementations.google.distanceapi
+package com.guizmaii.distances
 
 import cats.effect.Async
 import cats.kernel.Semigroup
 import com.google.maps.DistanceMatrixApi
 import com.google.maps.model.{Unit => GoogleDistanceUnit}
-import com.guizmaii.distances.Types.{DirectedPath, _}
-import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
-import com.guizmaii.distances.{DistanceApi, Geocoder}
+import com.guizmaii.distances.Types.{DirectedPath, LatLong, _}
+import com.guizmaii.distances.utils.GoogleGeoApiContext
 
-object GoogleDistanceApi {
+abstract class DistanceProvider[AIO[_]: Async] {
+
+  def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]]
+
+}
+
+object GoogleDistanceProvider {
 
   import TravelMode._
   import cats.implicits._
@@ -20,20 +25,7 @@ object GoogleDistanceApi {
       DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
   }
 
-  def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): DistanceApi[AIO] = new DistanceApi[AIO] {
-
-    override def distance(origin: LatLong, destination: LatLong, travelModes: List[TravelMode]): AIO[Map[TravelMode, Distance]] =
-      distances(DirectedPath(origin = origin, destination = destination, travelModes = travelModes) :: Nil)
-        .map(_.map { case ((travelMode, _, _), distance) => travelMode -> distance })
-
-    override def distanceFromPostalCodes(geocoder: Geocoder[AIO])(
-        origin: PostalCode,
-        destination: PostalCode,
-        travelModes: List[TravelMode]
-    ): AIO[Map[TravelMode, Distance]] =
-      if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
-      else
-        (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
+  def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): DistanceProvider[AIO] = new DistanceProvider[AIO] {
 
     override def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
       def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[((TravelMode, LatLong, LatLong), Distance)] =

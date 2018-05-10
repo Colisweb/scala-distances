@@ -4,9 +4,8 @@ import cats.effect.{Async, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types.{Distance, LatLong, PostalCode, TravelMode}
-import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
-import com.guizmaii.distances.implementations.google.geocoder.GoogleGeocoder
-import com.guizmaii.distances.{DistanceApi, Geocoder}
+import com.guizmaii.distances.utils.GoogleGeoApiContext
+import com.guizmaii.distances._
 import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -28,8 +27,8 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
 
   def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
 
-    val geocoder: Geocoder[AIO]       = GoogleGeocoder(geoContext)
-    val distanceApi: DistanceApi[AIO] = GoogleDistanceApi(geoContext)
+    val geocoder: Geocoder[AIO]       = Geocoder[AIO](GoogleGeoProvider[AIO](geoContext))
+    val distanceApi: DistanceApi[AIO] = DistanceApi[AIO](GoogleDistanceProvider[AIO](geoContext))
 
     "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
       val paris01 = runSync(geocoder.geocodePostalCode(PostalCode("75001"))).asInstanceOf[LatLong]

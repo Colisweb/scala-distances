@@ -1,9 +1,9 @@
 package com.guizmaii.distances.utils
 
 import cats.kernel.Semigroup
+import com.guizmaii.distances.GoogleGeoProvider
 import com.guizmaii.distances.Types.TravelMode._
 import com.guizmaii.distances.Types.{DirectedPath, LatLong}
-import com.guizmaii.distances.implementations.google.distanceapi.GoogleDistanceApi
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest._
 
@@ -25,7 +25,7 @@ class RichListSpec extends WordSpec with Matchers with ScalaFutures with BeforeA
       val a24 = DirectedPath(LatLong(42.0, 42.0), LatLong(43.0, 43.0), Driving :: Unknown :: Nil)
 
       val res = List(a00, a01, a11, a21, a22, a23, a24).combineDuplicatesOn { case DirectedPath(o, d, _) => (o, d) }(
-        GoogleDistanceApi invokePrivate directedPathSemiGroup())
+        GoogleGeoProvider invokePrivate directedPathSemiGroup())
 
       res.head shouldBe DirectedPath(LatLong(42.0, 42.0), LatLong(43.0, 43.0), Driving :: Bicycling :: Unknown :: Nil)
     }
@@ -37,7 +37,7 @@ class RichListSpec extends WordSpec with Matchers with ScalaFutures with BeforeA
       val b01 = DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Driving :: Nil)
       val b02 = DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Unknown :: Nil)
       val res = List(a00, a01, a11, b00, b01, b02).combineDuplicatesOn { case DirectedPath(o, d, _) => (o, d) }(
-        GoogleDistanceApi invokePrivate directedPathSemiGroup())
+        GoogleGeoProvider invokePrivate directedPathSemiGroup())
 
       res shouldBe Vector(
         DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Driving :: Unknown :: Nil),
