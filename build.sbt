@@ -1,6 +1,8 @@
 import sbt.Keys.crossScalaVersions
 
-organization in ThisBuild := "com.guizmaii"
+organization := "com.guizmaii"
+
+name := "scala-distances"
 
 lazy val scala212 = "2.12.6"
 lazy val scala211 = "2.11.12"
@@ -10,9 +12,9 @@ crossScalaVersions := Seq(scala211, scala212)
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 
-scalafmtOnCompile in ThisBuild := true
-scalafmtCheck in ThisBuild := true
-scalafmtSbtCheck in ThisBuild := true
+scalafmtOnCompile := true
+scalafmtCheck := true
+scalafmtSbtCheck := true
 
 /* Dependencies */
 
