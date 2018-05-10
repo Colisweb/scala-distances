@@ -22,7 +22,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           val distanceApi: DistanceApi[IO] = DistanceApi(distanceProviderStub)
           val latLong                      = LatLong(0.0, 0.0)
           val expectedResult               = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
-          distanceApi.distance(latLong, latLong, Driving :: Bicycling :: Nil) shouldBe expectedResult
+          distanceApi.distance(latLong, latLong, Driving :: Bicycling :: Nil).unsafeRunSync() shouldBe expectedResult
         }
       }
     }
@@ -33,7 +33,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           val distanceApi: DistanceApi[IO] = DistanceApi(distanceProviderStub)
           val postalCode                   = PostalCode("59000")
           val expectedResult               = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
-          distanceApi.distanceFromPostalCodes(geocoderStub)(postalCode, postalCode, Driving :: Bicycling :: Nil) shouldBe expectedResult
+          distanceApi
+            .distanceFromPostalCodes(geocoderStub)(postalCode, postalCode, Driving :: Bicycling :: Nil)
+            .unsafeRunSync() shouldBe expectedResult
         }
       }
     }

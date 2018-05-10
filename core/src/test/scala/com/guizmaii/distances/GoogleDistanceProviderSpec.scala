@@ -17,7 +17,6 @@ object GoogleDistanceProviderSpec extends WordSpec with Matchers {
       geocode: PostalCode => LatLong,
       computeDistances: List[DirectedPath] => Map[(TravelMode, LatLong, LatLong), Distance]
   ): Unit = {
-
     "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
       val paris01 = geocode(PostalCode("75001"))
       val paris02 = geocode(PostalCode("75002"))
