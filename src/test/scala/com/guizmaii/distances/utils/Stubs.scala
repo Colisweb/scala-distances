@@ -7,8 +7,7 @@ import com.guizmaii.distances.Types.LatLong
 object Stubs {
 
   def distanceProviderStub[AIO[_]: Async]: DistanceProvider[AIO] = new DistanceProvider[AIO] {
-    override def distances(paths: List[Types.DirectedPath]): AIO[Map[(Types.TravelMode, Types.LatLong, Types.LatLong), Types.Distance]] =
-      ???
+    override def distance(mode: Types.TravelMode, origin: LatLong, destination: LatLong): AIO[Types.Distance] = ???
   }
 
   def geoProviderStub[AIO[_]: Async]: GeoProvider[AIO] = new GeoProvider[AIO] {

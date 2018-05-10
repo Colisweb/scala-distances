@@ -35,7 +35,7 @@ private[distances] object RichImplicits {
   }
 
   implicit final class RichList[Value](val list: List[Value]) extends AnyVal {
-    def combineDuplicatesOn[Key](key: Value => Key)(implicit sm: Semigroup[Value]): Vector[Value] = {
+    def combineDuplicatesOn[Key](key: Value => Key)(implicit sm: Semigroup[Value]): List[Value] = {
       val zero: MutableMap[Key, Value] = MutableMap()
 
       list
@@ -45,7 +45,7 @@ private[distances] object RichImplicits {
             acc += k -> acc.get(k).fold(a)(_ |+| a)
         }
         .values
-        .toVector
+        .toList
     }
   }
 

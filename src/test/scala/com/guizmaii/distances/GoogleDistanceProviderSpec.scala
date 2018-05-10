@@ -30,19 +30,14 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
       paris02 shouldBe LatLong(48.8675641, 2.34399)
       paris18 shouldBe LatLong(48.891305, 2.3529867)
 
-      val driveFrom01to02 = DirectedPath(origin = paris01, destination = paris02, Driving :: Nil)
-      val driveFrom01to18 = DirectedPath(origin = paris01, destination = paris18, Driving :: Nil)
+      val distanceBetween01And02 = runSync(distanceApi.distance(Driving, paris01, paris02)).asInstanceOf[Distance]
+      val distanceBetween01And18 = runSync(distanceApi.distance(Driving, paris01, paris18)).asInstanceOf[Distance]
 
-      val results = runSync(distanceApi.distances(driveFrom01to02 :: driveFrom01to18 :: Nil))
-        .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
+      distanceBetween01And02 shouldBe Distance(1670.0 meters, 516 seconds)
+      distanceBetween01And18 shouldBe Distance(5474.0 meters, 1445 seconds)
 
-      results shouldBe Map(
-        (Driving, paris01, paris02) -> Distance(1670.0 meters, 516 seconds),
-        (Driving, paris01, paris18) -> Distance(5474.0 meters, 1445 seconds)
-      )
-
-      results((Driving, paris01, paris02)).length should be < results((Driving, paris01, paris18)).length
-      results((Driving, paris01, paris02)).duration should be < results((Driving, paris01, paris18)).duration
+      distanceBetween01And02.length should be < distanceBetween01And18.length
+      distanceBetween01And02.duration should be < distanceBetween01And18.duration
     }
   }
 
