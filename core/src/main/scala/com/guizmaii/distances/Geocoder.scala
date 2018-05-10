@@ -1,11 +1,11 @@
 package com.guizmaii.distances
 
 import cats.effect.Async
-import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
+import com.guizmaii.distances.Types.{NonAmbigueAddress, LatLong, PostalCode}
 
-trait Geocoder {
+final class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO]) {
 
-  def geocodePostalCode[AIO[_]: Async](postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): AIO[LatLong]
+  @inline def geocodePostalCode(postalCode: PostalCode): AIO[LatLong] = provider.geocode(postalCode)
 
   /**
     * Doc about "non ambigue addresses": https://developers.google.com/maps/documentation/geocoding/best-practices#complete-address
@@ -32,6 +32,10 @@ trait Geocoder {
     * @param address
     * @return
     */
-  def geocodeNonAmbigueAddress[AIO[_]: Async](address: Address)(implicit cache: GeoCache[LatLong]): AIO[LatLong]
+  @inline def geocodeNonAmbigueAddress(address: NonAmbigueAddress): AIO[LatLong] = provider.geocode(address)
 
+}
+
+object Geocoder {
+  @inline def apply[AIO[_]: Async](provider: GeoProvider[AIO]): Geocoder[AIO] = new Geocoder(provider)
 }

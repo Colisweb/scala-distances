@@ -11,13 +11,9 @@ import scala.language.postfixOps
 
 object Types {
 
-  type CacheableDistance = ((TravelMode, LatLong, LatLong), SerializableDistance)
-
-  // TODO Jules: This class should not leak out of this project. // private[distances]
-  final case class SerializableDistance(value: Double, duration: Double)
-
-  final case class PostalCode(value: String) extends AnyVal
-  final case class Address(line1: String, line2: String, postalCode: PostalCode, town: String, country: String)
+  sealed trait Point
+  final case class PostalCode(value: String)                                                                              extends Point
+  final case class NonAmbigueAddress(line1: String, line2: String, postalCode: PostalCode, town: String, country: String) extends Point
 
   final case class LatLong(latitude: Double, longitude: Double) {
     private[distances] def toGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)
@@ -26,9 +22,6 @@ object Types {
   final case class Distance(length: Length, duration: Duration)
 
   object Distance {
-    private[distances] def apply(s: SerializableDistance): Distance =
-      Distance(length = s.value meters, duration = s.duration seconds)
-
     final lazy val zero: Distance = Distance(0 meters, 0 seconds)
     final lazy val Inf: Distance  = Distance(Double.PositiveInfinity meters, Duration.Inf)
   }

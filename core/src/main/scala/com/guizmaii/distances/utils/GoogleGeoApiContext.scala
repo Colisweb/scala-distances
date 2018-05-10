@@ -1,4 +1,4 @@
-package com.guizmaii.distances.implementations.google
+package com.guizmaii.distances.utils
 
 import java.util.concurrent.TimeUnit
 

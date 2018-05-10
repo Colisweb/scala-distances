@@ -4,13 +4,16 @@ import cats.effect.Async
 import cats.kernel.Semigroup
 import com.google.maps.PendingResult
 import com.google.maps.model.{DistanceMatrixElement, LatLng}
-import com.guizmaii.distances.Types.{LatLong, SerializableDistance}
+import com.guizmaii.distances.Types.{Distance, LatLong}
 
 import scala.collection.mutable.{Map => MutableMap}
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 private[distances] object RichImplicits {
 
   import cats.implicits._
+  import squants.space.LengthConversions._
 
   implicit final class RichGoogleLatLng(val latLng: LatLng) extends AnyVal {
     def toInnerLatLong: LatLong = LatLong(latitude = latLng.lat, longitude = latLng.lng)
@@ -27,8 +30,8 @@ private[distances] object RichImplicits {
   }
 
   implicit final class RichDistanceMatrixElement(val element: DistanceMatrixElement) extends AnyVal {
-    def asSerializableDistance: SerializableDistance =
-      SerializableDistance(value = element.distance.inMeters.toDouble, duration = element.duration.inSeconds.toDouble)
+    def asDistance: Distance =
+      Distance(length = element.distance.inMeters meters, duration = element.duration.inSeconds seconds)
   }
 
   implicit final class RichList[Value](val list: List[Value]) extends AnyVal {
@@ -48,6 +51,7 @@ private[distances] object RichImplicits {
 
   implicit final class Tuple3AsyncOps[AIO[_], A](val instance: (AIO[A], AIO[A], AIO[A]))(implicit AIO: Async[AIO]) {
     import cats.implicits._
+    import cats.temp.par._
 
     /**
       * Launch the 3 Tasks side effects in parallele but returns the result in order:
@@ -58,10 +62,9 @@ private[distances] object RichImplicits {
       * else return the error of last one.
       *
       */
-    def raceInOrder3: AIO[A] = {
+    def raceInOrder3(implicit par: Par[AIO]): AIO[A] = {
       val (a, b, c) = instance
-      (a.attempt, b.attempt, c.attempt)
-        .mapN((_, _, _)) // TODO: Possible to use `parMapN` ??
+      (a.attempt, b.attempt, c.attempt).parTupled
         .flatMap {
           case (Right(v), _, _)             => AIO.pure(v)
           case (Left(_), Right(v), _)       => AIO.pure(v)
