@@ -1,6 +1,7 @@
 package com.guizmaii.distances
 
-import cats.effect.IO
+import cats.effect.{Async, IO}
+import cats.temp.par.Par
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types._
 import com.guizmaii.distances.utils.GoogleGeoApiContext
@@ -11,18 +12,19 @@ import squants.space.LengthConversions._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-object GoogleDistanceProviderSpec extends WordSpec with Matchers {
+class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
-  def passTests(
-      name: String,
-      ioName: String,
-      geocode: PostalCode => LatLong,
-      computeDistances: List[DirectedPath] => Map[(TravelMode, LatLong, LatLong), Distance]
-  ): Unit = synchronized {
-    s"($name - $ioName) says that Paris 02 is nearest to Paris 01 than Paris 18" in {
-      val paris01 = geocode(PostalCode("75001"))
-      val paris02 = geocode(PostalCode("75002"))
-      val paris18 = geocode(PostalCode("75018"))
+  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
+
+  def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
+
+    val geocoder: GeoProvider[AIO]         = GoogleGeoProvider[AIO](geoContext)
+    val distanceApi: DistanceProvider[AIO] = GoogleDistanceProvider[AIO](geoContext)
+
+    s"says that Paris 02 is nearest to Paris 01 than Paris 18" in {
+      val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]
+      val paris02 = runSync(geocoder.geocode(PostalCode("75002"))).asInstanceOf[LatLong]
+      val paris18 = runSync(geocoder.geocode(PostalCode("75018"))).asInstanceOf[LatLong]
 
       paris01 shouldBe LatLong(48.8640493, 2.3310526)
       paris02 shouldBe LatLong(48.8675641, 2.34399)
@@ -31,7 +33,8 @@ object GoogleDistanceProviderSpec extends WordSpec with Matchers {
       val driveFrom01to02 = DirectedPath(origin = paris01, destination = paris02, Driving :: Nil)
       val driveFrom01to18 = DirectedPath(origin = paris01, destination = paris18, Driving :: Nil)
 
-      val results = computeDistances(driveFrom01to02 :: driveFrom01to18 :: Nil)
+      val results = runSync(distanceApi.distances(driveFrom01to02 :: driveFrom01to18 :: Nil))
+        .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
 
       results shouldBe Map(
         (Driving, paris01, paris02) -> Distance(1670.0 meters, 516 seconds),
@@ -43,41 +46,14 @@ object GoogleDistanceProviderSpec extends WordSpec with Matchers {
     }
   }
 
-}
-
-class GoogleDistanceProviderSpec extends WordSpec with Matchers {
-
-  import GoogleDistanceProviderSpec._
-
-  lazy val geoContext: GoogleGeoApiContext = {
-    val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
-    GoogleGeoApiContext(googleApiKey)
-  }
-
   "GoogleDistanceProvider.distances" should {
     "pass tests with cats-effect IO" should {
-      val geocoder: GeoProvider[IO]         = GoogleGeoProvider(geoContext)
-      val distanceApi: DistanceProvider[IO] = GoogleDistanceProvider(geoContext)
-
-      passTests(
-        "GoogleDistanceProvider",
-        "IO",
-        postalCode => geocoder.geocode(postalCode).unsafeRunSync(),
-        paths => distanceApi.distances(paths).unsafeRunSync()
-      )
+      passTests[IO](_.unsafeRunSync())
     }
     "pass tests with Monix Task" should {
       import monix.execution.Scheduler.Implicits.global
 
-      val geocoder: GeoProvider[Task]         = GoogleGeoProvider(geoContext)
-      val distanceApi: DistanceProvider[Task] = GoogleDistanceProvider(geoContext)
-
-      passTests(
-        "GoogleDistanceProvider",
-        "Monix",
-        postalCode => geocoder.geocode(postalCode).runSyncUnsafe(10 seconds),
-        paths => distanceApi.distances(paths).runSyncUnsafe(10 seconds)
-      )
+      passTests[Task](_.runSyncUnsafe(10 seconds))
     }
   }
 
