@@ -26,7 +26,7 @@ final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit A
   ): AIO[Map[TravelMode, Distance]] =
     if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
     else
-      (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(origin)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
+      (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
   def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = provider.distances(paths)
 
