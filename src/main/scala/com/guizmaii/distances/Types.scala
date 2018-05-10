@@ -16,7 +16,7 @@ object Types {
   final case class NonAmbigueAddress(line1: String, line2: String, postalCode: PostalCode, town: String, country: String) extends Point
 
   final case class LatLong(latitude: Double, longitude: Double) {
-    private[distances] def toGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)
+    private[distances] def asGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)
   }
 
   final case class Distance(length: Length, duration: Duration)
@@ -38,7 +38,7 @@ object Types {
     case object Unknown   extends TravelMode
 
     implicit final class RichTravelMode(val travelMode: TravelMode) extends AnyVal {
-      def toGoogleTravelMode: GoogleTravelMode =
+      def asGoogleTravelMode: GoogleTravelMode =
         travelMode match {
           case Driving   => GoogleTravelMode.DRIVING
           case Bicycling => GoogleTravelMode.BICYCLING

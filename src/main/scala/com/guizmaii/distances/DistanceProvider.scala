@@ -31,9 +31,9 @@ object GoogleDistanceProvider {
       def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[((TravelMode, LatLong, LatLong), Distance)] =
         DistanceMatrixApi
           .newRequest(geoApiContext.geoApiContext)
-          .mode(mode.toGoogleTravelMode)
-          .origins(origin.toGoogleLatLng)
-          .destinations(destination.toGoogleLatLng)
+          .mode(mode.asGoogleTravelMode)
+          .origins(origin.asGoogleLatLng)
+          .destinations(destination.asGoogleLatLng)
           .units(GoogleDistanceUnit.METRIC)
           .asEffect
           .map(res => (mode, origin, destination) -> res.rows.head.elements.head.asDistance)
