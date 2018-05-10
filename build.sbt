@@ -16,6 +16,7 @@ lazy val squants       = "org.typelevel"   %% "squants"             % "1.3.0"
 lazy val cats          = "org.typelevel"   %% "cats-core"           % "1.1.0"
 lazy val `cats-effect` = "org.typelevel"   %% "cats-effect"         % "1.0.0-RC"
 lazy val enumeratum    = "com.beachape"    %% "enumeratum"          % "1.5.13"
+lazy val monix         = "io.monix"        %% "monix"               % "3.0.0-RC1"
 
 lazy val kantancsv = ((version: String) =>
   Seq(
@@ -35,7 +36,8 @@ lazy val scalacache = ((version: String) =>
 
 lazy val testKit = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.0",
-  "org.scalatest"  %% "scalatest"  % "3.0.5"
+  "org.scalatest"  %% "scalatest"  % "3.0.5",
+  monix
 ) ++ kantancsv
 
 lazy val coreDependencies = Seq(
