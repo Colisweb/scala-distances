@@ -33,14 +33,13 @@ lazy val kantancsv = ((version: String) =>
     "com.nrinaudo" %% "kantan.csv-generic" % version
   ))("0.4.0")
 
-lazy val scalaCacheVersion = "0.24.1"
 lazy val scalacache = ((version: String) =>
   Seq(
     "com.github.cb372" %% "scalacache-core"        % version,
     "com.github.cb372" %% "scalacache-caffeine"    % version,
     "com.github.cb372" %% "scalacache-redis"       % version,
     "com.github.cb372" %% "scalacache-cats-effect" % version
-  ))(scalaCacheVersion)
+  ))("0.24.1")
 
 lazy val testKit = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.0",
