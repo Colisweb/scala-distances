@@ -48,8 +48,8 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
 
           whenReady(from01to02.zip(from01to18)) {
             case ((from01to02V, from01to18V)) =>
-              from01to02V shouldBe Map(Driving -> Distance(1679.0 meters, 503 seconds))
-              from01to18V shouldBe Map(Driving -> Distance(4747.0 meters, 1240 seconds))
+              from01to02V shouldBe Map(Driving -> Distance(1670.0 meters, 516 seconds))
+              from01to18V shouldBe Map(Driving -> Distance(5474.0 meters, 1445 seconds))
 
               from01to02V(Driving).length should be < from01to18V(Driving).length
               from01to02V(Driving).duration should be < from01to18V(Driving).duration
