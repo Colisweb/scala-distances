@@ -3,7 +3,7 @@ package com.guizmaii.distances
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving}
-import com.guizmaii.distances.Types._
+import com.guizmaii.distances.Types.{Distance, LatLong, PostalCode, _}
 import com.guizmaii.distances.utils.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
@@ -76,11 +76,6 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           }
         }
 
-        lazy val geoContext: GoogleGeoApiContext = {
-          val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
-          GoogleGeoApiContext(googleApiKey)
-        }
-
         "pass tests with cats-effect IO" should {
           passTests[IO](_.unsafeRunSync())
         }
@@ -88,6 +83,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           import monix.execution.Scheduler.Implicits.global
 
           passTests[Task](_.runSyncUnsafe(10 seconds))
+
         }
       }
     }
