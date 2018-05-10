@@ -1,40 +1,21 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
 import cats.effect.IO
+import com.guizmaii.distances.Geocoder
 import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
-import com.guizmaii.distances.implementations.cache.{InMemoryGeoCache, RedisGeoCache}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
-import com.guizmaii.distances.{GeoCache, Geocoder}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import scalacache.Id
 import shapeless.CNil
 
-import scala.concurrent.duration._
-import scala.language.postfixOps
-import scala.reflect.ClassTag
-
-object GoogleGeocoderSpec {
-  import scalacache.modes.sync._
-
-  implicit final class RichGeoCache[E <: Serializable: ClassTag](val cache: GeoCache[E]) {
-    def get(keyParts: Any*): Id[Option[E]]     = cache.innerCache.get(keyParts)
-    def set(keyParts: Any*)(value: E): Id[Any] = cache.innerCache.put(keyParts)(value)
-    def flushAll(): Id[Any]                    = cache.innerCache.removeAll()
-  }
-}
-
 class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
-
-  import GoogleGeocoderSpec._
-  import scalacache.modes.sync._
 
   lazy val geoContext: GoogleGeoApiContext = {
     val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
     GoogleGeoApiContext(googleApiKey)
   }
-  lazy val geocoder: Geocoder = GoogleGeocoder(geoContext)
+  lazy val geocoder: Geocoder[IO] = GoogleGeocoder(geoContext)
 
   override implicit val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(5, Seconds), interval = Span(500, Millis))
@@ -53,74 +34,22 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
       $ curl https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:59000&region=eu&key=YOUR_API_KEY
    */
   "GoogleGeocoder.geocodePostalCode" should {
+    def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion =
+      geocoder.geocodePostalCode(postalCode).unsafeRunSync() shouldBe place
 
-    def tests(implicit cache: GeoCache[LatLong]): Unit = {
-      "cache" should {
-        "cache things" in {
-          val c     = cache.innerCache
-          val key   = "toto"
-          val value = LatLong(latitude = 12, longitude = 13)
-          c.put(key)(value, Some(1 day))
-          c.get(key) shouldBe Some(value)
-        }
+    "cache and return" should {
+      "Lille" in {
+        testGeocoder(PostalCode("59000"), lille)
       }
-
-      "if NOT ALREADY in cache" should {
-        def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {
-          cache.flushAll()
-          cache.get(postalCode) shouldBe None
-          val result = geocoder.geocodePostalCode[IO](postalCode).unsafeRunSync()
-          result shouldBe place
-          cache.get(postalCode) shouldBe Some(place)
-        }
-        "cache and return" should {
-          "Lille" in {
-            testGeocoder(PostalCode("59000"), lille)
-          }
-          "Lambersart" in {
-            testGeocoder(PostalCode("59130"), lambersart)
-          }
-          "Harnes" in {
-            testGeocoder(PostalCode("62440"), harnes)
-          }
-          "Artigues-près-Bordeaux" in {
-            testGeocoder(PostalCode("33370"), artiguesPresBordeaux)
-          }
-        }
+      "Lambersart" in {
+        testGeocoder(PostalCode("59130"), lambersart)
       }
-
-      "if ALREADY in cache" should {
-        val geoApiContext: GoogleGeoApiContext = GoogleGeoApiContext("WRONG KEY")
-        val geocoder                           = new GoogleGeocoder(geoApiContext)
-
-        def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion = {
-          cache.flushAll()
-          cache.set(postalCode)(place)
-          cache.get(postalCode) shouldBe Some(place)
-          geocoder.geocodePostalCode[IO](postalCode).unsafeRunSync() shouldBe place
-        }
-        "just return" should {
-          "Lille" in {
-            testGeocoder(PostalCode("59000"), lille)
-          }
-          "Lambersart" in {
-            testGeocoder(PostalCode("59130"), lambersart)
-          }
-          "Harnes" in {
-            testGeocoder(PostalCode("62440"), harnes)
-          }
-          "Artigues-près-Bordeaux" in {
-            testGeocoder(PostalCode("33370"), artiguesPresBordeaux)
-          }
-        }
+      "Harnes" in {
+        testGeocoder(PostalCode("62440"), harnes)
       }
-    }
-
-    "With Redis" should {
-      tests(RedisGeoCache[LatLong]("localhost", 6379, 1 day))
-    }
-    "With 'in memory' cache" should {
-      tests(InMemoryGeoCache[LatLong](1 day))
+      "Artigues-près-Bordeaux" in {
+        testGeocoder(PostalCode("33370"), artiguesPresBordeaux)
+      }
     }
   }
 
@@ -131,8 +60,6 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     import kantan.csv.ops._
 
     implicitly[CellDecoder[CNil]] // IntelliJ doesn't understand that `import kantan.csv.generic._` is required.
-
-    implicit val cache: GeoCache[LatLong] = InMemoryGeoCache[LatLong](1 day)
 
     final case class TestAddress(line1: String, postalCode: String, town: String, lat: String, long: String)
     object TestAddress {
@@ -171,7 +98,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
 
     def testNonAmbigueAddressGeocoder: ((Address, LatLong)) => Unit = { (address: Address, latLong: LatLong) =>
       s"$address should be located at $latLong}" in {
-        geocoder.geocodeNonAmbigueAddress[IO](address).unsafeRunSync() shouldBe latLong
+        geocoder.geocodeNonAmbigueAddress(address).unsafeRunSync() shouldBe latLong
       }
     }.tupled
 

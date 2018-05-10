@@ -3,9 +3,9 @@ package com.guizmaii.distances.implementations.google.geocoder
 import cats.effect.Async
 import com.google.maps.model.ComponentFilter
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
+import com.guizmaii.distances.Geocoder
 import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
-import com.guizmaii.distances.{GeoCache, Geocoder}
 
 /**
   * Remarques:
@@ -22,52 +22,45 @@ import com.guizmaii.distances.{GeoCache, Geocoder}
   *
   * Seconde astuce, il faut également préciser le "language" sinon un pourcentage élevé de réponses sont fausses.
   */
-final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder {
+object GoogleGeocoder {
 
-  import cats.implicits._
-  import com.guizmaii.distances.utils.RichImplicits._
+  def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): Geocoder[AIO] = new Geocoder[AIO] {
 
-  private def rawRequest: GeocodingApiRequest =
-    GeocodingApi
-      .newRequest(geoApiContext.geoApiContext)
-      .region("eu")
-      .language("fr")
+    import cats.implicits._
+    import com.guizmaii.distances.utils.RichImplicits._
 
-  override def geocodePostalCode[AIO[_]: Async](postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): AIO[LatLong] = {
-    val fetch: AIO[LatLong] =
+    private def rawRequest: GeocodingApiRequest =
+      GeocodingApi
+        .newRequest(geoApiContext.geoApiContext)
+        .region("eu")
+        .language("fr")
+
+    override def geocodePostalCode(postalCode: PostalCode): AIO[LatLong] =
       rawRequest
         .components(ComponentFilter.postalCode(postalCode.value))
         .asEffect
         .map(_.head.geometry.location.toInnerLatLong)
 
-    cache.getOrDefault(postalCode)(fetch)
-  }
+    override def geocodeNonAmbigueAddress(address: Address): AIO[LatLong] = {
+      def fetch(addr: Address): AIO[LatLong] =
+        rawRequest
+          .components(ComponentFilter.country(addr.country))
+          .components(ComponentFilter.postalCode(addr.postalCode.value))
+          .address(s"${addr.line1} ${addr.line2} ${addr.town}")
+          .asEffect
+          .map(_.head.geometry.location.toInnerLatLong)
 
-  override def geocodeNonAmbigueAddress[AIO[_]: Async](address: Address)(implicit cache: GeoCache[LatLong]): AIO[LatLong] = {
-    def fetch(addr: Address): AIO[LatLong] =
-      rawRequest
-        .components(ComponentFilter.country(addr.country))
-        .components(ComponentFilter.postalCode(addr.postalCode.value))
-        .address(s"${addr.line1} ${addr.line2} ${addr.town}")
-        .asEffect
-        .map(_.head.geometry.location.toInnerLatLong)
-
-    def fallbackFetch(addr: Address): AIO[LatLong] =
-      fetch(addr)
+      fetch(address)
         .handleErrorWith {
           case _: NoSuchElementException =>
             (
-              fetch(addr.copy(line2 = "")),
-              fetch(addr.copy(line2 = "", town = "")),
-              geocodePostalCode(addr.postalCode)
+              fetch(address.copy(line2 = "")),
+              fetch(address.copy(line2 = "", town = "")),
+              geocodePostalCode(address.postalCode)
             ).raceInOrder3
         }
+    }
 
-    cache.getOrDefault(address)(fallbackFetch(address))
   }
 
-}
-
-object GoogleGeocoder {
-  def apply(geoApiContext: GoogleGeoApiContext): GoogleGeocoder = new GoogleGeocoder(geoApiContext)
 }
