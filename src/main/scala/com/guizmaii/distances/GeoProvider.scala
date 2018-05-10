@@ -56,7 +56,7 @@ object GoogleGeoProvider {
         * WARNING:
         * --------
         *
-        * The actual implementation (GoogleGeocoder) tries to be robust: it will try to always give you an answer:
+        * The actual implementation tries to be robust: it will try to always give you an answer:
         *
         *   1. If it doesn't find an answer with the address informations, it will try to geocode the address without the `line2` information.
         *   2. If it still doesn't find an anwser, it will try to geocode the address without the `line2` and wihout the `town` information.
@@ -69,10 +69,7 @@ object GoogleGeoProvider {
         * For a more clever geocoder, Google proposes a better solution that what we're doing here.
         * See: https://developers.google.com/maps/documentation/geocoding/best-practices#automated-system
         *
-        * The next step for this lib is to implement this more clever solution, but for now, use this method preferably with good quality data and/or with caution.
-        *
-        * @param address
-        * @return
+        * TODO: The next step for this lib is to implement this more clever solution, but for now, use this method preferably with good quality data and/or with caution.
         */
       case address: NonAmbigueAddress =>
         def fetch(addr: NonAmbigueAddress): AIO[LatLong] =
