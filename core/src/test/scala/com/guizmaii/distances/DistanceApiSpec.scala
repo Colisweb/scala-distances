@@ -41,28 +41,32 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     }
 
     "#distances" should {
-      "pass the same test suite than GoogleDistanceProvider" in {
+      "pass the same test suite than GoogleDistanceProvider" should {
         lazy val geoContext: GoogleGeoApiContext = {
           val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
           GoogleGeoApiContext(googleApiKey)
         }
 
-        "pass tests with cats-effect IO" should {
+        "pass tests with cats-effect IO" in {
           val geocoder: GeoProvider[IO]    = GoogleGeoProvider(geoContext)
           val distanceApi: DistanceApi[IO] = DistanceApi(GoogleDistanceProvider(geoContext))
 
           GoogleDistanceProviderSpec.passTests(
+            "DistanceApi",
+            "IO",
             postalCode => geocoder.geocode(postalCode).unsafeRunSync(),
             paths => distanceApi.distances(paths).unsafeRunSync()
           )
         }
-        "pass tests with Monix Task" should {
+        "pass tests with Monix Task" in {
           import monix.execution.Scheduler.Implicits.global
 
           val geocoder: GeoProvider[Task]    = GoogleGeoProvider(geoContext)
           val distanceApi: DistanceApi[Task] = DistanceApi(GoogleDistanceProvider(geoContext))
 
           GoogleDistanceProviderSpec.passTests(
+            "DistanceApi",
+            "Monix",
             postalCode => geocoder.geocode(postalCode).runSyncUnsafe(10 seconds),
             paths => distanceApi.distances(paths).runSyncUnsafe(10 seconds)
           )

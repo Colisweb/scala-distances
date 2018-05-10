@@ -14,10 +14,12 @@ import scala.language.postfixOps
 object GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
   def passTests(
+      name: String,
+      ioName: String,
       geocode: PostalCode => LatLong,
       computeDistances: List[DirectedPath] => Map[(TravelMode, LatLong, LatLong), Distance]
-  ): Unit = {
-    "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
+  ): Unit = synchronized {
+    s"($name - $ioName) says that Paris 02 is nearest to Paris 01 than Paris 18" in {
       val paris01 = geocode(PostalCode("75001"))
       val paris02 = geocode(PostalCode("75002"))
       val paris18 = geocode(PostalCode("75018"))
@@ -52,12 +54,14 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
     GoogleGeoApiContext(googleApiKey)
   }
 
-  "GoogleDistanceApi.distance" should {
+  "GoogleDistanceProvider.distances" should {
     "pass tests with cats-effect IO" should {
       val geocoder: GeoProvider[IO]         = GoogleGeoProvider(geoContext)
       val distanceApi: DistanceProvider[IO] = GoogleDistanceProvider(geoContext)
 
       passTests(
+        "GoogleDistanceProvider",
+        "IO",
         postalCode => geocoder.geocode(postalCode).unsafeRunSync(),
         paths => distanceApi.distances(paths).unsafeRunSync()
       )
@@ -69,6 +73,8 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
       val distanceApi: DistanceProvider[Task] = GoogleDistanceProvider(geoContext)
 
       passTests(
+        "GoogleDistanceProvider",
+        "Monix",
         postalCode => geocoder.geocode(postalCode).runSyncUnsafe(10 seconds),
         paths => distanceApi.distances(paths).runSyncUnsafe(10 seconds)
       )
