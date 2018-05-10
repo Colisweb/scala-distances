@@ -30,7 +30,7 @@ object GoogleDistanceApi {
         destination: PostalCode,
         travelModes: List[TravelMode]
     ): AIO[Map[TravelMode, Distance]] =
-      if (origin == destination) implicitly[Async[AIO]].pure(travelModes.map(_ -> Distance.zero).toMap)
+      if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
       else
         (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination))
           .mapN((_, _)) // TODO: Possible to use `parMapN` ??
