@@ -81,10 +81,10 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           GoogleGeoApiContext(googleApiKey)
         }
 
-        "pass tests with cats-effect IO" in {
+        "pass tests with cats-effect IO" should {
           passTests[IO](_.unsafeRunSync())
         }
-        "pass tests with Monix Task" in {
+        "pass tests with Monix Task" should {
           import monix.execution.Scheduler.Implicits.global
 
           passTests[Task](_.runSyncUnsafe(10 seconds))
