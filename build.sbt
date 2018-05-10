@@ -68,15 +68,6 @@ lazy val core = project
   .settings(scalaDistancesSettings)
   .settings(libraryDependencies ++= coreDependencies)
 
-lazy val monix = project
-  .in(file("monix"))
-  .settings(moduleName := "scala-distance-monix")
-  .settings(scalaDistancesSettings)
-  .settings(libraryDependencies ++= coreDependencies)
-  .settings(libraryDependencies += "com.github.cb372" %% "scalacache-monix" % scalaCacheVersion)
-  .settings(libraryDependencies += "io.monix" %% "monix" % "3.0.0-RC1")
-
-
 /* Publishing configurations */
 
 // Copied from Cats
