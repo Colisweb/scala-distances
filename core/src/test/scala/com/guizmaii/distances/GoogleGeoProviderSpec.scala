@@ -1,27 +1,23 @@
-package com.guizmaii.distances.implementations.google.geocoder
+package com.guizmaii.distances
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
-import com.guizmaii.distances.Geocoder
-import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
-import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
+import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
+import com.guizmaii.distances.utils.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
 import shapeless.CNil
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
+class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
   lazy val geoContext: GoogleGeoApiContext = {
     val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
     GoogleGeoApiContext(googleApiKey)
   }
-  override implicit val patienceConfig: PatienceConfig =
-    PatienceConfig(timeout = Span(5, Seconds), interval = Span(500, Millis))
 
   val lille                = LatLong(latitude = 50.6138111, longitude = 3.0423599)
   val lambersart           = LatLong(latitude = 50.65583909999999, longitude = 3.0226977)
@@ -30,7 +26,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
 
   def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
 
-    val geocoder: Geocoder[AIO] = GoogleGeocoder[AIO](geoContext)
+    val geocoder: GeoProvider[AIO] = GoogleGeoProvider[AIO](geoContext)
 
     /*
     Remarque Jules:
@@ -42,7 +38,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
      */
     "geocodePostalCode" should {
       def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion =
-        runSync(geocoder.geocodePostalCode(postalCode)) shouldBe place
+        runSync(geocoder.geocode(postalCode)) shouldBe place
 
       "cache and return" should {
         "Lille" in {
@@ -70,8 +66,8 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
 
       final case class TestAddress(line1: String, postalCode: String, town: String, lat: String, long: String)
       object TestAddress {
-        def toAddressAndLatLong(addr: TestAddress): (Address, LatLong) =
-          Address(line1 = addr.line1, line2 = "", postalCode = PostalCode(addr.postalCode), town = addr.town, country = "France") -> LatLong(
+        def toAddressAndLatLong(addr: TestAddress): (NonAmbigueAddress, LatLong) =
+          NonAmbigueAddress(line1 = addr.line1, line2 = "", postalCode = PostalCode(addr.postalCode), town = addr.town, country = "France") -> LatLong(
             latitude = addr.lat.toDouble,
             longitude = addr.long.toDouble)
       }
@@ -100,12 +96,12 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
            |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;${artiguesPresBordeaux.latitude};${artiguesPresBordeaux.longitude}
            |""".stripMargin.drop(1).dropRight(1)
 
-      val data: Seq[(Address, LatLong)] =
+      val data: Seq[(NonAmbigueAddress, LatLong)] =
         rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(TestAddress.toAddressAndLatLong)
 
-      def testNonAmbigueAddressGeocoder: ((Address, LatLong)) => Unit = { (address: Address, latLong: LatLong) =>
+      def testNonAmbigueAddressGeocoder: ((NonAmbigueAddress, LatLong)) => Unit = { (address: NonAmbigueAddress, latLong: LatLong) =>
         s"$address should be located at $latLong}" in {
-          runSync(geocoder.geocodeNonAmbigueAddress(address)) shouldBe latLong
+          runSync(geocoder.geocode(address)) shouldBe latLong
         }
       }.tupled
 

@@ -11,8 +11,9 @@ import scala.language.postfixOps
 
 object Types {
 
-  final case class PostalCode(value: String) extends AnyVal
-  final case class Address(line1: String, line2: String, postalCode: PostalCode, town: String, country: String)
+  sealed trait Point
+  final case class PostalCode(value: String)                                                                              extends Point
+  final case class NonAmbigueAddress(line1: String, line2: String, postalCode: PostalCode, town: String, country: String) extends Point
 
   final case class LatLong(latitude: Double, longitude: Double) {
     private[distances] def toGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)
