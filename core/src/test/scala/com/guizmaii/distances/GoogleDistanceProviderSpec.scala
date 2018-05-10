@@ -7,7 +7,6 @@ import com.guizmaii.distances.Types._
 import com.guizmaii.distances.utils.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import squants.space.LengthConversions._
 
@@ -20,9 +19,6 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers with ScalaFuture
     val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
     GoogleGeoApiContext(googleApiKey)
   }
-
-  override implicit val patienceConfig: PatienceConfig =
-    PatienceConfig(timeout = Span(2, Seconds), interval = Span(500, Millis))
 
   def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
 

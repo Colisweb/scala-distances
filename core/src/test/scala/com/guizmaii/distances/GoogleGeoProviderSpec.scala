@@ -7,7 +7,6 @@ import com.guizmaii.distances.utils.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
 import shapeless.CNil
 
 import scala.concurrent.duration._
@@ -19,8 +18,6 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
     val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
     GoogleGeoApiContext(googleApiKey)
   }
-  override implicit val patienceConfig: PatienceConfig =
-    PatienceConfig(timeout = Span(5, Seconds), interval = Span(500, Millis))
 
   val lille                = LatLong(latitude = 50.6138111, longitude = 3.0423599)
   val lambersart           = LatLong(latitude = 50.65583909999999, longitude = 3.0226977)
