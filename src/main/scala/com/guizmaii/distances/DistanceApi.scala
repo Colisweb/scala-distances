@@ -21,7 +21,7 @@ final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit A
     if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
     else
       travelModes
-        .traverse(mode => provider.distance(mode, origin, destination).map(mode -> _))
+        .parTraverse(mode => provider.distance(mode, origin, destination).map(mode -> _))
         .map(_.toMap)
 
   def distanceFromPostalCodes(geocoder: Geocoder[AIO])(
