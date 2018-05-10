@@ -3,7 +3,7 @@ package com.guizmaii.distances.utils
 import cats.effect.Async
 import cats.kernel.Semigroup
 import com.google.maps.PendingResult
-import com.google.maps.model.{DistanceMatrixElement, LatLng}
+import com.google.maps.model.{DistanceMatrixElement, LatLng => GoogleLatLng}
 import com.guizmaii.distances.Types.{Distance, LatLong}
 
 import scala.collection.mutable.{Map => MutableMap}
@@ -15,8 +15,8 @@ private[distances] object RichImplicits {
   import cats.implicits._
   import squants.space.LengthConversions._
 
-  implicit final class RichGoogleLatLng(val latLng: LatLng) extends AnyVal {
-    def toInnerLatLong: LatLong = LatLong(latitude = latLng.lat, longitude = latLng.lng)
+  implicit final class RichGoogleLatLng(val googleLatLng: GoogleLatLng) extends AnyVal {
+    def asLatLong: LatLong = LatLong(latitude = googleLatLng.lat, longitude = googleLatLng.lng)
   }
 
   implicit final class RichPendingResult[AIO[_], T](val request: PendingResult[T])(implicit AIO: Async[AIO]) {

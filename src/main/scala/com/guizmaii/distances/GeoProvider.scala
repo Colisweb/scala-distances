@@ -47,7 +47,7 @@ object GoogleGeoProvider {
         rawRequest
           .components(ComponentFilter.postalCode(postalCode.value))
           .asEffect
-          .map(_.head.geometry.location.toInnerLatLong)
+          .map(_.head.geometry.location.asLatLong)
 
       case address: NonAmbigueAddress =>
         def fetch(addr: NonAmbigueAddress): AIO[LatLong] =
@@ -56,7 +56,7 @@ object GoogleGeoProvider {
             .components(ComponentFilter.postalCode(addr.postalCode.value))
             .address(s"${addr.line1} ${addr.line2} ${addr.town}")
             .asEffect
-            .map(_.head.geometry.location.toInnerLatLong)
+            .map(_.head.geometry.location.asLatLong)
 
         fetch(address)
           .handleErrorWith {
