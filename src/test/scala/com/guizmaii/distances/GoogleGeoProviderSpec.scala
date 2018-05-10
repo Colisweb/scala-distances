@@ -2,8 +2,8 @@ package com.guizmaii.distances
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
+import com.guizmaii.distances.GoogleDistanceProvider.GoogleGeoApiContext
 import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
-import com.guizmaii.distances.utils.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -14,10 +14,7 @@ import scala.language.postfixOps
 
 class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
-  lazy val geoContext: GoogleGeoApiContext = {
-    val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
-    GoogleGeoApiContext(googleApiKey)
-  }
+  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
 
   val lille                = LatLong(latitude = 50.6138111, longitude = 3.0423599)
   val lambersart           = LatLong(latitude = 50.65583909999999, longitude = 3.0226977)

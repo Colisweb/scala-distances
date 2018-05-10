@@ -2,9 +2,9 @@ package com.guizmaii.distances
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
+import com.guizmaii.distances.GoogleDistanceProvider.GoogleGeoApiContext
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types._
-import com.guizmaii.distances.utils.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest.{Matchers, WordSpec}
 import squants.space.LengthConversions._

@@ -1,10 +1,14 @@
 package com.guizmaii.distances
 
+import java.util.concurrent.TimeUnit
+
 import cats.effect.Async
-import com.google.maps.DistanceMatrixApi
+import com.google.maps.{DistanceMatrixApi, GeoApiContext}
 import com.google.maps.model.{Unit => GoogleDistanceUnit}
 import com.guizmaii.distances.Types.{LatLong, _}
-import com.guizmaii.distances.utils.GoogleGeoApiContext
+
+import scala.concurrent.duration.{Duration, _}
+import scala.language.postfixOps
 
 abstract class DistanceProvider[AIO[_]: Async] {
 
@@ -13,6 +17,26 @@ abstract class DistanceProvider[AIO[_]: Async] {
 }
 
 object GoogleDistanceProvider {
+
+  final case class GoogleGeoApiContext(googleApiKey: String, connectTimeout: Duration, readTimeout: Duration) {
+
+    /**
+      * More infos about the rate limit:
+      *   - https://developers.google.com/maps/documentation/distance-matrix/usage-limits
+      */
+    val geoApiContext: GeoApiContext =
+      new GeoApiContext.Builder()
+        .apiKey(googleApiKey)
+        .connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
+        .readTimeout(readTimeout.toMillis, TimeUnit.MILLISECONDS)
+        .queryRateLimit(100)
+        .build()
+
+  }
+
+  object GoogleGeoApiContext {
+    def apply(googleApiKey: String): GoogleGeoApiContext = new GoogleGeoApiContext(googleApiKey, 1 second, 1 second)
+  }
 
   import TravelMode._
   import cats.implicits._
