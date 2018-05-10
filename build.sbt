@@ -24,13 +24,14 @@ lazy val kantancsv = ((version: String) =>
     "com.nrinaudo" %% "kantan.csv-generic" % version
   ))("0.4.0")
 
+lazy val scalaCacheVersion = "0.24.1"
 lazy val scalacache = ((version: String) =>
   Seq(
     "com.github.cb372" %% "scalacache-core"        % version,
     "com.github.cb372" %% "scalacache-caffeine"    % version,
     "com.github.cb372" %% "scalacache-redis"       % version,
     "com.github.cb372" %% "scalacache-cats-effect" % version
-  ))("0.24.1")
+  ))(scalaCacheVersion)
 
 lazy val testKit = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.0",
@@ -47,7 +48,8 @@ lazy val coreDependencies = Seq(
 
 lazy val scalaDistancesSettings = Seq(
   scalaVersion := scala212,
-  crossScalaVersions := Seq(scala211, scala212)
+  crossScalaVersions := Seq(scala211, scala212),
+  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 )
 
 /* Modules */
@@ -63,9 +65,17 @@ lazy val `scala-distances` = project
 lazy val core = project
   .in(file("core"))
   .settings(moduleName := "scala-distance-core")
-  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
   .settings(scalaDistancesSettings)
   .settings(libraryDependencies ++= coreDependencies)
+
+lazy val monix = project
+  .in(file("monix"))
+  .settings(moduleName := "scala-distance-monix")
+  .settings(scalaDistancesSettings)
+  .settings(libraryDependencies ++= coreDependencies)
+  .settings(libraryDependencies += "com.github.cb372" %% "scalacache-monix" % scalaCacheVersion)
+  .settings(libraryDependencies += "io.monix" %% "monix" % "3.0.0-RC1")
+
 
 /* Publishing configurations */
 

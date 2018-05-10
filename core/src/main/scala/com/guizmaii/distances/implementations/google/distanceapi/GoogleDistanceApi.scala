@@ -1,6 +1,6 @@
 package com.guizmaii.distances.implementations.google.distanceapi
 
-import cats.effect.Effect
+import cats.effect.Async
 import cats.kernel.Semigroup
 import com.google.maps.DistanceMatrixApi
 import com.google.maps.model.{Unit => GoogleDistanceUnit}
@@ -15,29 +15,29 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
   import com.guizmaii.distances.utils.RichImplicits._
   import cats.implicits._
 
-  override def distance[E[_]: Effect](
+  override def distance[AIO[_]: Async](
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
-  )(implicit cache: GeoCache[CacheableDistance]): E[Map[TravelMode, Distance]] =
+  )(implicit cache: GeoCache[CacheableDistance]): AIO[Map[TravelMode, Distance]] =
     distances(DirectedPath(origin = origin, destination = destination, travelModes = travelModes) :: Nil)
       .map(_.map { case ((travelMode, _, _), distance) => travelMode -> distance })
 
-  override def distanceFromPostalCodes[E[_]: Effect](geocoder: Geocoder)(
+  override def distanceFromPostalCodes[AIO[_]: Async](geocoder: Geocoder)(
       origin: PostalCode,
       destination: PostalCode,
       travelModes: List[TravelMode] = List(TravelMode.Driving)
-  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): E[Map[TravelMode, Distance]] = {
-    if (origin == destination) implicitly[Effect[E]].pure(travelModes.map(_ -> Distance.zero).toMap)
+  )(implicit cache: GeoCache[CacheableDistance], geoCache: GeoCache[LatLong]): AIO[Map[TravelMode, Distance]] = {
+    if (origin == destination) implicitly[Async[AIO]].pure(travelModes.map(_ -> Distance.zero).toMap)
     else
       (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination))
         .mapN((_, _)) // TODO: Possible to use `parMapN` ??
         .flatMap { case (o, d) => distance(o, d, travelModes) }
   }
 
-  override def distances[E[_]: Effect](paths: List[DirectedPath])(
-      implicit cache: GeoCache[CacheableDistance]): E[Map[(TravelMode, LatLong, LatLong), Distance]] = {
-    def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): E[((TravelMode, LatLong, LatLong), SerializableDistance)] =
+  override def distances[AIO[_]: Async](paths: List[DirectedPath])(
+      implicit cache: GeoCache[CacheableDistance]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
+    def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[((TravelMode, LatLong, LatLong), SerializableDistance)] =
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
         .mode(mode.toGoogleTravelMode)
@@ -47,7 +47,7 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
         .asEffect
         .map(res => (mode, origin, destination) -> res.rows.head.elements.head.asSerializableDistance)
 
-    def fetchAndCache(mode: TravelMode, origin: LatLong, destination: LatLong): E[((TravelMode, LatLong, LatLong), Distance)] = {
+    def fetchAndCache(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[((TravelMode, LatLong, LatLong), Distance)] = {
       val key = (mode, origin, destination)
 
       cache
@@ -62,7 +62,7 @@ final class GoogleDistanceApi(geoApiContext: GoogleGeoApiContext) extends Distan
         case DirectedPath(origin, destination, travelModes) =>
           travelModes.map(
             mode =>
-              if (origin == destination) implicitly[Effect[E]].pure((mode, origin, destination) -> Distance.zero)
+              if (origin == destination) implicitly[Async[AIO]].pure((mode, origin, destination) -> Distance.zero)
               else fetchAndCache(mode, origin, destination))
       }
       .sequence

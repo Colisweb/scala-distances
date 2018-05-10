@@ -1,6 +1,6 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
-import cats.effect.Effect
+import cats.effect.Async
 import com.google.maps.model.ComponentFilter
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Types.{Address, LatLong, PostalCode}
@@ -24,8 +24,8 @@ import com.guizmaii.distances.{GeoCache, Geocoder}
   */
 final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder {
 
-  import com.guizmaii.distances.utils.RichImplicits._
   import cats.implicits._
+  import com.guizmaii.distances.utils.RichImplicits._
 
   private def rawRequest: GeocodingApiRequest =
     GeocodingApi
@@ -33,8 +33,8 @@ final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder 
       .region("eu")
       .language("fr")
 
-  override def geocodePostalCode[E[_]: Effect](postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): E[LatLong] = {
-    val fetch: E[LatLong] =
+  override def geocodePostalCode[AIO[_]: Async](postalCode: PostalCode)(implicit cache: GeoCache[LatLong]): AIO[LatLong] = {
+    val fetch: AIO[LatLong] =
       rawRequest
         .components(ComponentFilter.postalCode(postalCode.value))
         .asEffect
@@ -43,8 +43,8 @@ final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder 
     cache.getOrDefault(postalCode)(fetch)
   }
 
-  override def geocodeNonAmbigueAddress[E[_]: Effect](address: Address)(implicit cache: GeoCache[LatLong]): E[LatLong] = {
-    def fetch(addr: Address): E[LatLong] =
+  override def geocodeNonAmbigueAddress[AIO[_]: Async](address: Address)(implicit cache: GeoCache[LatLong]): AIO[LatLong] = {
+    def fetch(addr: Address): AIO[LatLong] =
       rawRequest
         .components(ComponentFilter.country(addr.country))
         .components(ComponentFilter.postalCode(addr.postalCode.value))
@@ -52,11 +52,15 @@ final class GoogleGeocoder(geoApiContext: GoogleGeoApiContext) extends Geocoder 
         .asEffect
         .map(_.head.geometry.location.toInnerLatLong)
 
-    def fallbackFetch(addr: Address): E[LatLong] =
+    def fallbackFetch(addr: Address): AIO[LatLong] =
       fetch(addr)
         .handleErrorWith {
           case _: NoSuchElementException =>
-            Effect.raceInOrder3(fetch(addr.copy(line2 = "")), fetch(addr.copy(line2 = "", town = "")), geocodePostalCode(addr.postalCode))
+            (
+              fetch(addr.copy(line2 = "")),
+              fetch(addr.copy(line2 = "", town = "")),
+              geocodePostalCode(addr.postalCode)
+            ).raceInOrder3
         }
 
     cache.getOrDefault(address)(fallbackFetch(address))
