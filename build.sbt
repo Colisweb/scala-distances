@@ -1,9 +1,14 @@
-import sbt.Keys.{crossScalaVersions, moduleName}
+import sbt.Keys.crossScalaVersions
 
 organization in ThisBuild := "com.guizmaii"
 
 lazy val scala212 = "2.12.6"
 lazy val scala211 = "2.11.12"
+
+scalaVersion := scala212
+crossScalaVersions := Seq(scala211, scala212)
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 
 scalafmtOnCompile in ThisBuild := true
 scalafmtCheck in ThisBuild := true
@@ -41,7 +46,7 @@ lazy val testKit = Seq(
   monix
 ) ++ kantancsv
 
-lazy val coreDependencies = Seq(
+libraryDependencies ++= Seq(
   squants % Provided,
   cats,
   `cats-effect`,
@@ -49,37 +54,6 @@ lazy val coreDependencies = Seq(
   enumeratum,
   googleMaps
 ) ++ scalacache ++ testKit.map(_ % Test)
-
-lazy val scalaDistancesSettings = Seq(
-  scalaVersion := scala212,
-  crossScalaVersions := Seq(scala211, scala212),
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
-)
-
-/* Modules */
-
-lazy val `scala-distances` = project
-  .in(file("."))
-  .settings(moduleName := "scala-distances")
-  .settings(scalaDistancesSettings)
-  .settings(noPublishSettings)
-  .aggregate(core)
-  .dependsOn(core)
-
-lazy val core = project
-  .in(file("core"))
-  .settings(moduleName := "scala-distance-core")
-  .settings(scalaDistancesSettings)
-  .settings(libraryDependencies ++= coreDependencies)
-
-/* Publishing configurations */
-
-// Copied from Cats
-lazy val noPublishSettings = Seq(
-  publish := {},
-  publishLocal := {},
-  publishArtifact := false
-)
 
 inThisBuild(
   List(
