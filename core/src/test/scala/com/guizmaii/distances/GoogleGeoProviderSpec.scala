@@ -1,10 +1,9 @@
-package com.guizmaii.distances.implementations.google.geocoder
+package com.guizmaii.distances
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
 import com.guizmaii.distances.utils.GoogleGeoApiContext
-import com.guizmaii.distances.{Geocoder, GoogleGeoProvider}
 import monix.eval.Task
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -14,7 +13,7 @@ import shapeless.CNil
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
+class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
   lazy val geoContext: GoogleGeoApiContext = {
     val googleApiKey: String = System.getenv().get("GOOGLE_API_KEY")
@@ -30,7 +29,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
 
   def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
 
-    val geocoder: Geocoder[AIO] = Geocoder[AIO](GoogleGeoProvider[AIO](geoContext))
+    val geocoder: GeoProvider[AIO] = GoogleGeoProvider[AIO](geoContext)
 
     /*
     Remarque Jules:
@@ -42,7 +41,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
      */
     "geocodePostalCode" should {
       def testGeocoder(postalCode: PostalCode, place: LatLong): Assertion =
-        runSync(geocoder.geocodePostalCode(postalCode)) shouldBe place
+        runSync(geocoder.geocode(postalCode)) shouldBe place
 
       "cache and return" should {
         "Lille" in {
@@ -105,7 +104,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
 
       def testNonAmbigueAddressGeocoder: ((NonAmbigueAddress, LatLong)) => Unit = { (address: NonAmbigueAddress, latLong: LatLong) =>
         s"$address should be located at $latLong}" in {
-          runSync(geocoder.geocodeNonAmbigueAddress(address)) shouldBe latLong
+          runSync(geocoder.geocode(address)) shouldBe latLong
         }
       }.tupled
 
