@@ -28,10 +28,10 @@ final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit A
     else
       (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
-  def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = provider.distances(paths)
+  @inline def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = provider.distances(paths)
 
 }
 
 object DistanceApi {
-  def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO]): DistanceApi[AIO] = new DistanceApi(provider)
+  @inline def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO]): DistanceApi[AIO] = new DistanceApi(provider)
 }
