@@ -124,7 +124,7 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     }
   }
 
-  "GoogleGeocoder.geocodeNonAmbigueAddressT" should {
+  "GoogleGeocoder.geocodeNonAmbigueAddress" should {
 
     import kantan.csv._
     import kantan.csv.generic._
@@ -169,12 +169,11 @@ class GoogleGeocoderSpec extends WordSpec with Matchers with ScalaFutures with B
     val data: Seq[(Address, LatLong)] =
       rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(TestAddress.toAddressAndLatLong)
 
-    def testNonAmbigueAddressGeocoder: ((Address, LatLong)) => Unit = {
-      case ((address: Address, latLong: LatLong)) =>
-        s"$address should be located at $latLong}" in {
-          geocoder.geocodeNonAmbigueAddress[IO](address).unsafeRunSync() shouldBe latLong
-        }
-    }
+    def testNonAmbigueAddressGeocoder: ((Address, LatLong)) => Unit = { (address: Address, latLong: LatLong) =>
+      s"$address should be located at $latLong}" in {
+        geocoder.geocodeNonAmbigueAddress[IO](address).unsafeRunSync() shouldBe latLong
+      }
+    }.tupled
 
     data.foreach(testNonAmbigueAddressGeocoder.apply)
   }

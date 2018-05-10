@@ -27,7 +27,7 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
   override implicit val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(2, Seconds), interval = Span(500, Millis))
 
-  "GoogleDistanceApi.distanceT" should {
+  "GoogleDistanceApi.distance" should {
     "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
       implicit val cache: GeoCache[LatLong]               = InMemoryGeoCache[LatLong](1 day)
       implicit val distCache: GeoCache[CacheableDistance] = InMemoryGeoCache[CacheableDistance](1 day)
@@ -43,7 +43,7 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
       val from01to02 = distanceApi.distance[IO](paris01, paris02, Driving :: Nil).unsafeRunSync()
       val from01to18 = distanceApi.distance[IO](paris01, paris18, Driving :: Nil).unsafeRunSync()
 
-      from01to02 shouldBe Map(Driving -> Distance(1679.0 meters, 503 seconds))
+      from01to02 shouldBe Map(Driving -> Distance(1670.0 meters, 516 seconds))
       from01to18 shouldBe Map(Driving -> Distance(4747.0 meters, 1240 seconds))
 
       from01to02(Driving).length should be < from01to18(Driving).length
