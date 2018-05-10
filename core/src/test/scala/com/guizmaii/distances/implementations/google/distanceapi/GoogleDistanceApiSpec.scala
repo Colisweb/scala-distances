@@ -44,7 +44,7 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
       val from01to18 = distanceApi.distance[IO](paris01, paris18, Driving :: Nil).unsafeRunSync()
 
       from01to02 shouldBe Map(Driving -> Distance(1670.0 meters, 516 seconds))
-      from01to18 shouldBe Map(Driving -> Distance(4747.0 meters, 1240 seconds))
+      from01to18 shouldBe Map(Driving -> Distance(5474.0 meters, 1445 seconds))
 
       from01to02(Driving).length should be < from01to18(Driving).length
       from01to02(Driving).duration should be < from01to18(Driving).duration
