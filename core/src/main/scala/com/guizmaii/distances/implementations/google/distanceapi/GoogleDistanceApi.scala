@@ -12,8 +12,8 @@ object GoogleDistanceApi {
 
   import TravelMode._
   import cats.implicits._
-  import com.guizmaii.distances.utils.RichImplicits._
   import cats.temp.par._
+  import com.guizmaii.distances.utils.RichImplicits._
 
   private final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
     override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
@@ -33,9 +33,7 @@ object GoogleDistanceApi {
     ): AIO[Map[TravelMode, Distance]] =
       if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
       else
-        (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination))
-          .parMapN((_, _))
-          .flatMap { case (o, d) => distance(o, d, travelModes) }
+        (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
     override def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
       def fetch(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[((TravelMode, LatLong, LatLong), Distance)] =

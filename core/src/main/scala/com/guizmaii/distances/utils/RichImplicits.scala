@@ -64,8 +64,7 @@ private[distances] object RichImplicits {
       */
     def raceInOrder3(implicit par: Par[AIO]): AIO[A] = {
       val (a, b, c) = instance
-      (a.attempt, b.attempt, c.attempt)
-        .parMapN((_, _, _))
+      (a.attempt, b.attempt, c.attempt).parTupled
         .flatMap {
           case (Right(v), _, _)             => AIO.pure(v)
           case (Left(_), Right(v), _)       => AIO.pure(v)
