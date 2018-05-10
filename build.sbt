@@ -1,4 +1,4 @@
-import sbt.Keys.{crossScalaVersions, moduleName, scalacOptions}
+import sbt.Keys.{crossScalaVersions, moduleName}
 
 organization in ThisBuild := "com.guizmaii"
 
@@ -11,12 +11,13 @@ scalafmtSbtCheck in ThisBuild := true
 
 /* Dependencies */
 
-lazy val googleMaps    = "com.google.maps" % "google-maps-services" % "0.2.7"
-lazy val squants       = "org.typelevel"   %% "squants"             % "1.3.0"
-lazy val cats          = "org.typelevel"   %% "cats-core"           % "1.1.0"
-lazy val `cats-effect` = "org.typelevel"   %% "cats-effect"         % "1.0.0-RC"
-lazy val enumeratum    = "com.beachape"    %% "enumeratum"          % "1.5.13"
-lazy val monix         = "io.monix"        %% "monix"               % "3.0.0-RC1"
+lazy val googleMaps    = "com.google.maps"   % "google-maps-services" % "0.2.7"
+lazy val squants       = "org.typelevel"     %% "squants"             % "1.3.0"
+lazy val cats          = "org.typelevel"     %% "cats-core"           % "1.1.0"
+lazy val `cats-effect` = "org.typelevel"     %% "cats-effect"         % "1.0.0-RC"
+lazy val `cats-par`    = "io.chrisdavenport" %% "cats-par"            % "0.1.0"
+lazy val enumeratum    = "com.beachape"      %% "enumeratum"          % "1.5.13"
+lazy val monix         = "io.monix"          %% "monix"               % "3.0.0-RC1"
 
 lazy val kantancsv = ((version: String) =>
   Seq(
@@ -42,8 +43,9 @@ lazy val testKit = Seq(
 
 lazy val coreDependencies = Seq(
   squants % Provided,
-  `cats-effect`,
   cats,
+  `cats-effect`,
+  `cats-par`,
   enumeratum,
   googleMaps
 ) ++ scalacache ++ testKit.map(_ % Test)

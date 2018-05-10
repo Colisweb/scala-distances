@@ -1,6 +1,7 @@
 package com.guizmaii.distances.implementations.google.geocoder
 
 import cats.effect.Async
+import cats.temp.par.Par
 import com.google.maps.model.ComponentFilter
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Geocoder
@@ -24,7 +25,7 @@ import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
   */
 object GoogleGeocoder {
 
-  def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): Geocoder[AIO] = new Geocoder[AIO] {
+  def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): Geocoder[AIO] = new Geocoder[AIO] {
 
     import cats.implicits._
     import com.guizmaii.distances.utils.RichImplicits._

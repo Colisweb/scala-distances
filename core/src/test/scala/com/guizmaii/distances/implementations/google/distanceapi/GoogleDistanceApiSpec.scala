@@ -1,6 +1,7 @@
 package com.guizmaii.distances.implementations.google.distanceapi
 
 import cats.effect.{Async, IO}
+import cats.temp.par.Par
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types.{Distance, LatLong, PostalCode, TravelMode}
 import com.guizmaii.distances.implementations.google.GoogleGeoApiContext
@@ -25,7 +26,7 @@ class GoogleDistanceApiSpec extends WordSpec with Matchers with ScalaFutures wit
   override implicit val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(2, Seconds), interval = Span(500, Millis))
 
-  def passTests[AIO[+ _]: Async](runSync: AIO[Any] => Any): Unit = {
+  def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
 
     val geocoder: Geocoder[AIO]       = GoogleGeocoder(geoContext)
     val distanceApi: DistanceApi[AIO] = GoogleDistanceApi(geoContext)

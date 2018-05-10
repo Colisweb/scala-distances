@@ -51,6 +51,7 @@ private[distances] object RichImplicits {
 
   implicit final class Tuple3AsyncOps[AIO[_], A](val instance: (AIO[A], AIO[A], AIO[A]))(implicit AIO: Async[AIO]) {
     import cats.implicits._
+    import cats.temp.par._
 
     /**
       * Launch the 3 Tasks side effects in parallele but returns the result in order:
@@ -61,10 +62,10 @@ private[distances] object RichImplicits {
       * else return the error of last one.
       *
       */
-    def raceInOrder3: AIO[A] = {
+    def raceInOrder3(implicit par: Par[AIO]): AIO[A] = {
       val (a, b, c) = instance
       (a.attempt, b.attempt, c.attempt)
-        .mapN((_, _, _)) // TODO: Possible to use `parMapN` ??
+        .parMapN((_, _, _))
         .flatMap {
           case (Right(v), _, _)             => AIO.pure(v)
           case (Left(_), Right(v), _)       => AIO.pure(v)
