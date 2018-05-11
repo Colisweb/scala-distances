@@ -25,7 +25,7 @@ object Toto {
   implicit final val Encoder: Encoder[Toto] = deriveEncoder[Toto]
 }
 
-class InMemoryCacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
+class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
 
   import com.guizmaii.distances.generators.Gens._
   import io.circe.literal._
