@@ -30,6 +30,8 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
 
   import com.guizmaii.distances.generators.Gens._
   import io.circe.literal._
+  import com.guizmaii.distances.utils.circe.LengthSerializer._
+  import com.guizmaii.distances.utils.circe.ScalaDerivation._
 
   def expectedJson(toto: Toto): Json =
     json"""
