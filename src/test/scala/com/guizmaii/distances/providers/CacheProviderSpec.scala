@@ -68,7 +68,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
           "duration" : ${toto.distance.duration}
         }
       }
-     """
+    """
 
   def tests[AIO[+ _]: Async](cacheImpl: () => CacheProvider[AIO])(runSync: AIO[Any] => Any): Unit = {
     val cache = cacheImpl()
