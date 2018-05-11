@@ -1,5 +1,7 @@
 package com.guizmaii.distances.providers
 
+import java.util.UUID
+
 import cats.effect.{Async, IO}
 import com.guizmaii.distances.Types._
 import com.guizmaii.distances.providers.RedisCacheProvider.RedisConfiuration
@@ -70,7 +72,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
 
   def tests[AIO[+ _]: Async](cacheImpl: () => CacheProvider[AIO])(runSync: AIO[Any] => Any): Unit = {
     val cache = cacheImpl()
-    val key   = "a key"
+    val key   = UUID.randomUUID()
 
     "empty cache" should {
       "returns nothing" in {
