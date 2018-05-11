@@ -21,7 +21,7 @@ object Gens {
   final val directedPathGen: Gen[DirectedPath] = for {
     origin      <- latLongGen
     destination <- latLongGen
-    travelModes <- Gen.listOf(travelModeGen)
+    travelModes <- Gen.nonEmptyListOf(travelModeGen)
   } yield
     DirectedPath(
       origin = origin,
