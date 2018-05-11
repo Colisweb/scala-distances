@@ -8,6 +8,7 @@ import io.circe.generic.semiauto._
 import monix.eval.Task
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, WordSpec}
+import squants.space.Length
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -32,6 +33,9 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
   import io.circe.literal._
   import com.guizmaii.distances.utils.circe.LengthSerializer._
   import com.guizmaii.distances.utils.circe.ScalaDerivation._
+
+  implicitly[Decoder[Duration]] // IntelliJ doesn't understand the need of `import ScalaDerivation._` without this
+  implicitly[Decoder[Length]]   // IntelliJ doesn't understand the need of `import LengthSerializer._` without this
 
   def expectedJson(toto: Toto): Json =
     json"""
