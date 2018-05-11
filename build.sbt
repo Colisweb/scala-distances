@@ -59,7 +59,7 @@ lazy val testKit = {
 }.map(_ % Test)
 
 libraryDependencies ++= Seq(
-  squants % Provided,
+  squants,
   cats,
   `cats-effect`,
   `cats-par`,
