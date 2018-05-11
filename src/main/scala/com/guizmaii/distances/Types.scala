@@ -1,7 +1,7 @@
 package com.guizmaii.distances
 
 import com.google.maps.model.{LatLng => GoogleLatLng, TravelMode => GoogleTravelMode}
-import com.guizmaii.distances.utils.circe.{LengthSerializer, ScalaDerivation}
+import com.guizmaii.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
 import enumeratum.{CirceEnum, Enum, EnumEntry}
 import squants.space.Length
 import squants.space.LengthConversions._
@@ -33,7 +33,7 @@ object Types {
 
   object Distance {
     import LengthSerializer._
-    import ScalaDerivation._
+    import ScalaDurationSerializer._
 
     implicitly[Decoder[Duration]] // IntelliJ doesn't understand the need of `import ScalaDerivation._` without this
     implicitly[Decoder[Length]]   // IntelliJ doesn't understand the need of `import LengthSerializer._` without this

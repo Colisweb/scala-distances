@@ -34,7 +34,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
   import com.guizmaii.distances.generators.Gens._
   import io.circe.literal._
   import com.guizmaii.distances.utils.circe.LengthSerializer._
-  import com.guizmaii.distances.utils.circe.ScalaDerivation._
+  import com.guizmaii.distances.utils.circe.ScalaDurationSerializer._
 
   implicitly[Decoder[Duration]] // IntelliJ doesn't understand the need of `import ScalaDerivation._` without this
   implicitly[Decoder[Length]]   // IntelliJ doesn't understand the need of `import LengthSerializer._` without this
@@ -82,8 +82,8 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
     "cache" should {
       "save things" in {
         forAll(totoGen) { toto: Toto =>
-          runSync(cache.set(key)(toto)) shouldBe expectedJson(toto)
-          runSync(cache.get[Toto](key)) shouldBe toto
+          runSync(cache.set(key)(toto, Some(1 day))) shouldBe expectedJson(toto)
+          runSync(cache.get[Toto](key)) shouldBe Some(toto)
         }
       }
     }
