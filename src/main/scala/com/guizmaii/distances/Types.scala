@@ -14,10 +14,16 @@ object Types {
   import io.circe._
   import io.circe.generic.JsonCodec
 
-  sealed trait Point
-  @JsonCodec final case class PostalCode(value: String) extends Point
+  sealed trait Point                         extends Any
+  final case class PostalCode(value: String) extends AnyVal with Point
   @JsonCodec final case class NonAmbigueAddress(line1: String, line2: String, postalCode: String, town: String, country: String)
       extends Point
+
+  object PostalCode {
+    import io.circe.generic.extras.semiauto._
+    implicit val encoder: Encoder[PostalCode] = deriveUnwrappedEncoder
+    implicit val decoder: Decoder[PostalCode] = deriveUnwrappedDecoder
+  }
 
   @JsonCodec final case class LatLong(latitude: Double, longitude: Double) {
     private[distances] def asGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)

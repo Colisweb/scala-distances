@@ -37,8 +37,9 @@ lazy val scalacache = ((version: String) =>
 
 lazy val circe = ((version: String) =>
   Seq(
-    "io.circe" %% "circe-generic" % version,
-    "io.circe" %% "circe-java8"   % version,
+    "io.circe" %% "circe-generic"        % version,
+    "io.circe" %% "circe-generic-extras" % version,
+    "io.circe" %% "circe-java8"          % version,
   ))("0.9.3")
 
 lazy val testKit = {

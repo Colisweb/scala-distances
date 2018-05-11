@@ -53,9 +53,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
           },
           "travelModes" : ${toto.directedPath.travelModes}
         },
-        "postalCode" : {
-          "value" : ${toto.postalCode.value}
-        },
+        "postalCode" : ${toto.postalCode.value},
         "nonAmbigueAddress" : {
           "line1" : ${toto.nonAmbigueAddress.line1},
           "line2" : ${toto.nonAmbigueAddress.line2},
