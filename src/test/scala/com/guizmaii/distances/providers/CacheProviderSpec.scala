@@ -17,7 +17,8 @@ final case class Toto(
     age: Int,
     directedPath: DirectedPath,
     postalCode: PostalCode,
-    nonAmbigueAddress: NonAmbigueAddress
+    nonAmbigueAddress: NonAmbigueAddress,
+    distance: Distance
 )
 
 object Toto {
@@ -55,6 +56,10 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
           "postalCode" : ${toto.nonAmbigueAddress.postalCode},
           "town" : ${toto.nonAmbigueAddress.town},
           "country" : ${toto.nonAmbigueAddress.country}
+        },
+        "distance" : {
+          "length" : ${toto.distance.length},
+          "duration" : ${toto.distance.duration}
         }
       }
      """

@@ -1,17 +1,30 @@
 package com.guizmaii.distances.generators
 
-import com.guizmaii.distances.Types.{DirectedPath, LatLong, NonAmbigueAddress, PostalCode, TravelMode}
+import com.guizmaii.distances.Types._
 import com.guizmaii.distances.providers.Toto
 import org.scalacheck.{Arbitrary, Gen}
+import squants.Length
+import squants.space.LengthConversions._
+
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 object Gens {
 
   final val nameGen: Gen[String] = Gen.oneOf("toto", "tata", "titi", "tutu")
   final val ageGen: Gen[Int]     = Gen.choose(0, 150)
 
+  final val lengthGen: Gen[Length]     = Gen.posNum[Double].map(_ meters)
+  final val durationGen: Gen[Duration] = Gen.posNum[Int].map(_ seconds)
+
+  final val distaceGen: Gen[Distance] = for {
+    length   <- lengthGen
+    duration <- durationGen
+  } yield Distance(length = length, duration = duration)
+
   final val latLongGen: Gen[LatLong] = for {
-    lat: Double  <- Gen.choose(0.0, 180.0)
-    long: Double <- Gen.choose(0.0, 180.0)
+    lat: Double  <- Gen.posNum[Double]
+    long: Double <- Gen.posNum[Double]
   } yield LatLong(latitude = lat, longitude = long)
 
   import enumeratum.scalacheck._
@@ -52,12 +65,14 @@ object Gens {
     directedPath      <- directedPathGen
     postalCode        <- postalCodeGen
     nonAmbigueAddress <- nonAmbigueAddressGen
+    distance          <- distaceGen
   } yield
     Toto(
       name = name,
       age = age,
       directedPath = directedPath,
       postalCode = postalCode,
-      nonAmbigueAddress = nonAmbigueAddress
+      nonAmbigueAddress = nonAmbigueAddress,
+      distance = distance
     )
 }
