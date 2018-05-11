@@ -1,7 +1,8 @@
 package com.guizmaii.distances
 
 import cats.effect.Async
-import com.guizmaii.distances.Types.{NonAmbigueAddress, LatLong, PostalCode}
+import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
+import com.guizmaii.distances.providers.GeoProvider
 
 final class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO]) {
 

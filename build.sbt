@@ -18,34 +18,47 @@ scalafmtSbtCheck := true
 
 /* Dependencies */
 
-lazy val googleMaps    = "com.google.maps"   % "google-maps-services" % "0.2.7"
-lazy val squants       = "org.typelevel"     %% "squants"             % "1.3.0"
-lazy val cats          = "org.typelevel"     %% "cats-core"           % "1.1.0"
-lazy val `cats-effect` = "org.typelevel"     %% "cats-effect"         % "1.0.0-RC"
-lazy val `cats-par`    = "io.chrisdavenport" %% "cats-par"            % "0.1.0"
-lazy val enumeratum    = "com.beachape"      %% "enumeratum"          % "1.5.13"
-lazy val monix         = "io.monix"          %% "monix"               % "3.0.0-RC1"
-
-lazy val kantancsv = ((version: String) =>
-  Seq(
-    "com.nrinaudo" %% "kantan.csv"         % version,
-    "com.nrinaudo" %% "kantan.csv-cats"    % version,
-    "com.nrinaudo" %% "kantan.csv-generic" % version
-  ))("0.4.0")
+lazy val googleMaps         = "com.google.maps"   % "google-maps-services" % "0.2.7"
+lazy val squants            = "org.typelevel"     %% "squants"             % "1.3.0"
+lazy val cats               = "org.typelevel"     %% "cats-core"           % "1.1.0"
+lazy val `cats-effect`      = "org.typelevel"     %% "cats-effect"         % "1.0.0-RC"
+lazy val `cats-par`         = "io.chrisdavenport" %% "cats-par"            % "0.1.0"
+lazy val enumeratum         = "com.beachape"      %% "enumeratum"          % "1.5.13"
+lazy val `enumeratum-circe` = "com.beachape"      %% "enumeratum-circe"    % "1.5.17"
+lazy val monix              = "io.monix"          %% "monix"               % "3.0.0-RC1"
 
 lazy val scalacache = ((version: String) =>
   Seq(
     "com.github.cb372" %% "scalacache-core"        % version,
+    "com.github.cb372" %% "scalacache-cats-effect" % version,
+    "com.github.cb372" %% "scalacache-circe"       % version,
     "com.github.cb372" %% "scalacache-caffeine"    % version,
-    "com.github.cb372" %% "scalacache-redis"       % version,
-    "com.github.cb372" %% "scalacache-cats-effect" % version
+    "com.github.cb372" %% "scalacache-redis"       % version
   ))("0.24.1")
 
-lazy val testKit = Seq(
-  "org.scalacheck" %% "scalacheck" % "1.14.0",
-  "org.scalatest"  %% "scalatest"  % "3.0.5",
-  monix
-) ++ kantancsv
+lazy val circe = ((version: String) =>
+  Seq(
+    "io.circe" %% "circe-generic" % version,
+    "io.circe" %% "circe-shapes"  % version,
+    "io.circe" %% "circe-java8"   % version,
+  ))("0.9.3")
+
+lazy val testKit = {
+  val kantancsv = ((version: String) =>
+    Seq(
+      "com.nrinaudo" %% "kantan.csv"         % version,
+      "com.nrinaudo" %% "kantan.csv-cats"    % version,
+      "com.nrinaudo" %% "kantan.csv-generic" % version
+    ))("0.4.0")
+
+  Seq(
+    "org.scalacheck" %% "scalacheck"            % "1.14.0",
+    "org.scalatest"  %% "scalatest"             % "3.0.5",
+    "com.beachape"   %% "enumeratum-scalacheck" % "1.5.15",
+    "io.circe"       %% "circe-literal"         % "0.9.3",
+    monix
+  ) ++ kantancsv
+}.map(_ % Test)
 
 libraryDependencies ++= Seq(
   squants % Provided,
@@ -53,8 +66,9 @@ libraryDependencies ++= Seq(
   `cats-effect`,
   `cats-par`,
   enumeratum,
+  `enumeratum-circe`,
   googleMaps
-) ++ scalacache ++ testKit.map(_ % Test)
+) ++ circe ++ scalacache ++ testKit
 
 inThisBuild(
   List(

@@ -1,8 +1,9 @@
 package com.guizmaii.distances.utils
 
 import cats.effect.Async
-import com.guizmaii.distances.{DistanceProvider, GeoProvider, Geocoder, Types}
+import com.guizmaii.distances.{Geocoder, Types}
 import com.guizmaii.distances.Types.LatLong
+import com.guizmaii.distances.providers.{DistanceProvider, GeoProvider}
 
 object Stubs {
 

@@ -5,6 +5,7 @@ import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
 import com.guizmaii.distances.Types._
+import com.guizmaii.distances.providers.DistanceProvider
 
 final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit AIO: Async[AIO]) {
 

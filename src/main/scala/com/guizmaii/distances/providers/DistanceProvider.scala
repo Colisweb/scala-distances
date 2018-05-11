@@ -1,10 +1,10 @@
-package com.guizmaii.distances
+package com.guizmaii.distances.providers
 
 import java.util.concurrent.TimeUnit
 
 import cats.effect.Async
-import com.google.maps.{DistanceMatrixApi, GeoApiContext}
 import com.google.maps.model.{Unit => GoogleDistanceUnit}
+import com.google.maps.{DistanceMatrixApi, GeoApiContext}
 import com.guizmaii.distances.Types.{LatLong, _}
 
 import scala.concurrent.duration.{Duration, _}

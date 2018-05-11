@@ -1,35 +1,58 @@
 package com.guizmaii.distances
 
 import com.google.maps.model.{LatLng => GoogleLatLng, TravelMode => GoogleTravelMode}
-import enumeratum.{Enum, EnumEntry}
+import com.guizmaii.distances.utils.circe.{LengthSerializer, ScalaDerivation}
+import enumeratum.{CirceEnum, Enum, EnumEntry}
 import squants.space.Length
 import squants.space.LengthConversions._
 
 import scala.collection.immutable
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 object Types {
 
-  sealed trait Point
-  final case class PostalCode(value: String)                                                                              extends Point
-  final case class NonAmbigueAddress(line1: String, line2: String, postalCode: PostalCode, town: String, country: String) extends Point
+  import io.circe._
+  import io.circe.generic.JsonCodec
+  import shapeless.{Coproduct, Generic}
 
-  final case class LatLong(latitude: Double, longitude: Double) {
+  implicit def encodeAdtNoDiscr[A, Repr <: Coproduct](
+      implicit
+      gen: Generic.Aux[A, Repr],
+      encodeRepr: Encoder[Repr]
+  ): Encoder[A] = encodeRepr.contramap(gen.to)
+
+  implicit def decodeAdtNoDiscr[A, Repr <: Coproduct](
+      implicit
+      gen: Generic.Aux[A, Repr],
+      decodeRepr: Decoder[Repr]
+  ): Decoder[A] = decodeRepr.map(gen.from)
+
+  sealed trait Point
+  @JsonCodec final case class PostalCode(value: String) extends Point
+  @JsonCodec final case class NonAmbigueAddress(line1: String, line2: String, postalCode: String, town: String, country: String)
+      extends Point
+
+  @JsonCodec final case class LatLong(latitude: Double, longitude: Double) {
     private[distances] def asGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)
   }
 
-  final case class Distance(length: Length, duration: Duration)
+  @JsonCodec final case class Distance(length: Length, duration: Duration)
 
   object Distance {
+    import LengthSerializer._
+    import ScalaDerivation._
+
+    implicitly[Decoder[Duration]] // IntelliJ doesn't understand the need of `import ScalaDerivation._` without this
+    implicitly[Decoder[Length]]   // IntelliJ doesn't understand the need of `import LengthSerializer._` without this
+
     final lazy val zero: Distance = Distance(0 meters, 0 seconds)
     final lazy val Inf: Distance  = Distance(Double.PositiveInfinity meters, Duration.Inf)
   }
 
-  final case class DirectedPath(origin: LatLong, destination: LatLong, travelModes: List[TravelMode])
+  @JsonCodec final case class DirectedPath(origin: LatLong, destination: LatLong, travelModes: List[TravelMode])
 
   sealed trait TravelMode extends EnumEntry
-  object TravelMode extends Enum[TravelMode] {
+  object TravelMode extends Enum[TravelMode] with CirceEnum[TravelMode] {
 
     val values: immutable.IndexedSeq[TravelMode] = findValues
 

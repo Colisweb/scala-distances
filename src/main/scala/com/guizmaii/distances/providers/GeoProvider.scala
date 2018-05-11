@@ -1,10 +1,10 @@
-package com.guizmaii.distances
+package com.guizmaii.distances.providers
 
 import cats.effect.Async
 import com.google.maps.model.ComponentFilter
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
-import com.guizmaii.distances.GoogleDistanceProvider.GoogleGeoApiContext
 import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode, _}
+import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
 
 abstract class GeoProvider[AIO[_]: Async] {
 
@@ -75,7 +75,7 @@ object GoogleGeoProvider {
         def fetch(addr: NonAmbigueAddress): AIO[LatLong] =
           rawRequest
             .components(ComponentFilter.country(addr.country))
-            .components(ComponentFilter.postalCode(addr.postalCode.value))
+            .components(ComponentFilter.postalCode(addr.postalCode))
             .address(s"${addr.line1} ${addr.line2} ${addr.town}")
             .asEffect
             .map(_.head.geometry.location.asLatLong)
@@ -86,7 +86,7 @@ object GoogleGeoProvider {
               (
                 fetch(address.copy(line2 = "")),
                 fetch(address.copy(line2 = "", town = "")),
-                geocode(address.postalCode)
+                geocode(PostalCode(address.postalCode))
               ).raceInOrder3
           }
     }
