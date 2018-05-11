@@ -32,9 +32,9 @@ object Toto {
 class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
 
   import com.guizmaii.distances.generators.Gens._
-  import io.circe.literal._
   import com.guizmaii.distances.utils.circe.LengthSerializer._
   import com.guizmaii.distances.utils.circe.ScalaDurationSerializer._
+  import io.circe.literal._
 
   implicitly[Decoder[Duration]] // IntelliJ doesn't understand the need of `import ScalaDerivation._` without this
   implicitly[Decoder[Length]]   // IntelliJ doesn't understand the need of `import LengthSerializer._` without this
@@ -74,6 +74,12 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
     val cache = cacheImpl()
     val key   = UUID.randomUUID()
 
+    implicit final class RichCacheProvider(val cache: CacheProvider[AIO]) {
+      import scalacache.CatsEffect.modes.async
+
+      def removeAll(): AIO[Any] = cache.innerCache.removeAll[AIO]()(async[AIO])
+    }
+
     "empty cache" should {
       "returns nothing" in {
         runSync(cache.get[Toto](key)).asInstanceOf[Option[Toto]] shouldBe empty
@@ -84,6 +90,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
         forAll(totoGen) { toto: Toto =>
           runSync(cache.set(key)(toto, Some(1 day))) shouldBe expectedJson(toto)
           runSync(cache.get[Toto](key)) shouldBe Some(toto)
+          runSync(cache.removeAll())
         }
       }
     }

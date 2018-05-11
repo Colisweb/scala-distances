@@ -15,7 +15,8 @@ abstract class CacheProvider[AIO[_]: Async] {
   import cats.implicits._
   import scalacache.CatsEffect.modes.async
 
-  protected implicit val innerCache: Cache[Json]
+  // TODO: Should be private but I need to access it in tests
+  implicit val innerCache: Cache[Json]
 
   def get[A](key: Any*)(implicit decoder: Decoder[A]): AIO[Option[A]] =
     OptionT(innerCache.get(key)).mapFilter(decoder.decodeJson(_).toOption).value
@@ -33,7 +34,7 @@ object InMemoryCacheProvider {
   import scalacache.caffeine._
 
   def apply[AIO[_]: effect.Async](): CacheProvider[AIO] = new CacheProvider[AIO]() {
-    override protected implicit final val innerCache: Cache[Json] = CaffeineCache[Json]
+    override implicit final val innerCache: Cache[Json] = CaffeineCache[Json]
   }
 
 }
@@ -60,7 +61,7 @@ object RedisCacheProvider {
 
   def apply[AIO[_]: effect.Async](config: RedisConfiuration): CacheProvider[AIO] = new CacheProvider[AIO] {
     import scalacache.serialization.circe._
-    override protected implicit final val innerCache: Cache[Json] = RedisCache[Json](config.jedisPool)
+    override implicit final val innerCache: Cache[Json] = RedisCache[Json](config.jedisPool)
   }
 
 }
