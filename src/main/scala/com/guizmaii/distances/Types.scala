@@ -38,8 +38,8 @@ object Types {
     implicitly[Decoder[Duration]] // IntelliJ doesn't understand the need of `import ScalaDerivation._` without this
     implicitly[Decoder[Length]]   // IntelliJ doesn't understand the need of `import LengthSerializer._` without this
 
-    final lazy val zero: Distance = Distance(0 meters, 0 seconds)
-    final lazy val Inf: Distance  = Distance(Double.PositiveInfinity meters, Duration.Inf)
+    final lazy val zero: Distance = Distance(0.meters, 0.seconds)
+    final lazy val Inf: Distance  = Distance(Double.PositiveInfinity.meters, Duration.Inf)
   }
 
   @JsonCodec final case class DirectedPath(origin: LatLong, destination: LatLong, travelModes: List[TravelMode])
