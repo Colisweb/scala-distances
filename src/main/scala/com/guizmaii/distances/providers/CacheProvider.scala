@@ -2,7 +2,6 @@ package com.guizmaii.distances.providers
 
 import cats.effect
 import cats.effect.Async
-import com.guizmaii.distances.Types.{LatLong, TravelMode}
 import io.circe.{Decoder, Encoder, Json}
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig
 import redis.clients.jedis.JedisPool
@@ -18,12 +17,12 @@ abstract class CacheProvider[AIO[_]](ttl: Option[Duration])(implicit AIO: Async[
   // TODO: Should be private but I need to access it in tests
   implicit val innerCache: Cache[Json]
 
-  final def cachingF[V](mode: TravelMode, origin: LatLong, destination: LatLong)(f: => AIO[V])(
+  final def cachingF[V](keyParts: Any*)(f: => AIO[V])(
       implicit decoder: Decoder[V],
       encoder: Encoder[V]
   ): AIO[V] =
     innerCache
-      .cachingF((mode, origin, destination))(ttl)(f.map(encoder.apply))
+      .cachingF(keyParts)(ttl)(f.map(encoder.apply))
       .flatMap(json => AIO.fromEither(decoder.decodeJson(json)))
 
 }
