@@ -18,5 +18,12 @@ class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO], cacheProvider: CachePr
 }
 
 object Geocoder {
-  final def apply[AIO[_]: Async](provider: GeoProvider[AIO]): Geocoder[AIO] = new Geocoder(provider, InMemoryCacheProvider(Some(7 days)))
+  final def apply[AIO[_]: Async](provider: GeoProvider[AIO]): Geocoder[AIO] =
+    new Geocoder(provider, InMemoryCacheProvider(Some(7 days)))
+
+  final def apply[AIO[_]: Async](provider: GeoProvider[AIO], ttl: Option[Duration]): Geocoder[AIO] =
+    new Geocoder(provider, InMemoryCacheProvider(ttl))
+
+  final def apply[AIO[_]: Async](provider: GeoProvider[AIO], cacheProvider: CacheProvider[AIO]): Geocoder[AIO] =
+    new Geocoder(provider, cacheProvider)
 }

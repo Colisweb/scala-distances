@@ -16,9 +16,7 @@ import scala.language.postfixOps
 final case class Toto(
     name: String,
     age: Int,
-    directedPath: DirectedPath,
-    postalCode: PostalCode,
-    nonAmbigueAddress: NonAmbigueAddress,
+    latLong: LatLong,
     distance: Distance
 )
 
@@ -43,24 +41,9 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
       {
         "name" : ${toto.name},
         "age" : ${toto.age},
-        "directedPath" : {
-          "origin" : {
-            "latitude" : ${toto.directedPath.origin.latitude},
-            "longitude" : ${toto.directedPath.origin.longitude}
-          },
-          "destination" : {
-            "latitude" : ${toto.directedPath.destination.latitude},
-            "longitude" : ${toto.directedPath.destination.longitude}
-          },
-          "travelModes" : ${toto.directedPath.travelModes}
-        },
-        "postalCode" : ${toto.postalCode.value},
-        "nonAmbigueAddress" : {
-          "line1" : ${toto.nonAmbigueAddress.line1},
-          "line2" : ${toto.nonAmbigueAddress.line2},
-          "postalCode" : ${toto.nonAmbigueAddress.postalCode},
-          "town" : ${toto.nonAmbigueAddress.town},
-          "country" : ${toto.nonAmbigueAddress.country}
+        "latLong" : {
+          "latitude" : ${toto.latLong.latitude},
+          "longitude" : ${toto.latLong.longitude}
         },
         "distance" : {
           "length" : ${toto.distance.length},

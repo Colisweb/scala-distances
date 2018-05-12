@@ -60,19 +60,15 @@ object Gens {
     )
 
   final val totoGen: Gen[Toto] = for {
-    name              <- nameGen
-    age               <- ageGen
-    directedPath      <- directedPathGen
-    postalCode        <- postalCodeGen
-    nonAmbigueAddress <- nonAmbigueAddressGen
-    distance          <- distaceGen
+    name     <- nameGen
+    age      <- ageGen
+    latLong  <- latLongGen
+    distance <- distaceGen
   } yield
     Toto(
       name = name,
       age = age,
-      directedPath = directedPath,
-      postalCode = postalCode,
-      nonAmbigueAddress = nonAmbigueAddress,
+      latLong = latLong,
       distance = distance
     )
 }
