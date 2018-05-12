@@ -27,7 +27,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
       travelModes
         .parTraverse { mode =>
           cacheProvider
-            .distanceCachingF(mode, origin, destination) {
+            .cachingF(mode, origin, destination) {
               distanceProvider.distance(mode, origin, destination)
             }
             .map(mode -> _)
@@ -57,7 +57,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
           else {
             travelModes.parTraverse { mode =>
               cacheProvider
-                .distanceCachingF(mode, origin, destination) {
+                .cachingF(mode, origin, destination) {
                   distanceProvider.distance(mode, origin, destination)
                 }
                 .map((mode, origin, destination) -> _)

@@ -18,7 +18,7 @@ abstract class CacheProvider[AIO[_]](ttl: Option[Duration])(implicit AIO: Async[
   // TODO: Should be private but I need to access it in tests
   implicit val innerCache: Cache[Json]
 
-  final def distanceCachingF[V](mode: TravelMode, origin: LatLong, destination: LatLong)(f: => AIO[V])(
+  final def cachingF[V](mode: TravelMode, origin: LatLong, destination: LatLong)(f: => AIO[V])(
       implicit decoder: Decoder[V],
       encoder: Encoder[V]
   ): AIO[V] =

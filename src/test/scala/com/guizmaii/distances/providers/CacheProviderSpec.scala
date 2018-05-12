@@ -81,8 +81,8 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
     "cache" should {
       "save things" in {
         forAll(travelModeGen, latLongGen, latLongGen, distaceGen) { (mode, origin, destination, distance) =>
-          runSync(cache.distanceCachingF(mode, origin, destination)(AIO.pure(distance))) shouldBe distance
-          runSync(cache.distanceCachingF(mode, origin, destination)(AIO.raiseError(new RuntimeException).asInstanceOf[AIO[Distance]])) shouldBe distance
+          runSync(cache.cachingF(mode, origin, destination)(AIO.pure(distance))) shouldBe distance
+          runSync(cache.cachingF(mode, origin, destination)(AIO.raiseError(new RuntimeException).asInstanceOf[AIO[Distance]])) shouldBe distance
           runSync(cache.removeAll())
         }
       }
