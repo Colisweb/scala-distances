@@ -11,32 +11,38 @@ import scala.concurrent.duration.Duration
 
 object Stubs {
 
-  class NonCachingCache extends Cache[Json] {
-    override def config: CacheConfig = ???
+  object NonCachingCache extends Cache[Json] {
+    override def config: CacheConfig = CacheConfig()
 
-    override def cachingForMemoize[F[_]](baseKey: String)(ttl: Option[Duration])(f: => Json)(implicit mode: Mode[F],
-                                                                                             flags: Flags): F[Json] = ???
+    override def cachingForMemoize[F[_]](baseKey: String)(ttl: Option[Duration])(f: => Json)(
+        implicit mode: Mode[F],
+        flags: Flags
+    ): F[Json] = mode.M.pure(f)
 
-    override def cachingForMemoizeF[F[_]](baseKey: String)(ttl: Option[Duration])(f: => F[Json])(implicit mode: Mode[F],
-                                                                                                 flags: Flags): F[Json] = ???
+    override def cachingForMemoizeF[F[_]](baseKey: String)(ttl: Option[Duration])(f: => F[Json])(
+        implicit mode: Mode[F],
+        flags: Flags
+    ): F[Json] = f
 
-    override def get[F[_]](keyParts: Any*)(implicit mode: Mode[F], flags: Flags): F[Option[Json]] = ???
+    override def get[F[_]](keyParts: Any*)(implicit mode: Mode[F], flags: Flags): F[Option[Json]] = mode.M.pure(None)
 
-    override def put[F[_]](keyParts: Any*)(value: Json, ttl: Option[Duration])(implicit mode: Mode[F], flags: Flags): F[Any] = ???
+    override def put[F[_]](keyParts: Any*)(value: Json, ttl: Option[Duration])(implicit mode: Mode[F], flags: Flags): F[Any] =
+      mode.M.pure(())
 
-    override def remove[F[_]](keyParts: Any*)(implicit mode: Mode[F]): F[Any] = ???
+    override def remove[F[_]](keyParts: Any*)(implicit mode: Mode[F]): F[Any] = mode.M.pure(())
 
-    override def removeAll[F[_]]()(implicit mode: Mode[F]): F[Any] = ???
+    override def removeAll[F[_]]()(implicit mode: Mode[F]): F[Any] = mode.M.pure(())
 
-    override def caching[F[_]](keyParts: Any*)(ttl: Option[Duration])(f: => Json)(implicit mode: Mode[F], flags: Flags): F[Json] = ???
+    override def caching[F[_]](keyParts: Any*)(ttl: Option[Duration])(f: => Json)(implicit mode: Mode[F], flags: Flags): F[Json] =
+      mode.M.pure(f)
 
     override def cachingF[F[_]](keyParts: Any*)(ttl: Option[Duration])(f: => F[Json])(implicit mode: Mode[F], flags: Flags): F[Json] = f
 
-    override def close[F[_]]()(implicit mode: Mode[F]): F[Any] = ???
+    override def close[F[_]]()(implicit mode: Mode[F]): F[Any] = mode.M.pure(())
   }
 
   def cacheProviderStub[AIO[_]: Async]: CacheProvider[AIO] = new CacheProvider[AIO](None) {
-    override private[distances] implicit val innerCache: Cache[Json] = new NonCachingCache
+    override private[distances] implicit val innerCache: Cache[Json] = NonCachingCache
   }
 
   def distanceProviderStub[AIO[_]: Async]: DistanceProvider[AIO] = new DistanceProvider[AIO] {
