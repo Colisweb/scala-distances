@@ -37,6 +37,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
   implicitly[Decoder[Duration]] // IntelliJ doesn't understand the need of `import ScalaDerivation._` without this
   implicitly[Decoder[Length]]   // IntelliJ doesn't understand the need of `import LengthSerializer._` without this
 
+  // TODO Jules: Implement test for JSON serialization
   def expectedJson(toto: Toto): Json =
     json"""
       {
