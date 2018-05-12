@@ -98,20 +98,20 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
 
   "with cats-effect IO" should {
     "with InMemoryCacheProvider" should {
-      tests[IO](() => InMemoryCacheProvider())(_.unsafeRunSync())
+      tests[IO](() => InMemoryCacheProvider(Some(1 day)))(_.unsafeRunSync())
     }
     "pass RedisCacheProvider" should {
-      tests[IO](() => RedisCacheProvider(RedisConfiuration("127.0.0.1", 6379)))(_.unsafeRunSync())
+      tests[IO](() => RedisCacheProvider(RedisConfiuration("127.0.0.1", 6379), Some(1 day)))(_.unsafeRunSync())
     }
   }
   "with Monix Task" should {
     import monix.execution.Scheduler.Implicits.global
 
     "with InMemoryCacheProvider" should {
-      tests[Task](() => InMemoryCacheProvider())(_.runSyncUnsafe(10 seconds))
+      tests[Task](() => InMemoryCacheProvider(Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
     "pass RedisCacheProvider" should {
-      tests[Task](() => RedisCacheProvider(RedisConfiuration("127.0.0.1", 6379)))(_.runSyncUnsafe(10 seconds))
+      tests[Task](() => RedisCacheProvider(RedisConfiuration("127.0.0.1", 6379), Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
   }
 
