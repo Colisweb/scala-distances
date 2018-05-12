@@ -14,6 +14,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
 
   import DistanceApi._
   import cats.implicits._
+  import cats.temp.par._
   import com.guizmaii.distances.utils.RichImplicits._
 
   final def distance(
