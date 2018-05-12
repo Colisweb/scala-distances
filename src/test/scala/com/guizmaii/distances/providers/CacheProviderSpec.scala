@@ -1,7 +1,5 @@
 package com.guizmaii.distances.providers
 
-import java.util.UUID
-
 import cats.effect.{Async, IO}
 import com.guizmaii.distances.Types._
 import com.guizmaii.distances.providers.RedisCacheProvider.RedisConfiuration
@@ -70,9 +68,8 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
       }
     """
 
-  def tests[AIO[+ _]: Async](cacheImpl: () => CacheProvider[AIO])(runSync: AIO[Any] => Any): Unit = {
+  def tests[AIO[+ _]](cacheImpl: () => CacheProvider[AIO])(runSync: AIO[Any] => Any)(implicit AIO: Async[AIO]): Unit = {
     val cache = cacheImpl()
-    val key   = UUID.randomUUID()
 
     implicit final class RichCacheProvider(val cache: CacheProvider[AIO]) {
       import scalacache.CatsEffect.modes.async
@@ -80,16 +77,11 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
       def removeAll(): AIO[Any] = cache.innerCache.removeAll[AIO]()(async[AIO])
     }
 
-    "empty cache" should {
-      "returns nothing" in {
-        runSync(cache.get[Toto](key)).asInstanceOf[Option[Toto]] shouldBe empty
-      }
-    }
     "cache" should {
       "save things" in {
-        forAll(totoGen) { toto: Toto =>
-          runSync(cache.set(key)(toto, Some(1 day))) shouldBe expectedJson(toto)
-          runSync(cache.get[Toto](key)) shouldBe Some(toto)
+        forAll(travelModeGen, latLongGen, latLongGen, distaceGen) { (mode, origin, destination, distance) =>
+          runSync(cache.distanceCachingF(mode, origin, destination)(AIO.pure(distance))) shouldBe distance
+          runSync(cache.distanceCachingF(mode, origin, destination)(AIO.raiseError(new RuntimeException).asInstanceOf[AIO[Distance]])) shouldBe distance
           runSync(cache.removeAll())
         }
       }

@@ -1,6 +1,5 @@
 package com.guizmaii.distances.providers
 
-import cats.data.OptionT
 import cats.effect
 import cats.effect.Async
 import com.guizmaii.distances.Types.{LatLong, TravelMode}
@@ -19,14 +18,6 @@ abstract class CacheProvider[AIO[_]](ttl: Option[Duration])(implicit AIO: Async[
   // TODO: Should be private but I need to access it in tests
   implicit val innerCache: Cache[Json]
 
-  def get[A](key: Any*)(implicit decoder: Decoder[A]): AIO[Option[A]] =
-    OptionT(innerCache.get(key)).mapFilter(decoder.decodeJson(_).toOption).value
-
-  def set[A](key: Any*)(value: A, ttl: Option[Duration] = None)(implicit encoder: Encoder[A]): AIO[Json] = {
-    val jsonValue = encoder.apply(value)
-    innerCache.put(key)(jsonValue, ttl).map(_ => jsonValue)
-  }
-
   final def distanceCachingF[V](mode: TravelMode, origin: LatLong, destination: LatLong)(f: => AIO[V])(
       implicit decoder: Decoder[V],
       encoder: Encoder[V]
@@ -42,7 +33,7 @@ object InMemoryCacheProvider {
   import scalacache._
   import scalacache.caffeine._
 
-  def apply[AIO[_]: effect.Async](ttl: Option[Duration]): CacheProvider[AIO] =
+  final def apply[AIO[_]: effect.Async](ttl: Option[Duration]): CacheProvider[AIO] =
     new CacheProvider[AIO](ttl) {
       override implicit final val innerCache: Cache[Json] = CaffeineCache[Json]
     }
@@ -57,19 +48,19 @@ object RedisCacheProvider {
   final case class RedisConfiuration(jedisPool: JedisPool) extends AnyVal
 
   object RedisConfiuration {
-    def apply(host: String, port: Int): RedisConfiuration = RedisConfiuration(new JedisPool(host, port))
+    final def apply(host: String, port: Int): RedisConfiuration = RedisConfiuration(new JedisPool(host, port))
 
-    def apply(host: String, port: Int, password: String): RedisConfiuration =
+    final def apply(host: String, port: Int, password: String): RedisConfiuration =
       RedisConfiuration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password))
 
-    def apply(host: String, port: Int, database: Int): RedisConfiuration =
+    final def apply(host: String, port: Int, database: Int): RedisConfiuration =
       RedisConfiuration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, null, database))
 
-    def apply(host: String, port: Int, password: String, database: Int): RedisConfiuration =
+    final def apply(host: String, port: Int, password: String, database: Int): RedisConfiuration =
       RedisConfiuration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password, database))
   }
 
-  def apply[AIO[_]: effect.Async](config: RedisConfiuration, ttl: Option[Duration]): CacheProvider[AIO] =
+  final def apply[AIO[_]: effect.Async](config: RedisConfiuration, ttl: Option[Duration]): CacheProvider[AIO] =
     new CacheProvider[AIO](ttl) {
       import scalacache.serialization.circe._
       override implicit final val innerCache: Cache[Json] = RedisCache[Json](config.jedisPool)

@@ -24,7 +24,7 @@ object GoogleDistanceProvider {
       * More infos about the rate limit:
       *   - https://developers.google.com/maps/documentation/distance-matrix/usage-limits
       */
-    val geoApiContext: GeoApiContext =
+    final val geoApiContext: GeoApiContext =
       new GeoApiContext.Builder()
         .apiKey(googleApiKey)
         .connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
@@ -35,16 +35,16 @@ object GoogleDistanceProvider {
   }
 
   object GoogleGeoApiContext {
-    def apply(googleApiKey: String): GoogleGeoApiContext = new GoogleGeoApiContext(googleApiKey, 1 second, 1 second)
+    final def apply(googleApiKey: String): GoogleGeoApiContext = new GoogleGeoApiContext(googleApiKey, 1 second, 1 second)
   }
 
   import TravelMode._
   import cats.implicits._
   import com.guizmaii.distances.utils.RichImplicits._
 
-  def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): DistanceProvider[AIO] = new DistanceProvider[AIO] {
+  final def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): DistanceProvider[AIO] = new DistanceProvider[AIO] {
 
-    override def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
+    override final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
         .mode(mode.asGoogleTravelMode)

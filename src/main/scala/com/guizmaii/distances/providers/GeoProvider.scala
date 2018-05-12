@@ -33,15 +33,15 @@ object GoogleGeoProvider {
   import cats.temp.par._
   import com.guizmaii.distances.utils.RichImplicits._
 
-  def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): GeoProvider[AIO] = new GeoProvider[AIO] {
+  final def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): GeoProvider[AIO] = new GeoProvider[AIO] {
 
-    private def rawRequest: GeocodingApiRequest =
+    private final def rawRequest: GeocodingApiRequest =
       GeocodingApi
         .newRequest(geoApiContext.geoApiContext)
         .region("eu")
         .language("fr")
 
-    override def geocode(point: Point): AIO[LatLong] = point match {
+    override final def geocode(point: Point): AIO[LatLong] = point match {
 
       case postalCode: PostalCode =>
         rawRequest
