@@ -12,7 +12,7 @@ import scala.language.postfixOps
 
 abstract class DistanceProvider[AIO[_]: Async] {
 
-  def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance]
+  private[distances] def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance]
 
 }
 

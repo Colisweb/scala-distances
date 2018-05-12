@@ -14,10 +14,9 @@ abstract class CacheProvider[AIO[_]](ttl: Option[Duration])(implicit AIO: Async[
   import cats.implicits._
   import scalacache.CatsEffect.modes.async
 
-  // TODO: Should be private but I need to access it in tests
-  implicit val innerCache: Cache[Json]
+  private[distances] implicit val innerCache: Cache[Json]
 
-  final def cachingF[V](keyParts: Any*)(f: => AIO[V])(
+  private[distances] final def cachingF[V](keyParts: Any*)(f: => AIO[V])(
       implicit decoder: Decoder[V],
       encoder: Encoder[V]
   ): AIO[V] =
