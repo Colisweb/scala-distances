@@ -1,6 +1,5 @@
 package com.guizmaii.distances
 
-import com.google.maps.model.{LatLng => GoogleLatLng}
 import com.guizmaii.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
 import enumeratum.{Enum, EnumEntry}
 import squants.space.Length
@@ -18,9 +17,7 @@ object Types {
   final case class PostalCode(value: String)                                                                          extends AnyVal with Point
   final case class NonAmbigueAddress(line1: String, line2: String, postalCode: String, town: String, country: String) extends Point
 
-  final case class LatLong(latitude: Double, longitude: Double) {
-    private[distances] def asGoogleLatLng: GoogleLatLng = new GoogleLatLng(latitude, longitude)
-  }
+  final case class LatLong(latitude: Double, longitude: Double)
 
   object LatLong {
     private[distances] implicit final val encoder: Encoder[LatLong] = deriveEncoder[LatLong]

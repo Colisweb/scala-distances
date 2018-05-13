@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import cats.effect.Async
 import com.google.maps.model.TravelMode._
-import com.google.maps.model.{DistanceMatrixElement, TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
+import com.google.maps.model.{DistanceMatrixElement, LatLng => GoogleLatLng, TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
 import com.google.maps.{DistanceMatrixApi, GeoApiContext}
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving, Unknown}
 import com.guizmaii.distances.Types.{LatLong, _}
@@ -51,8 +51,8 @@ object GoogleDistanceProvider {
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
         .mode(asGoogleTravelMode(mode))
-        .origins(origin.asGoogleLatLng)
-        .destinations(destination.asGoogleLatLng)
+        .origins(asGoogleLatLng(origin))
+        .destinations(asGoogleLatLng(destination))
         .units(GoogleDistanceUnit.METRIC)
         .asEffect
         .map(r => asDistance(r.rows.head.elements.head))
@@ -67,6 +67,10 @@ object GoogleDistanceProvider {
   }
 
   @inline
-  private final def asDistance(element: DistanceMatrixElement): Distance =
+  private[this] final def asDistance(element: DistanceMatrixElement): Distance =
     Distance(length = element.distance.inMeters meters, duration = element.duration.inSeconds seconds)
+
+  @inline
+  private[this] final def asGoogleLatLng(latLong: LatLong): GoogleLatLng = new GoogleLatLng(latLong.latitude, latLong.longitude)
+
 }
