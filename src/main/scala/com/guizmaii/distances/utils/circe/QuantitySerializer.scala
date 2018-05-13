@@ -15,9 +15,9 @@ abstract class QuantitySerializer[A <: Quantity[A]] {
   import cats.implicits._
   import io.circe.syntax._
 
-  protected def dimension: Dimension[A]
+  protected val dimension: Dimension[A]
 
-  private final def symbolToUnit: String => Option[UnitOfMeasure[A]] =
+  private final val symbolToUnit: String => Option[UnitOfMeasure[A]] =
     dimension.units.map(u => u.symbol -> u).toMap.get
 
   implicit final val quantityEncoder: Encoder[A] = Encoder.instance(a => Json.obj("value" := a.value, "unit" := a.unit.symbol))
@@ -34,5 +34,5 @@ abstract class QuantitySerializer[A <: Quantity[A]] {
 
 }
 object LengthSerializer extends QuantitySerializer[Length] {
-  override protected def dimension: Dimension[Length] = Length
+  override protected final val dimension: Dimension[Length] = Length
 }
