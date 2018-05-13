@@ -1,14 +1,14 @@
 package com.guizmaii.distances.providers
 
 import cats.effect.Async
-import com.google.maps.model.ComponentFilter
+import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode, _}
 import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
 
 abstract class GeoProvider[AIO[_]: Async] {
 
-  def geocode(point: Point): AIO[LatLong]
+  private[distances] def geocode(point: Point): AIO[LatLong]
 
 }
 
@@ -41,13 +41,13 @@ object GoogleGeoProvider {
         .region("eu")
         .language("fr")
 
-    override final def geocode(point: Point): AIO[LatLong] = point match {
+    override private[distances] final def geocode(point: Point): AIO[LatLong] = point match {
 
       case postalCode: PostalCode =>
         rawRequest
           .components(ComponentFilter.postalCode(postalCode.value))
           .asEffect
-          .map(_.head.geometry.location.asLatLong)
+          .map(r => asLatLong(r.head.geometry.location))
 
       /**
         * Doc about "non ambigue addresses": https://developers.google.com/maps/documentation/geocoding/best-practices#complete-address
@@ -78,7 +78,7 @@ object GoogleGeoProvider {
             .components(ComponentFilter.postalCode(addr.postalCode))
             .address(s"${addr.line1} ${addr.line2} ${addr.town}")
             .asEffect
-            .map(_.head.geometry.location.asLatLong)
+            .map(r => asLatLong(r.head.geometry.location))
 
         fetch(address)
           .handleErrorWith {
@@ -91,5 +91,9 @@ object GoogleGeoProvider {
           }
     }
   }
+
+  @inline
+  private[this] final def asLatLong(googleLatLng: GoogleLatLng): LatLong =
+    LatLong(latitude = googleLatLng.lat, longitude = googleLatLng.lng)
 
 }

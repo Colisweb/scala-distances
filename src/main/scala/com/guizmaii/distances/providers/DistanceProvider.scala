@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import cats.effect.Async
 import com.google.maps.model.TravelMode._
-import com.google.maps.model.{TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
+import com.google.maps.model.{DistanceMatrixElement, TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
 import com.google.maps.{DistanceMatrixApi, GeoApiContext}
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving, Unknown}
 import com.guizmaii.distances.Types.{LatLong, _}
@@ -19,6 +19,8 @@ abstract class DistanceProvider[AIO[_]: Async] {
 }
 
 object GoogleDistanceProvider {
+
+  import squants.space.LengthConversions._
 
   final case class GoogleGeoApiContext(googleApiKey: String, connectTimeout: Duration, readTimeout: Duration) {
 
@@ -45,7 +47,7 @@ object GoogleDistanceProvider {
 
   final def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): DistanceProvider[AIO] = new DistanceProvider[AIO] {
 
-    override final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
+    override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
         .mode(asGoogleTravelMode(mode))
@@ -53,7 +55,7 @@ object GoogleDistanceProvider {
         .destinations(destination.asGoogleLatLng)
         .units(GoogleDistanceUnit.METRIC)
         .asEffect
-        .map(_.rows.head.elements.head.asDistance)
+        .map(r => asDistance(r.rows.head.elements.head))
 
   }
 
@@ -63,4 +65,8 @@ object GoogleDistanceProvider {
     case Bicycling => BICYCLING
     case Unknown   => UNKNOWN
   }
+
+  @inline
+  private final def asDistance(element: DistanceMatrixElement): Distance =
+    Distance(length = element.distance.inMeters meters, duration = element.duration.inSeconds seconds)
 }

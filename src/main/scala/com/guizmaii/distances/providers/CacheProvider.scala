@@ -33,7 +33,7 @@ object InMemoryCacheProvider {
 
   final def apply[AIO[_]: effect.Async](ttl: Option[Duration]): CacheProvider[AIO] =
     new CacheProvider[AIO](ttl) {
-      override implicit final val innerCache: Cache[Json] = CaffeineCache[Json]
+      override private[distances] implicit final val innerCache: Cache[Json] = CaffeineCache[Json]
     }
 
 }
@@ -61,7 +61,7 @@ object RedisCacheProvider {
   final def apply[AIO[_]: effect.Async](config: RedisConfiuration, ttl: Option[Duration]): CacheProvider[AIO] =
     new CacheProvider[AIO](ttl) {
       import scalacache.serialization.circe._
-      override implicit final val innerCache: Cache[Json] = RedisCache[Json](config.jedisPool)
+      override private[distances] implicit final val innerCache: Cache[Json] = RedisCache[Json](config.jedisPool)
     }
 
 }
