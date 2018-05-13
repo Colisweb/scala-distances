@@ -21,7 +21,7 @@ abstract class CacheProvider[AIO[_]](ttl: Option[Duration])(implicit AIO: Async[
       encoder: Encoder[V]
   ): AIO[V] =
     innerCache
-      .cachingF(keyParts)(ttl)(f.map(encoder.apply))
+      .cachingF(keyParts: _*)(ttl)(f.map(encoder.apply))
       .flatMap(json => AIO.fromEither(decoder.decodeJson(json)))
 
 }
