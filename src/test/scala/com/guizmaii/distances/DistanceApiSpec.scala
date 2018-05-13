@@ -24,7 +24,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distance" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val distanceApi: DistanceApi[IO] = DistanceApi(distanceProviderStub)
+          val distanceApi: DistanceApi[IO] = DistanceApi[IO](distanceProviderStub[IO], Some(1 days))
           val latLong                      = LatLong(0.0, 0.0)
           val expectedResult               = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
           distanceApi.distance(latLong, latLong, Driving :: Bicycling :: Nil).unsafeRunSync() shouldBe expectedResult
@@ -35,7 +35,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distanceFromPostalCodes" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val distanceApi: DistanceApi[IO] = DistanceApi(distanceProviderStub)
+          val distanceApi: DistanceApi[IO] = DistanceApi[IO](distanceProviderStub[IO], Some(1 days))
           val postalCode                   = PostalCode("59000")
           val expectedResult               = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
           distanceApi
@@ -50,7 +50,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
         def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
 
           val geocoder: GeoProvider[AIO]    = GoogleGeoProvider[AIO](geoContext)
-          val distanceApi: DistanceApi[AIO] = DistanceApi[AIO](GoogleDistanceProvider[AIO](geoContext))
+          val distanceApi: DistanceApi[AIO] = DistanceApi[AIO](GoogleDistanceProvider[AIO](geoContext), Some(1 days))
 
           s"says that Paris 02 is nearest to Paris 01 than Paris 18" in {
             val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]

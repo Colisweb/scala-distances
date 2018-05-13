@@ -8,7 +8,6 @@ import com.guizmaii.distances.Types._
 import com.guizmaii.distances.providers.{CacheProvider, DistanceProvider, InMemoryCacheProvider}
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cacheProvider: CacheProvider[AIO])(implicit AIO: Async[AIO]) {
 
@@ -69,9 +68,6 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
 }
 
 object DistanceApi {
-  final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO]): DistanceApi[AIO] =
-    new DistanceApi(provider, InMemoryCacheProvider(Some(7 days)))
-
   final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], ttl: Option[Duration]): DistanceApi[AIO] =
     new DistanceApi(provider, InMemoryCacheProvider(ttl))
 

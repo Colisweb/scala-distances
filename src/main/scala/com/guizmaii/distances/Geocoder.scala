@@ -5,7 +5,6 @@ import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
 import com.guizmaii.distances.providers.{CacheProvider, GeoProvider, InMemoryCacheProvider}
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO], cacheProvider: CacheProvider[AIO]) {
 
@@ -18,9 +17,6 @@ class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO], cacheProvider: CachePr
 }
 
 object Geocoder {
-  final def apply[AIO[_]: Async](provider: GeoProvider[AIO]): Geocoder[AIO] =
-    new Geocoder(provider, InMemoryCacheProvider(Some(7 days)))
-
   final def apply[AIO[_]: Async](provider: GeoProvider[AIO], ttl: Option[Duration]): Geocoder[AIO] =
     new Geocoder(provider, InMemoryCacheProvider(ttl))
 
