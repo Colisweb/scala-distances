@@ -3,8 +3,10 @@ package com.guizmaii.distances.providers
 import java.util.concurrent.TimeUnit
 
 import cats.effect.Async
-import com.google.maps.model.{Unit => GoogleDistanceUnit}
+import com.google.maps.model.TravelMode._
+import com.google.maps.model.{TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
 import com.google.maps.{DistanceMatrixApi, GeoApiContext}
+import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving, Unknown}
 import com.guizmaii.distances.Types.{LatLong, _}
 
 import scala.concurrent.duration.{Duration, _}
@@ -38,7 +40,6 @@ object GoogleDistanceProvider {
     final def apply(googleApiKey: String): GoogleGeoApiContext = new GoogleGeoApiContext(googleApiKey, 1 second, 1 second)
   }
 
-  import TravelMode._
   import cats.implicits._
   import com.guizmaii.distances.utils.RichImplicits._
 
@@ -47,12 +48,19 @@ object GoogleDistanceProvider {
     override final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
-        .mode(mode.asGoogleTravelMode)
+        .mode(asGoogleTravelMode(mode))
         .origins(origin.asGoogleLatLng)
         .destinations(destination.asGoogleLatLng)
         .units(GoogleDistanceUnit.METRIC)
         .asEffect
         .map(_.rows.head.elements.head.asDistance)
 
+  }
+
+  @inline
+  private[this] final def asGoogleTravelMode(travelMode: TravelMode): GoogleTravelMode = travelMode match {
+    case Driving   => DRIVING
+    case Bicycling => BICYCLING
+    case Unknown   => UNKNOWN
   }
 }

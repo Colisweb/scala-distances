@@ -1,6 +1,6 @@
 package com.guizmaii.distances
 
-import com.google.maps.model.{LatLng => GoogleLatLng, TravelMode => GoogleTravelMode}
+import com.google.maps.model.{LatLng => GoogleLatLng}
 import com.guizmaii.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
 import enumeratum.{Enum, EnumEntry}
 import squants.space.Length
@@ -53,34 +53,6 @@ object Types {
     case object Driving   extends TravelMode
     case object Bicycling extends TravelMode
     case object Unknown   extends TravelMode
-
-    private[distances] implicit final class RichTravelMode(val travelMode: TravelMode) extends AnyVal {
-      def asGoogleTravelMode: GoogleTravelMode =
-        travelMode match {
-          case Driving   => GoogleTravelMode.DRIVING
-          case Bicycling => GoogleTravelMode.BICYCLING
-          case Unknown   => GoogleTravelMode.UNKNOWN
-        }
-    }
-
-    private[distances] implicit final class RichGoogleTravelMode(val travelMode: GoogleTravelMode) extends AnyVal {
-
-      /**
-        * For now, I don't want to handle WALKING and TRANSIT.
-        *
-        * @return
-        */
-      def fromGoogleTravelMode: TravelMode = {
-        import GoogleTravelMode._
-
-        travelMode match {
-          case DRIVING                     => Driving
-          case BICYCLING                   => Bicycling
-          case UNKNOWN | WALKING | TRANSIT => Unknown
-        }
-      }
-    }
-
   }
 
 }
