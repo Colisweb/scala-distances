@@ -17,12 +17,12 @@ abstract class QuantitySerializer[A <: Quantity[A]] {
 
   protected val dimension: Dimension[A]
 
-  private final val symbolToUnit: String => Option[UnitOfMeasure[A]] =
+  private final lazy val symbolToUnit: String => Option[UnitOfMeasure[A]] =
     dimension.units.map(u => u.symbol -> u).toMap.get
 
-  implicit final val quantityEncoder: Encoder[A] = Encoder.instance(a => Json.obj("value" := a.value, "unit" := a.unit.symbol))
+  implicit final lazy val quantityEncoder: Encoder[A] = Encoder.instance(a => Json.obj("value" := a.value, "unit" := a.unit.symbol))
 
-  implicit final val quantityDecoder: Decoder[A] = Decoder.instance { c =>
+  implicit final lazy val quantityDecoder: Decoder[A] = Decoder.instance { c =>
     (c.downField("value").as[Double], c.downField("unit").as[String]).tupled.flatMap {
       case (value, unit) =>
         symbolToUnit(unit) match {
