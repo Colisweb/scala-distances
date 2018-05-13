@@ -3,7 +3,6 @@ package com.guizmaii.distances
 import com.guizmaii.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
 import enumeratum.{Enum, EnumEntry}
 import squants.space.Length
-import squants.space.LengthConversions._
 
 import scala.collection.immutable
 import scala.concurrent.duration._
@@ -12,6 +11,7 @@ object Types {
 
   import io.circe._
   import io.circe.generic.semiauto._
+  import squants.space.LengthConversions._
 
   sealed trait Point                                                                                                  extends Any
   final case class PostalCode(value: String)                                                                          extends AnyVal with Point
