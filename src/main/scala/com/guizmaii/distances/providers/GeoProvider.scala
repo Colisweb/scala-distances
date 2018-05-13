@@ -1,14 +1,14 @@
-package com.guizmaii.distances
+package com.guizmaii.distances.providers
 
 import cats.effect.Async
-import com.google.maps.model.ComponentFilter
+import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
-import com.guizmaii.distances.GoogleDistanceProvider.GoogleGeoApiContext
 import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode, _}
+import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
 
 abstract class GeoProvider[AIO[_]: Async] {
 
-  def geocode(point: Point): AIO[LatLong]
+  private[distances] def geocode(point: Point): AIO[LatLong]
 
 }
 
@@ -33,21 +33,21 @@ object GoogleGeoProvider {
   import cats.temp.par._
   import com.guizmaii.distances.utils.RichImplicits._
 
-  def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): GeoProvider[AIO] = new GeoProvider[AIO] {
+  final def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): GeoProvider[AIO] = new GeoProvider[AIO] {
 
-    private def rawRequest: GeocodingApiRequest =
+    private final def rawRequest: GeocodingApiRequest =
       GeocodingApi
         .newRequest(geoApiContext.geoApiContext)
         .region("eu")
         .language("fr")
 
-    override def geocode(point: Point): AIO[LatLong] = point match {
+    override private[distances] final def geocode(point: Point): AIO[LatLong] = point match {
 
       case postalCode: PostalCode =>
         rawRequest
           .components(ComponentFilter.postalCode(postalCode.value))
           .asEffect
-          .map(_.head.geometry.location.asLatLong)
+          .map(r => asLatLong(r.head.geometry.location))
 
       /**
         * Doc about "non ambigue addresses": https://developers.google.com/maps/documentation/geocoding/best-practices#complete-address
@@ -75,10 +75,10 @@ object GoogleGeoProvider {
         def fetch(addr: NonAmbigueAddress): AIO[LatLong] =
           rawRequest
             .components(ComponentFilter.country(addr.country))
-            .components(ComponentFilter.postalCode(addr.postalCode.value))
+            .components(ComponentFilter.postalCode(addr.postalCode))
             .address(s"${addr.line1} ${addr.line2} ${addr.town}")
             .asEffect
-            .map(_.head.geometry.location.asLatLong)
+            .map(r => asLatLong(r.head.geometry.location))
 
         fetch(address)
           .handleErrorWith {
@@ -86,10 +86,14 @@ object GoogleGeoProvider {
               (
                 fetch(address.copy(line2 = "")),
                 fetch(address.copy(line2 = "", town = "")),
-                geocode(address.postalCode)
+                geocode(PostalCode(address.postalCode))
               ).raceInOrder3
           }
     }
   }
+
+  @inline
+  private[this] final def asLatLong(googleLatLng: GoogleLatLng): LatLong =
+    LatLong(latitude = googleLatLng.lat, longitude = googleLatLng.lng)
 
 }

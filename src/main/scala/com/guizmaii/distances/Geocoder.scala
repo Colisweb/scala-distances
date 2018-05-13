@@ -1,16 +1,25 @@
 package com.guizmaii.distances
 
 import cats.effect.Async
-import com.guizmaii.distances.Types.{NonAmbigueAddress, LatLong, PostalCode}
+import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
+import com.guizmaii.distances.providers.{CacheProvider, GeoProvider, InMemoryCacheProvider}
 
-final class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO]) {
+import scala.concurrent.duration._
 
-  @inline def geocodePostalCode(postalCode: PostalCode): AIO[LatLong] = provider.geocode(postalCode)
+class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO], cacheProvider: CacheProvider[AIO]) {
 
-  @inline def geocodeNonAmbigueAddress(address: NonAmbigueAddress): AIO[LatLong] = provider.geocode(address)
+  final def geocodePostalCode(postalCode: PostalCode): AIO[LatLong] =
+    cacheProvider.cachingF(postalCode) { provider.geocode(postalCode) }
+
+  final def geocodeNonAmbigueAddress(address: NonAmbigueAddress): AIO[LatLong] =
+    cacheProvider.cachingF(address) { provider.geocode(address) }
 
 }
 
 object Geocoder {
-  @inline def apply[AIO[_]: Async](provider: GeoProvider[AIO]): Geocoder[AIO] = new Geocoder(provider)
+  final def apply[AIO[_]: Async](provider: GeoProvider[AIO], ttl: Option[Duration]): Geocoder[AIO] =
+    new Geocoder(provider, InMemoryCacheProvider(ttl))
+
+  final def apply[AIO[_]: Async](provider: GeoProvider[AIO], cacheProvider: CacheProvider[AIO]): Geocoder[AIO] =
+    new Geocoder(provider, cacheProvider)
 }

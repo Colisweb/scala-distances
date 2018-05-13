@@ -5,15 +5,18 @@ import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
 import com.guizmaii.distances.Types._
+import com.guizmaii.distances.providers.{CacheProvider, DistanceProvider, InMemoryCacheProvider}
 
-final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit AIO: Async[AIO]) {
+import scala.concurrent.duration._
+
+class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cacheProvider: CacheProvider[AIO])(implicit AIO: Async[AIO]) {
 
   import DistanceApi._
   import cats.implicits._
   import cats.temp.par._
   import com.guizmaii.distances.utils.RichImplicits._
 
-  def distance(
+  final def distance(
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode]
@@ -21,10 +24,16 @@ final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit A
     if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
     else
       travelModes
-        .parTraverse(mode => provider.distance(mode, origin, destination).map(mode -> _))
+        .parTraverse { mode =>
+          cacheProvider
+            .cachingF(mode, origin, destination) {
+              distanceProvider.distance(mode, origin, destination)
+            }
+            .map(mode -> _)
+        }
         .map(_.toMap)
 
-  def distanceFromPostalCodes(geocoder: Geocoder[AIO])(
+  final def distanceFromPostalCodes(geocoder: Geocoder[AIO])(
       origin: PostalCode,
       destination: PostalCode,
       travelModes: List[TravelMode]
@@ -33,14 +42,7 @@ final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit A
     else
       (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
-  def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
-    @inline def format(
-        mode: TravelMode,
-        origin: LatLong,
-        destination: LatLong,
-        distance: AIO[Distance]
-    ): AIO[((TravelMode, LatLong, LatLong), Distance)] = distance.map((mode, origin, destination) -> _)
-
+  final def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     val combinedDirectedPaths: List[DirectedPath] =
       paths
         .filter(_.travelModes.nonEmpty)
@@ -50,19 +52,30 @@ final class DistanceApi[AIO[_]: Par](provider: DistanceProvider[AIO])(implicit A
     Parallel
       .parFlatTraverse(combinedDirectedPaths) {
         case DirectedPath(origin, destination, travelModes) =>
-          if (origin == destination) travelModes.traverse(mode => format(mode, origin, destination, AIO.pure(Distance.zero)))
-          else travelModes.parTraverse(mode => format(mode, origin, destination, provider.distance(mode, origin, destination)))
+          if (origin == destination) travelModes.traverse(mode => AIO.pure(Distance.zero).map((mode, origin, destination) -> _))
+          else {
+            travelModes.parTraverse { mode =>
+              cacheProvider
+                .cachingF(mode, origin, destination) {
+                  distanceProvider.distance(mode, origin, destination)
+                }
+                .map((mode, origin, destination) -> _)
+            }
+          }
       }
       .map(_.toMap)
   }
 }
 
 object DistanceApi {
-  @inline def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO]): DistanceApi[AIO] = new DistanceApi(provider)
+  final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], ttl: Option[Duration]): DistanceApi[AIO] =
+    new DistanceApi(provider, InMemoryCacheProvider(ttl))
+
+  final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], cacheProvider: CacheProvider[AIO]): DistanceApi[AIO] =
+    new DistanceApi(provider, cacheProvider)
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
     override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
       DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
   }
-
 }
