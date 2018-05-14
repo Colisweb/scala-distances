@@ -16,6 +16,7 @@ abstract class CacheProvider[AIO[_]](ttl: Option[Duration])(implicit AIO: Async[
 
   private[distances] implicit val innerCache: Cache[Json]
 
+  // TODO Jules: An optimization is possible when there's a cache miss because in that case the deserialization is useless.
   private[distances] final def cachingF[V](keyParts: Any*)(f: => AIO[V])(
       implicit decoder: Decoder[V],
       encoder: Encoder[V]
