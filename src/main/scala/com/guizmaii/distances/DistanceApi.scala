@@ -52,8 +52,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
     Parallel
       .parFlatTraverse(combinedDirectedPaths) {
         case DirectedPath(origin, destination, travelModes) =>
-          if (origin == destination) travelModes.traverse(mode => AIO.pure(Distance.zero).map((mode, origin, destination) -> _))
-          else {
+          if (origin == destination) AIO.pure { travelModes.map(mode => (mode, origin, destination) -> Distance.zero) } else {
             travelModes.parTraverse { mode =>
               cacheProvider
                 .cachingF(mode, origin, destination) {
