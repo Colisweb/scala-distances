@@ -2,7 +2,7 @@ package com.guizmaii.distances.providers
 
 import cats.effect.{Async, IO}
 import com.guizmaii.distances.Types._
-import com.guizmaii.distances.providers.RedisCacheProvider.RedisConfiuration
+import com.guizmaii.distances.providers.RedisCacheProvider.RedisConfiguration
 import io.circe._
 import io.circe.generic.semiauto._
 import monix.eval.Task
@@ -77,7 +77,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
       tests[IO](() => InMemoryCacheProvider(Some(1 day)))(_.unsafeRunSync())
     }
     "pass RedisCacheProvider" should {
-      tests[IO](() => RedisCacheProvider(RedisConfiuration("127.0.0.1", 6379), Some(1 day)))(_.unsafeRunSync())
+      tests[IO](() => RedisCacheProvider(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.unsafeRunSync())
     }
   }
   "with Monix Task" should {
@@ -87,7 +87,7 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
       tests[Task](() => InMemoryCacheProvider(Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
     "pass RedisCacheProvider" should {
-      tests[Task](() => RedisCacheProvider(RedisConfiuration("127.0.0.1", 6379), Some(1 day)))(_.runSyncUnsafe(10 seconds))
+      tests[Task](() => RedisCacheProvider(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
   }
 

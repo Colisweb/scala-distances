@@ -44,22 +44,22 @@ object RedisCacheProvider {
   import scalacache._
   import scalacache.redis._
 
-  final case class RedisConfiuration(jedisPool: JedisPool) extends AnyVal
+  final case class RedisConfiguration(jedisPool: JedisPool) extends AnyVal
 
-  object RedisConfiuration {
-    final def apply(host: String, port: Int): RedisConfiuration = RedisConfiuration(new JedisPool(host, port))
+  object RedisConfiguration {
+    final def apply(host: String, port: Int): RedisConfiguration = RedisConfiguration(new JedisPool(host, port))
 
-    final def apply(host: String, port: Int, password: String): RedisConfiuration =
-      RedisConfiuration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password))
+    final def apply(host: String, port: Int, password: String): RedisConfiguration =
+      RedisConfiguration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password))
 
-    final def apply(host: String, port: Int, database: Int): RedisConfiuration =
-      RedisConfiuration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, null, database))
+    final def apply(host: String, port: Int, database: Int): RedisConfiguration =
+      RedisConfiguration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, null, database))
 
-    final def apply(host: String, port: Int, password: String, database: Int): RedisConfiuration =
-      RedisConfiuration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password, database))
+    final def apply(host: String, port: Int, password: String, database: Int): RedisConfiguration =
+      RedisConfiguration(new JedisPool(new GenericObjectPoolConfig(), host, port, 1000, password, database))
   }
 
-  final def apply[AIO[_]: effect.Async](config: RedisConfiuration, ttl: Option[Duration]): CacheProvider[AIO] =
+  final def apply[AIO[_]: effect.Async](config: RedisConfiguration, ttl: Option[Duration]): CacheProvider[AIO] =
     new CacheProvider[AIO](ttl) {
       import scalacache.serialization.circe._
       override private[distances] implicit final val innerCache: Cache[Json] = RedisCache[Json](config.jedisPool)
