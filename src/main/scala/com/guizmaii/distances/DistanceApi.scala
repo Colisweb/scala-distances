@@ -22,7 +22,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
       destination: LatLong,
       travelModes: List[TravelMode]
   ): AIO[Map[TravelMode, Distance]] =
-    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
+    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       travelModes
         .parTraverse { mode =>
@@ -39,7 +39,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
       destination: PostalCode,
       travelModes: List[TravelMode]
   ): AIO[Map[TravelMode, Distance]] =
-    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
+    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
