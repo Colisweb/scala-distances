@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **DistanceApi#distances method should also accept `Array`s**
+
 ## [v1.0.0-RC1] - 2018.05.14
 
 Breaking changes:

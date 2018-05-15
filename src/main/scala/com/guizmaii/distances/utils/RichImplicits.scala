@@ -4,11 +4,10 @@ import cats.effect.Async
 import cats.kernel.Semigroup
 import com.google.maps.PendingResult
 
-import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.generic.CanBuildFrom
+import scala.collection.{TraversableLike, mutable}
 
 private[distances] object RichImplicits {
-
-  import cats.implicits._
 
   implicit final class RichPendingResult[AIO[_], T](val request: PendingResult[T])(implicit AIO: Async[AIO]) {
     def asEffect: AIO[T] =
@@ -20,18 +19,31 @@ private[distances] object RichImplicits {
       }
   }
 
-  implicit final class RichList[Value](val list: List[Value]) extends AnyVal {
-    def combineDuplicatesOn[Key](key: Value => Key)(implicit sm: Semigroup[Value]): List[Value] = {
-      val zero: MutableMap[Key, Value] = MutableMap()
+  implicit final class TraversableLikeOps[A, Repr](val coll: TraversableLike[A, Repr]) extends AnyVal {
 
-      list
-        .foldLeft(zero) {
-          case (acc, a) =>
-            val k: Key = key(a)
-            acc += k -> acc.get(k).fold(a)(_ |+| a)
-        }
-        .values
-        .toList
+    // TODO: Is it possible to do that with only one pass ? Maybe by manually manipulating an index.
+    /**
+      * Inspired by: https://github.com/cvogt/scala-extensions/blob/master/src/main/scala/collection.scala#L14-L28
+      *
+      * For more information, see: https://scala-lang.org/blog/2017/05/30/tribulations-canbuildfrom.html
+      *
+      * @param key
+      * @param bf
+      * @tparam B
+      * @tparam That
+      * @return
+      */
+    def combineDuplicatesOn[B, That](key: A => B)(implicit A: Semigroup[A], bf: CanBuildFrom[Repr, A, That]): That = {
+      val acc: mutable.Map[B, A] = mutable.Map()
+
+      for (a <- coll) {
+        val k: B = key(a)
+        acc += k -> acc.get(k).fold(a)(A.combine(_, a))
+      }
+
+      val builder = bf(coll.repr)
+      for (elem <- acc) { builder += elem._2 }
+      builder.result()
     }
   }
 

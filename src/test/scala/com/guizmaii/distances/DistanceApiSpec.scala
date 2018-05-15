@@ -64,7 +64,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             val driveFrom01to02 = DirectedPath(origin = paris01, destination = paris02, Driving :: Nil)
             val driveFrom01to18 = DirectedPath(origin = paris01, destination = paris18, Driving :: Nil)
 
-            val results = runSync(distanceApi.distances(driveFrom01to02 :: driveFrom01to18 :: Nil))
+            val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
               .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
 
             results shouldBe Map(

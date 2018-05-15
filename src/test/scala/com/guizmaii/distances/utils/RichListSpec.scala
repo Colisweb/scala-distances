@@ -7,6 +7,8 @@ import com.guizmaii.distances.Types.{DirectedPath, LatLong}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 
+import scala.collection.breakOut
+
 class RichListSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach with PrivateMethodTester {
 
   "RichList#combineDuplicatesOn" should {
@@ -25,7 +27,8 @@ class RichListSpec extends WordSpec with Matchers with ScalaFutures with BeforeA
       val a24 = DirectedPath(LatLong(42.0, 42.0), LatLong(43.0, 43.0), Driving :: Unknown :: Nil)
 
       val res = List(a00, a01, a11, a21, a22, a23, a24).combineDuplicatesOn { case DirectedPath(o, d, _) => (o, d) }(
-        DistanceApi invokePrivate directedPathSemiGroup())
+        DistanceApi invokePrivate directedPathSemiGroup(),
+        breakOut)
 
       res.head shouldBe DirectedPath(LatLong(42.0, 42.0), LatLong(43.0, 43.0), Driving :: Bicycling :: Unknown :: Nil)
     }
@@ -36,8 +39,9 @@ class RichListSpec extends WordSpec with Matchers with ScalaFutures with BeforeA
       val b00 = DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Driving :: Nil)
       val b01 = DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Driving :: Nil)
       val b02 = DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Unknown :: Nil)
-      val res = List(a00, a01, a11, b00, b01, b02).combineDuplicatesOn { case DirectedPath(o, d, _) => (o, d) }(
-        DistanceApi invokePrivate directedPathSemiGroup())
+      val res = wrapRefArray(Array(a00, a01, a11, b00, b01, b02)).combineDuplicatesOn { case DirectedPath(o, d, _) => (o, d) }(
+        DistanceApi invokePrivate directedPathSemiGroup(),
+        breakOut)
 
       res shouldBe Vector(
         DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Driving :: Unknown :: Nil),
