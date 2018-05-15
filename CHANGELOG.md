@@ -6,6 +6,17 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v1.0.0-RC1] - 2018.05.14
+
+Breaking changes:
+-----------------
+
+- **New API**
+- **The API is now generalized for any effect system that implements the `cats-effect` `Async` and `Parallel` typeclasses**
+
+Others:
+-------
+
 - **Use `sbt-tpolecat` plugin instead of our manually defined scalac options**
 - **Change used scalafmt plugin**
 - **Update Scala 2.12 version**
