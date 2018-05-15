@@ -75,7 +75,7 @@ object DistanceApi {
   final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], cacheProvider: CacheProvider[AIO]): DistanceApi[AIO] =
     new DistanceApi(provider, cacheProvider)
 
-  private[DistanceApi] implicit final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
+  private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
     override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
       DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
   }
