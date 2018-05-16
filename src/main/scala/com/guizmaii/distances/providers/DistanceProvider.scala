@@ -8,7 +8,6 @@ import com.google.maps.model.{DistanceMatrixElement, LatLng => GoogleLatLng, Tra
 import com.google.maps.{DistanceMatrixApi, GeoApiContext}
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving, Unknown}
 import com.guizmaii.distances.Types.{LatLong, _}
-import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleCredentials.{ApiKey, EnterpriseCredentials}
 
 import scala.concurrent.duration.{Duration, _}
 import scala.language.postfixOps
@@ -23,25 +22,16 @@ object GoogleDistanceProvider {
 
   import squants.space.LengthConversions._
 
-  sealed trait GoogleCredentials extends Any
-  object GoogleCredentials {
-    final case class ApiKey(key: String) extends AnyVal with GoogleCredentials
-    final case class EnterpriseCredentials(clientId: String, cryptographicSecret: String) extends GoogleCredentials {
-      override def toString: String = s"EnterpriseCredentials($clientId, *****)"
-    }
-  }
-  final case class GoogleGeoApiContext(credentials: GoogleCredentials, connectTimeout: Duration, readTimeout: Duration) {
+  final case class GoogleGeoApiContext(apiKey: String, connectTimeout: Duration, readTimeout: Duration) {
 
     /**
       * More infos about the rate limit:
       *   - https://developers.google.com/maps/documentation/distance-matrix/usage-limits
       */
     final val geoApiContext: GeoApiContext =
-      (credentials match {
-        case ApiKey(key) => new GeoApiContext.Builder().apiKey(key)
-        case EnterpriseCredentials(clientId, cryptographicSecret) =>
-          new GeoApiContext.Builder().enterpriseCredentials(clientId, cryptographicSecret)
-      }).connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
+      new GeoApiContext.Builder()
+        .apiKey(apiKey)
+        .connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
         .readTimeout(readTimeout.toMillis, TimeUnit.MILLISECONDS)
         .queryRateLimit(100)
         .build()
@@ -49,9 +39,7 @@ object GoogleDistanceProvider {
   }
 
   object GoogleGeoApiContext {
-    final def apply(googleApiKey: String): GoogleGeoApiContext = new GoogleGeoApiContext(ApiKey(googleApiKey), 1 second, 1 second)
-    final def apply(clientId: String, cryptographicSecret: String): GoogleGeoApiContext =
-      new GoogleGeoApiContext(EnterpriseCredentials(clientId, cryptographicSecret), 1 second, 1 second)
+    final def apply(googleApiKey: String): GoogleGeoApiContext = new GoogleGeoApiContext(googleApiKey, 1 second, 1 second)
   }
 
   import cats.implicits._

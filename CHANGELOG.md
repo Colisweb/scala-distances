@@ -6,7 +6,6 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
-- **Google Providers should accept enterprise credentials**
 - **DistanceApi#distances method should also accept `Array`s**
 - **Some small optimisations**
 
