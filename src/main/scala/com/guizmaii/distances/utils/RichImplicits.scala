@@ -21,7 +21,6 @@ private[distances] object RichImplicits {
 
   implicit final class TraversableLikeOps[A, Repr](val coll: TraversableLike[A, Repr]) extends AnyVal {
 
-    // TODO: Is it possible to do that with only one pass ? Maybe by manually manipulating an index.
     /**
       * Inspired by: https://github.com/cvogt/scala-extensions/blob/master/src/main/scala/collection.scala#L14-L28
       *
