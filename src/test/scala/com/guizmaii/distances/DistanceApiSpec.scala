@@ -48,11 +48,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
         def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
-
           val geocoder: GeoProvider[AIO]    = GoogleGeoProvider[AIO](geoContext)
           val distanceApi: DistanceApi[AIO] = DistanceApi[AIO](GoogleDistanceProvider[AIO](geoContext), Some(1 days))
-
-          s"says that Paris 02 is nearest to Paris 01 than Paris 18" in {
+          "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
             val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]
             val paris02 = runSync(geocoder.geocode(PostalCode("75002"))).asInstanceOf[LatLong]
             val paris18 = runSync(geocoder.geocode(PostalCode("75018"))).asInstanceOf[LatLong]
@@ -64,7 +62,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             val driveFrom01to02 = DirectedPath(origin = paris01, destination = paris02, Driving :: Nil)
             val driveFrom01to18 = DirectedPath(origin = paris01, destination = paris18, Driving :: Nil)
 
-            val results = runSync(distanceApi.distances(driveFrom01to02 :: driveFrom01to18 :: Nil))
+            val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
               .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
 
             results shouldBe Map(
@@ -84,7 +82,6 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           import monix.execution.Scheduler.Implicits.global
 
           passTests[Task](_.runSyncUnsafe(10 seconds))
-
         }
       }
     }

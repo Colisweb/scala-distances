@@ -7,6 +7,7 @@ import cats.temp.par.Par
 import com.guizmaii.distances.Types._
 import com.guizmaii.distances.providers.{CacheProvider, DistanceProvider, InMemoryCacheProvider}
 
+import scala.collection.breakOut
 import scala.concurrent.duration._
 
 class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cacheProvider: CacheProvider[AIO])(implicit AIO: Async[AIO]) {
@@ -21,7 +22,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
       destination: LatLong,
       travelModes: List[TravelMode]
   ): AIO[Map[TravelMode, Distance]] =
-    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
+    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       travelModes
         .parTraverse { mode =>
@@ -38,21 +39,21 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
       destination: PostalCode,
       travelModes: List[TravelMode]
   ): AIO[Map[TravelMode, Distance]] =
-    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero).toMap)
+    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
-  final def distances(paths: List[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
+  final def distances(paths: Seq[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     val combinedDirectedPaths: List[DirectedPath] =
       paths
         .filter(_.travelModes.nonEmpty)
-        .combineDuplicatesOn { case DirectedPath(origin, destination, _) => (origin, destination) }(directedPathSemiGroup)
+        .combineDuplicatesOn { case DirectedPath(origin, destination, _) => (origin, destination) }(directedPathSemiGroup, breakOut)
 
     // TODO: Replace by the syntax extension when this issue is closed: https://github.com/typelevel/cats/issues/2255
     Parallel
       .parFlatTraverse(combinedDirectedPaths) {
         case DirectedPath(origin, destination, travelModes) =>
-          if (origin == destination) travelModes.traverse(mode => AIO.pure(Distance.zero).map((mode, origin, destination) -> _))
+          if (origin == destination) AIO.pure(travelModes.map(mode => (mode, origin, destination) -> Distance.zero))
           else {
             travelModes.parTraverse { mode =>
               cacheProvider

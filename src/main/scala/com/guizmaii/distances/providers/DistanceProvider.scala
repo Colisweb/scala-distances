@@ -22,7 +22,7 @@ object GoogleDistanceProvider {
 
   import squants.space.LengthConversions._
 
-  final case class GoogleGeoApiContext(googleApiKey: String, connectTimeout: Duration, readTimeout: Duration) {
+  final case class GoogleGeoApiContext(apiKey: String, connectTimeout: Duration, readTimeout: Duration) {
 
     /**
       * More infos about the rate limit:
@@ -30,7 +30,7 @@ object GoogleDistanceProvider {
       */
     final val geoApiContext: GeoApiContext =
       new GeoApiContext.Builder()
-        .apiKey(googleApiKey)
+        .apiKey(apiKey)
         .connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
         .readTimeout(readTimeout.toMillis, TimeUnit.MILLISECONDS)
         .queryRateLimit(100)
