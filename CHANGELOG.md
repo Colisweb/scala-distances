@@ -6,7 +6,16 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v1.0.0-RC2] - 2018.05.16
+
+Breaking changes:
+-----------------
+
 - **Fix english naming: `Ambigue` -> `Ambiguous`**
+
+Others:
+-------
+
 - **DistanceApi#distances method should also accept `Array`s**
 - **Some small optimisations**
 
