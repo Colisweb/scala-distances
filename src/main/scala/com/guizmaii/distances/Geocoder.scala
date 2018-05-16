@@ -1,7 +1,7 @@
 package com.guizmaii.distances
 
 import cats.effect.Async
-import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
+import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode}
 import com.guizmaii.distances.providers.{CacheProvider, GeoProvider, InMemoryCacheProvider}
 
 import scala.concurrent.duration._
@@ -11,7 +11,7 @@ class Geocoder[AIO[_]: Async](provider: GeoProvider[AIO], cacheProvider: CachePr
   final def geocodePostalCode(postalCode: PostalCode): AIO[LatLong] =
     cacheProvider.cachingF(postalCode) { provider.geocode(postalCode) }
 
-  final def geocodeNonAmbigueAddress(address: NonAmbigueAddress): AIO[LatLong] =
+  final def geocodeNonAmbiguousAddress(address: NonAmbiguousAddress): AIO[LatLong] =
     cacheProvider.cachingF(address) { provider.geocode(address) }
 
 }

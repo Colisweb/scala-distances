@@ -3,7 +3,7 @@ package com.guizmaii.distances.providers
 import cats.effect.Async
 import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
-import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode, _}
+import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode, _}
 import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
 
 abstract class GeoProvider[AIO[_]: Async] {
@@ -71,8 +71,8 @@ object GoogleGeoProvider {
        *
        * TODO: The next step for this lib is to implement this more clever solution, but for now, use this method preferably with good quality data and/or with caution.
        */
-      case address: NonAmbigueAddress =>
-        def fetch(addr: NonAmbigueAddress): AIO[LatLong] =
+      case address: NonAmbiguousAddress =>
+        def fetch(addr: NonAmbiguousAddress): AIO[LatLong] =
           rawRequest
             .components(ComponentFilter.country(addr.country))
             .components(ComponentFilter.postalCode(addr.postalCode))

@@ -44,14 +44,14 @@ object Gens {
 
   final val postalCodeGen: Gen[PostalCode] = Gen.listOfN(5, Gen.alphaNumChar).map(cs => PostalCode(cs.mkString))
 
-  final val nonAmbigueAddressGen: Gen[NonAmbigueAddress] = for {
+  final val nonAmbigueAddressGen: Gen[NonAmbiguousAddress] = for {
     line1      <- Gen.alphaNumStr
     line2      <- Gen.alphaNumStr
     postalCode <- Gen.listOfN(5, Gen.alphaNumChar).map(_.mkString)
     town       <- Gen.alphaNumStr
     country    <- Gen.alphaNumStr
   } yield
-    NonAmbigueAddress(
+    NonAmbiguousAddress(
       line1 = line1,
       line2 = line2,
       postalCode = postalCode,

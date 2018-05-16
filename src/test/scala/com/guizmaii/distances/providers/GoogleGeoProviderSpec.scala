@@ -2,7 +2,7 @@ package com.guizmaii.distances.providers
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
-import com.guizmaii.distances.Types.{LatLong, NonAmbigueAddress, PostalCode}
+import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode}
 import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest._
@@ -63,8 +63,8 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
 
       final case class TestAddress(line1: String, postalCode: String, town: String, lat: String, long: String)
       object TestAddress {
-        def toAddressAndLatLong(addr: TestAddress): (NonAmbigueAddress, LatLong) =
-          NonAmbigueAddress(line1 = addr.line1, line2 = "", postalCode = addr.postalCode, town = addr.town, country = "France") -> LatLong(
+        def toAddressAndLatLong(addr: TestAddress): (NonAmbiguousAddress, LatLong) =
+          NonAmbiguousAddress(line1 = addr.line1, line2 = "", postalCode = addr.postalCode, town = addr.town, country = "France") -> LatLong(
             latitude = addr.lat.toDouble,
             longitude = addr.long.toDouble)
       }
@@ -93,10 +93,10 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;${artiguesPresBordeaux.latitude};${artiguesPresBordeaux.longitude}
            |""".stripMargin.drop(1).dropRight(1)
 
-      val data: Seq[(NonAmbigueAddress, LatLong)] =
+      val data: Seq[(NonAmbiguousAddress, LatLong)] =
         rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(TestAddress.toAddressAndLatLong)
 
-      def testNonAmbigueAddressGeocoder: ((NonAmbigueAddress, LatLong)) => Unit = { (address: NonAmbigueAddress, latLong: LatLong) =>
+      def testNonAmbigueAddressGeocoder: ((NonAmbiguousAddress, LatLong)) => Unit = { (address: NonAmbiguousAddress, latLong: LatLong) =>
         s"$address should be located at $latLong}" in {
           runSync(geocoder.geocode(address)) shouldBe latLong
         }

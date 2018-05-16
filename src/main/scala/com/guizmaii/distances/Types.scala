@@ -15,7 +15,7 @@ object Types {
 
   sealed trait Point                                                                                                  extends Any
   final case class PostalCode(value: String)                                                                          extends AnyVal with Point
-  final case class NonAmbigueAddress(line1: String, line2: String, postalCode: String, town: String, country: String) extends Point
+  final case class NonAmbiguousAddress(line1: String, line2: String, postalCode: String, town: String, country: String) extends Point
 
   final case class LatLong(latitude: Double, longitude: Double)
 
