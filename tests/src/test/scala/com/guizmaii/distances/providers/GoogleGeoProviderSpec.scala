@@ -20,7 +20,7 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
   val lille                = LatLong(latitude = 50.6138111, longitude = 3.0423599)
   val lambersart           = LatLong(latitude = 50.65583909999999, longitude = 3.0226977)
   val harnes               = LatLong(latitude = 50.4515282, longitude = 2.9047234)
-  val artiguesPresBordeaux = LatLong(latitude = 44.8635218, longitude = -0.4927134)
+  val artiguesPresBordeaux = LatLong(latitude = 44.84034490000001, longitude = -0.4408037)
 
   def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
 
