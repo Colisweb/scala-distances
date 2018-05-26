@@ -1,20 +1,16 @@
 import sbt.Keys.crossScalaVersions
 
-organization := "com.guizmaii"
-
-name := "scala-distances"
+organization in ThisBuild := "com.guizmaii"
 
 lazy val scala212 = "2.12.6"
 lazy val scala211 = "2.11.12"
 
-scalaVersion := scala212
-crossScalaVersions := Seq(scala211, scala212)
+scalaVersion in ThisBuild := scala212
+crossScalaVersions in ThisBuild := Seq(scala211, scala212)
 
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
-
-scalafmtOnCompile := true
-scalafmtCheck := true
-scalafmtSbtCheck := true
+scalafmtOnCompile in ThisBuild := true
+scalafmtCheck in ThisBuild := true
+scalafmtSbtCheck in ThisBuild := true
 
 /* Dependencies */
 
@@ -52,15 +48,37 @@ lazy val testKit = {
   ) ++ kantancsv
 }.map(_ % Test)
 
-libraryDependencies ++= Seq(
-  squants,
-  cats,
-  `cats-effect`,
-  `cats-par`,
-  enumeratum,
-  `circe-generic`,
-  googleMaps
-) ++ scalacache ++ testKit
+lazy val root = Project(id = "scala-distances", base = file("."))
+  .settings(moduleName := "root")
+  .settings(noPublishSettings)
+  .aggregate(core)
+  .dependsOn(core)
+
+lazy val core = project
+  .in(file("core"))
+  .settings(moduleName := "scala-distances")
+  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
+  .settings(
+    libraryDependencies ++= Seq(
+      squants,
+      cats,
+      `cats-effect`,
+      `cats-par`,
+      enumeratum,
+      `circe-generic`,
+      googleMaps
+    ) ++ scalacache ++ testKit)
+
+//// Publishing settings
+
+/**
+  * Come from Cats
+  */
+lazy val noPublishSettings = Seq(
+  publish := {},
+  publishLocal := {},
+  publishArtifact := false
+)
 
 inThisBuild(
   List(
