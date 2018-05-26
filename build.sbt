@@ -51,11 +51,10 @@ lazy val testKit = {
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core)
-  .dependsOn(core)
+  .aggregate(core, `google-provider`, tests, benchmark)
+  .dependsOn(core, `google-provider`, tests, benchmark)
 
 lazy val core = project
-  .in(file("core"))
   .settings(moduleName := "scala-distances")
   .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
   .settings(
@@ -65,14 +64,29 @@ lazy val core = project
       `cats-effect`,
       `cats-par`,
       enumeratum,
-      `circe-generic`,
-      googleMaps
+      `circe-generic`
     ) ++ scalacache ++ testKit)
+
+lazy val `google-provider` = project
+  .in(file("providers/google"))
+  .settings(moduleName := "scala-distances-google")
+  .settings(libraryDependencies += googleMaps)
+  .dependsOn(core)
+
+lazy val tests = project
+  .settings(noPublishSettings)
+  .settings(libraryDependencies ++= testKit)
+  .dependsOn(core, `google-provider`)
+
+lazy val benchmark = project
+  .enablePlugins(JmhPlugin)
+  .settings(noPublishSettings)
+  .dependsOn(core)
 
 //// Publishing settings
 
 /**
-  * Come from Cats
+  * Copied from Cats
   */
 lazy val noPublishSettings = Seq(
   publish := {},
@@ -91,3 +105,10 @@ inThisBuild(
     releaseEarlyWith := BintrayPublisher
   )
 )
+
+//// Aliases
+
+/**
+  * Copied from kantan.csv
+  */
+addCommandAlias("runBench", "benchmark/jmh:run -i 10 -wi 10 -f 2 -t 1")

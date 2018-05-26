@@ -2,10 +2,10 @@ package com.guizmaii.distances
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
-import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving}
 import com.guizmaii.distances.Types.{Distance, LatLong, PostalCode, _}
-import com.guizmaii.distances.providers.{GeoProvider, GoogleDistanceProvider, GoogleGeoProvider}
+import com.guizmaii.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}
+import com.guizmaii.distances.providers.GeoProvider
 import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}

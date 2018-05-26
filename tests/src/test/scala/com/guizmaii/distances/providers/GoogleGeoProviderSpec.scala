@@ -3,7 +3,7 @@ package com.guizmaii.distances.providers
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode}
-import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
+import com.guizmaii.distances.providers.google.{GoogleGeoApiContext, GoogleGeoProvider}
 import monix.eval.Task
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures

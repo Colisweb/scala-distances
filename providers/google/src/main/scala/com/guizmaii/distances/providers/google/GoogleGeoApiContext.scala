@@ -1,0 +1,28 @@
+package com.guizmaii.distances.providers.google
+
+import java.util.concurrent.TimeUnit
+
+import com.google.maps.GeoApiContext
+
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
+final case class GoogleGeoApiContext(apiKey: String, connectTimeout: Duration, readTimeout: Duration) {
+
+  /**
+    * More infos about the rate limit:
+    *   - https://developers.google.com/maps/documentation/distance-matrix/usage-limits
+    */
+  final val geoApiContext: GeoApiContext =
+    new GeoApiContext.Builder()
+      .apiKey(apiKey)
+      .connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
+      .readTimeout(readTimeout.toMillis, TimeUnit.MILLISECONDS)
+      .queryRateLimit(100)
+      .build()
+
+}
+
+object GoogleGeoApiContext {
+  final def apply(googleApiKey: String): GoogleGeoApiContext = new GoogleGeoApiContext(googleApiKey, 1 second, 1 second)
+}

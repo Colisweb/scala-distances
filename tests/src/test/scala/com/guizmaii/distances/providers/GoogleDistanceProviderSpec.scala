@@ -4,7 +4,7 @@ import cats.effect.{Async, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types._
-import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
+import com.guizmaii.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}
 import monix.eval.Task
 import org.scalatest.{Matchers, WordSpec}
 import squants.space.LengthConversions._

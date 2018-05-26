@@ -9,11 +9,11 @@ import org.scalatest.concurrent.ScalaFutures
 
 import scala.collection.breakOut
 
-class RichListSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach with PrivateMethodTester {
+class TraversableLikeOpsSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach with PrivateMethodTester {
 
   "RichList#combineDuplicatesOn" should {
 
-    import RichImplicits._
+    import Implicits._
 
     val directedPathSemiGroup: PrivateMethod[Semigroup[DirectedPath]] = PrivateMethod[Semigroup[DirectedPath]]('directedPathSemiGroup)
 
