@@ -66,8 +66,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
               .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
 
             results shouldBe Map(
-              (Driving, paris01, paris02) -> Distance(1670.0 meters, 516 seconds),
-              (Driving, paris01, paris18) -> Distance(5474.0 meters, 1445 seconds)
+              (Driving, paris01, paris02) -> Distance(1680.0 meters, 492 seconds),
+              (Driving, paris01, paris18) -> Distance(4747.0 meters, 1215 seconds)
             )
 
             results((Driving, paris01, paris02)).length should be < results((Driving, paris01, paris18)).length
