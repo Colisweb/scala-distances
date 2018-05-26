@@ -1,8 +1,8 @@
-package com.guizmaii.distances.providers
+package com.guizmaii.distances.caches
 
 import cats.effect.{Async, IO}
+import com.guizmaii.distances.Cache
 import com.guizmaii.distances.Types._
-import com.guizmaii.distances.providers.RedisCacheProvider.RedisConfiguration
 import io.circe._
 import io.circe.generic.semiauto._
 import monix.eval.Task
@@ -25,7 +25,7 @@ object Toto {
   implicit final val Encoder: Encoder[Toto] = deriveEncoder[Toto]
 }
 
-class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
+class CacheSpec extends WordSpec with Matchers with PropertyChecks {
 
   import com.guizmaii.distances.generators.Gens._
   import com.guizmaii.distances.utils.circe.LengthSerializer._
@@ -52,10 +52,10 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
       }
     """
 
-  def tests[AIO[+ _]](cacheImpl: () => CacheProvider[AIO])(runSync: AIO[Any] => Any)(implicit AIO: Async[AIO]): Unit = {
+  def tests[AIO[+ _]](cacheImpl: () => Cache[AIO])(runSync: AIO[Any] => Any)(implicit AIO: Async[AIO]): Unit = {
     val cache = cacheImpl()
 
-    implicit final class RichCacheProvider(val cache: CacheProvider[AIO]) {
+    implicit final class RichCacheProvider(val cache: Cache[AIO]) {
       import scalacache.CatsEffect.modes.async
 
       def removeAll(): AIO[Any] = cache.innerCache.removeAll[AIO]()(async[AIO])
@@ -73,21 +73,21 @@ class CacheProviderSpec extends WordSpec with Matchers with PropertyChecks {
   }
 
   "with cats-effect IO" should {
-    "with InMemoryCacheProvider" should {
-      tests[IO](() => InMemoryCacheProvider(Some(1 day)))(_.unsafeRunSync())
+    "with CaffeineCache" should {
+      tests[IO](() => CaffeineCache(Some(1 day)))(_.unsafeRunSync())
     }
-    "pass RedisCacheProvider" should {
-      tests[IO](() => RedisCacheProvider(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.unsafeRunSync())
+    "pass RedisCache" should {
+      tests[IO](() => RedisCache(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.unsafeRunSync())
     }
   }
   "with Monix Task" should {
     import monix.execution.Scheduler.Implicits.global
 
-    "with InMemoryCacheProvider" should {
-      tests[Task](() => InMemoryCacheProvider(Some(1 day)))(_.runSyncUnsafe(10 seconds))
+    "with CaffeineCache" should {
+      tests[Task](() => CaffeineCache(Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
-    "pass RedisCacheProvider" should {
-      tests[Task](() => RedisCacheProvider(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.runSyncUnsafe(10 seconds))
+    "pass RedisCache" should {
+      tests[Task](() => RedisCache(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
   }
 

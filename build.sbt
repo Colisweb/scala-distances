@@ -12,7 +12,7 @@ scalafmtOnCompile in ThisBuild := true
 scalafmtCheck in ThisBuild := true
 scalafmtSbtCheck in ThisBuild := true
 
-/* Dependencies */
+//// Dependencies
 
 lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.2.7"
 lazy val squants         = "org.typelevel"     %% "squants"             % "1.3.0"
@@ -48,11 +48,13 @@ lazy val testKit = {
   ) ++ kantancsv
 }.map(_ % Test)
 
+//// Main projects
+
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core, `google-provider`, tests, benchmark)
-  .dependsOn(core, `google-provider`, tests, benchmark)
+  .aggregate(core, `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`, tests, benchmark)
+  .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`, tests, benchmark)
 
 lazy val core = project
   .settings(moduleName := "scala-distances")
@@ -67,16 +69,37 @@ lazy val core = project
       `circe-generic`
     ) ++ scalacache ++ testKit)
 
+//// Providers
+
 lazy val `google-provider` = project
   .in(file("providers/google"))
   .settings(moduleName := "scala-distances-google")
   .settings(libraryDependencies += googleMaps)
   .dependsOn(core)
 
+//// Caches
+
+lazy val `redis-cache` = project
+  .in(file("caches/redis"))
+  .settings(moduleName := "scala-distances-redis")
+  .dependsOn(core)
+
+lazy val `caffeine-cache` = project
+  .in(file("caches/caffeine"))
+  .settings(moduleName := "scala-distances-caffeine")
+  .dependsOn(core)
+
+lazy val `no-cache` = project
+  .in(file("caches/no-cache"))
+  .settings(moduleName := "scala-distances-noCache")
+  .dependsOn(core)
+
+//// Meta projects
+
 lazy val tests = project
   .settings(noPublishSettings)
   .settings(libraryDependencies ++= testKit)
-  .dependsOn(core, `google-provider`)
+  .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`)
 
 lazy val benchmark = project
   .enablePlugins(JmhPlugin)

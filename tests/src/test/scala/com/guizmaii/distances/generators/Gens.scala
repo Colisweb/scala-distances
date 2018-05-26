@@ -1,7 +1,7 @@
 package com.guizmaii.distances.generators
 
 import com.guizmaii.distances.Types._
-import com.guizmaii.distances.providers.Toto
+import com.guizmaii.distances.caches.Toto
 import org.scalacheck.{Arbitrary, Gen}
 import squants.Length
 import squants.space.LengthConversions._

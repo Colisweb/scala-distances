@@ -5,12 +5,10 @@ import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
 import com.guizmaii.distances.Types._
-import com.guizmaii.distances.providers.{CacheProvider, DistanceProvider, InMemoryCacheProvider}
 
 import scala.collection.breakOut
-import scala.concurrent.duration._
 
-class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cacheProvider: CacheProvider[AIO])(implicit AIO: Async[AIO]) {
+class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cache: Cache[AIO])(implicit AIO: Async[AIO]) {
 
   import DistanceApi._
   import cats.implicits._
@@ -26,7 +24,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
     else
       travelModes
         .parTraverse { mode =>
-          cacheProvider
+          cache
             .cachingF(mode, origin, destination) {
               distanceProvider.distance(mode, origin, destination)
             }
@@ -56,7 +54,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
           if (origin == destination) AIO.pure(travelModes.map(mode => (mode, origin, destination) -> Distance.zero))
           else {
             travelModes.parTraverse { mode =>
-              cacheProvider
+              cache
                 .cachingF(mode, origin, destination) {
                   distanceProvider.distance(mode, origin, destination)
                 }
@@ -69,10 +67,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cachePro
 }
 
 object DistanceApi {
-  final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], ttl: Option[Duration]): DistanceApi[AIO] =
-    new DistanceApi(provider, InMemoryCacheProvider(ttl))
-
-  final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], cacheProvider: CacheProvider[AIO]): DistanceApi[AIO] =
+  final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], cacheProvider: Cache[AIO]): DistanceApi[AIO] =
     new DistanceApi(provider, cacheProvider)
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {

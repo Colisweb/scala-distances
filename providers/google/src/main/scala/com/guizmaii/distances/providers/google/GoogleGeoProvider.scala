@@ -3,8 +3,8 @@ package com.guizmaii.distances.providers.google
 import cats.effect.Async
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, Point, PostalCode}
-import com.guizmaii.distances.providers.GeoProvider
 import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
+import com.guizmaii.distances.GeoProvider
 
 /**
   * Remarques:

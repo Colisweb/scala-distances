@@ -1,4 +1,4 @@
-package com.guizmaii.distances.providers
+package com.guizmaii.distances
 
 import cats.effect.Async
 import com.guizmaii.distances.Types.{LatLong, _}

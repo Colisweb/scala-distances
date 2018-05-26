@@ -2,6 +2,7 @@ package com.guizmaii.distances.providers
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
+import com.guizmaii.distances.GeoProvider
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode}
 import com.guizmaii.distances.providers.google.{GoogleGeoApiContext, GoogleGeoProvider}
 import monix.eval.Task

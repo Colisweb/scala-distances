@@ -2,6 +2,7 @@ package com.guizmaii.distances.providers
 
 import cats.effect.{Async, IO}
 import cats.temp.par.Par
+import com.guizmaii.distances.{DistanceProvider, GeoProvider}
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types._
 import com.guizmaii.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}

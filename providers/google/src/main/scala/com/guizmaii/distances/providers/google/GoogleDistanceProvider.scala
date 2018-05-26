@@ -4,9 +4,9 @@ import cats.effect.Async
 import com.google.maps.DistanceMatrixApi
 import com.google.maps.model.TravelMode._
 import com.google.maps.model.{DistanceMatrixElement, LatLng => GoogleLatLng, TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
+import com.guizmaii.distances.DistanceProvider
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving, Unknown}
 import com.guizmaii.distances.Types.{Distance, LatLong, TravelMode}
-import com.guizmaii.distances.providers.DistanceProvider
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
