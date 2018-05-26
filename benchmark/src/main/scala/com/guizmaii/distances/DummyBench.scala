@@ -9,10 +9,10 @@ import org.openjdk.jmh.annotations._
 @BenchmarkMode(Array(Mode.Throughput))
 class DummyBench {
 
-  val dummyCats  = new DummyGeoProvider[IO]
-  val dummyMonix = new DummyGeoProvider[Task]
-  val point      = PostalCode("toto")
-  val latLong    = LatLong(42, 42)
+  final val dummyCats  = new DummyGeoProvider[IO]
+  final val dummyMonix = new DummyGeoProvider[Task]
+  final val point      = PostalCode("toto")
+  final val latLong    = LatLong(42, 42)
 
   final class DummyGeoProvider[AIO[_]](implicit AIO: Async[AIO]) extends GeoProvider[AIO] {
     override private[distances] def geocode(point: Types.Point): AIO[LatLong] = AIO.pure(latLong)
