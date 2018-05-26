@@ -1,6 +1,6 @@
 package com.guizmaii.distances.utils
 
-import cats.effect.Async
+import cats.effect.{Async, Concurrent, IO}
 import cats.kernel.Semigroup
 import com.google.maps.PendingResult
 
@@ -9,13 +9,15 @@ import scala.collection.{TraversableLike, mutable}
 
 private[distances] object RichImplicits {
 
-  implicit final class RichPendingResult[AIO[_], T](val request: PendingResult[T])(implicit AIO: Async[AIO]) {
+  implicit final class RichPendingResult[AIO[_], T](val request: PendingResult[T])(implicit AIO: Concurrent[AIO]) {
     def asEffect: AIO[T] =
-      AIO.async { cb =>
+      AIO.cancelable { cb =>
         request.setCallback(new PendingResult.Callback[T] {
           override def onResult(result: T): Unit     = cb(Right(result))
           override def onFailure(e: Throwable): Unit = cb(Left(e))
         })
+
+        IO(request.cancel())
       }
   }
 

@@ -1,6 +1,6 @@
 package com.guizmaii.distances.providers
 
-import cats.effect.Async
+import cats.effect.{Async, Concurrent}
 import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode, _}
@@ -33,7 +33,7 @@ object GoogleGeoProvider {
   import cats.temp.par._
   import com.guizmaii.distances.utils.RichImplicits._
 
-  final def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): GeoProvider[AIO] = new GeoProvider[AIO] {
+  final def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Concurrent[AIO]): GeoProvider[AIO] = new GeoProvider[AIO] {
 
     private final def rawRequest: GeocodingApiRequest =
       GeocodingApi

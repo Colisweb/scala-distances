@@ -2,7 +2,7 @@ package com.guizmaii.distances.providers
 
 import java.util.concurrent.TimeUnit
 
-import cats.effect.Async
+import cats.effect.{Async, Concurrent}
 import com.google.maps.model.TravelMode._
 import com.google.maps.model.{DistanceMatrixElement, LatLng => GoogleLatLng, TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
 import com.google.maps.{DistanceMatrixApi, GeoApiContext}
@@ -45,19 +45,20 @@ object GoogleDistanceProvider {
   import cats.implicits._
   import com.guizmaii.distances.utils.RichImplicits._
 
-  final def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): DistanceProvider[AIO] = new DistanceProvider[AIO] {
+  final def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Concurrent[AIO]): DistanceProvider[AIO] =
+    new DistanceProvider[AIO] {
 
-    override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
-      DistanceMatrixApi
-        .newRequest(geoApiContext.geoApiContext)
-        .mode(asGoogleTravelMode(mode))
-        .origins(asGoogleLatLng(origin))
-        .destinations(asGoogleLatLng(destination))
-        .units(GoogleDistanceUnit.METRIC)
-        .asEffect
-        .map(r => asDistance(r.rows.head.elements.head))
+      override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
+        DistanceMatrixApi
+          .newRequest(geoApiContext.geoApiContext)
+          .mode(asGoogleTravelMode(mode))
+          .origins(asGoogleLatLng(origin))
+          .destinations(asGoogleLatLng(destination))
+          .units(GoogleDistanceUnit.METRIC)
+          .asEffect
+          .map(r => asDistance(r.rows.head.elements.head))
 
-  }
+    }
 
   @inline
   private[this] final def asGoogleTravelMode(travelMode: TravelMode): GoogleTravelMode = travelMode match {

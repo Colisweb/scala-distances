@@ -1,6 +1,6 @@
 package com.guizmaii.distances.providers
 
-import cats.effect.{Async, IO}
+import cats.effect.{Concurrent, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode}
 import com.guizmaii.distances.providers.GoogleDistanceProvider.GoogleGeoApiContext
@@ -21,7 +21,7 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
   val harnes               = LatLong(latitude = 50.4515282, longitude = 2.9047234)
   val artiguesPresBordeaux = LatLong(latitude = 44.84034490000001, longitude = -0.4408037)
 
-  def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
+  def passTests[AIO[+ _]: Concurrent: Par](runSync: AIO[Any] => Any): Unit = {
 
     val geocoder: GeoProvider[AIO] = GoogleGeoProvider[AIO](geoContext)
 

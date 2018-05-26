@@ -6,6 +6,8 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+- **Google API calls should be cancelable**
+
 ## [v1.0.0-RC2] - 2018.05.16
 
 Breaking changes:
