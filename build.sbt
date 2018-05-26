@@ -21,6 +21,7 @@ lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.0.0
 lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.1.0"
 lazy val enumeratum      = "com.beachape"      %% "enumeratum"          % "1.5.13"
 lazy val `circe-generic` = "io.circe"          %% "circe-generic"       % "0.9.3"
+lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC1"
 
 lazy val scalacache = ((version: String) =>
   Seq(
@@ -44,7 +45,7 @@ lazy val testKit = {
     "org.scalatest"  %% "scalatest"             % "3.0.5",
     "com.beachape"   %% "enumeratum-scalacheck" % "1.5.15",
     "io.circe"       %% "circe-literal"         % "0.9.3",
-    "io.monix"       %% "monix"                 % "3.0.0-RC1"
+    monix
   ) ++ kantancsv
 }.map(_ % Test)
 
@@ -104,6 +105,7 @@ lazy val tests = project
 lazy val benchmark = project
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
+  .settings(libraryDependencies += monix)
   .dependsOn(core)
 
 //// Publishing settings
