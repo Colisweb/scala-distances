@@ -62,12 +62,11 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
 
       implicitly[CellDecoder[CNil]] // IntelliJ doesn't understand that `import kantan.csv.generic._` is required.
 
-      final case class TestAddress(line1: String, postalCode: String, town: String, lat: String, long: String)
-      object TestAddress {
-        def toAddressAndLatLong(addr: TestAddress): (NonAmbiguousAddress, LatLong) =
-          NonAmbiguousAddress(line1 = addr.line1, line2 = "", postalCode = addr.postalCode, town = addr.town, country = "France") -> LatLong(
-            latitude = addr.lat.toDouble,
-            longitude = addr.long.toDouble)
+      final case class TestAddress(line1: String, postalCode: String, town: String, lat: String, long: String) {
+        def toAddressAndLatLong: (NonAmbiguousAddress, LatLong) =
+          NonAmbiguousAddress(line1 = this.line1, line2 = "", postalCode = this.postalCode, town = this.town, country = "France") -> LatLong(
+            latitude = this.lat.toDouble,
+            longitude = this.long.toDouble)
       }
 
       val rawData =
@@ -95,7 +94,7 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |""".stripMargin.drop(1).dropRight(1)
 
       val data: Seq[(NonAmbiguousAddress, LatLong)] =
-        rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(TestAddress.toAddressAndLatLong)
+        rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(_.toAddressAndLatLong)
 
       def testNonAmbigueAddressGeocoder: ((NonAmbiguousAddress, LatLong)) => Unit = { (address: NonAmbiguousAddress, latLong: LatLong) =>
         s"$address should be located at $latLong}" in {
