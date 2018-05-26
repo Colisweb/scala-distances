@@ -90,7 +90,7 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |108 rue de Richelieu;75002;PARIS;48.8714406;2.3398815
            |24 AVENUE MARIE ALEXIS;76370;PETIT CAUX;49.95763789999999;1.2224194
            |8 RUE FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
-           |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
+           |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8635218;-0.4927134
            |""".stripMargin.drop(1).dropRight(1)
 
       val data: Seq[(NonAmbiguousAddress, LatLong)] =
