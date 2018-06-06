@@ -78,6 +78,11 @@ lazy val `google-provider` = project
   .settings(libraryDependencies += googleMaps)
   .dependsOn(core)
 
+lazy val `maths-provider` = project
+  .in(file("providers/maths"))
+  .settings(moduleName := "scala-distances-maths")
+  .dependsOn(core)
+
 //// Caches
 
 lazy val `redis-cache` = project
