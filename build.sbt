@@ -14,6 +14,8 @@ scalafmtSbtCheck in ThisBuild := true
 
 //// Dependencies
 
+val scalaCacheVersion = "0.24.2"
+
 lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.2.7"
 lazy val squants         = "org.typelevel"     %% "squants"             % "1.3.0"
 lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.1.0"
@@ -23,14 +25,12 @@ lazy val enumeratum      = "com.beachape"      %% "enumeratum"          % "1.5.1
 lazy val `circe-generic` = "io.circe"          %% "circe-generic"       % "0.9.3"
 lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC1"
 
-lazy val scalacache = ((version: String) =>
+lazy val scalacacheCore =
   Seq(
-    "com.github.cb372" %% "scalacache-core"        % version,
-    "com.github.cb372" %% "scalacache-cats-effect" % version,
-    "com.github.cb372" %% "scalacache-circe"       % version,
-    "com.github.cb372" %% "scalacache-caffeine"    % version,
-    "com.github.cb372" %% "scalacache-redis"       % version
-  ))("0.24.1")
+    "com.github.cb372" %% "scalacache-core"        % scalaCacheVersion,
+    "com.github.cb372" %% "scalacache-cats-effect" % scalaCacheVersion,
+    "com.github.cb372" %% "scalacache-circe"       % scalaCacheVersion,
+  )
 
 lazy val testKit = {
   val kantancsv = ((version: String) =>
@@ -68,7 +68,7 @@ lazy val core = project
       `cats-par`,
       enumeratum,
       `circe-generic`
-    ) ++ scalacache ++ testKit)
+    ) ++ scalacacheCore ++ testKit)
 
 //// Providers
 
@@ -83,11 +83,13 @@ lazy val `google-provider` = project
 lazy val `redis-cache` = project
   .in(file("caches/redis"))
   .settings(moduleName := "scala-distances-redis")
+  .settings(libraryDependencies += "com.github.cb372" %% "scalacache-redis" % scalaCacheVersion)
   .dependsOn(core)
 
 lazy val `caffeine-cache` = project
   .in(file("caches/caffeine"))
   .settings(moduleName := "scala-distances-caffeine")
+  .settings(libraryDependencies += "com.github.cb372" %% "scalacache-caffeine" % scalaCacheVersion)
   .dependsOn(core)
 
 lazy val `no-cache` = project
