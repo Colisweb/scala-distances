@@ -28,7 +28,8 @@ class TraversableLikeOpsSpec extends WordSpec with Matchers with ScalaFutures wi
 
       val res = List(a00, a01, a11, a21, a22, a23, a24).combineDuplicatesOn { case DirectedPath(o, d, _) => (o, d) }(
         DistanceApi invokePrivate directedPathSemiGroup(),
-        breakOut)
+        breakOut
+      )
 
       res.head shouldBe DirectedPath(LatLong(42.0, 42.0), LatLong(43.0, 43.0), Driving :: Bicycling :: Unknown :: Nil)
     }
@@ -41,7 +42,8 @@ class TraversableLikeOpsSpec extends WordSpec with Matchers with ScalaFutures wi
       val b02 = DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Unknown :: Nil)
       val res = wrapRefArray(Array(a00, a01, a11, b00, b01, b02)).combineDuplicatesOn { case DirectedPath(o, d, _) => (o, d) }(
         DistanceApi invokePrivate directedPathSemiGroup(),
-        breakOut)
+        breakOut
+      )
 
       res shouldBe Vector(
         DirectedPath(LatLong(1.0, 1.0), LatLong(2.0, 2.0), Driving :: Unknown :: Nil),

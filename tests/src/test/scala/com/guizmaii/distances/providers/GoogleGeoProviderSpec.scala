@@ -66,7 +66,8 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
         def toAddressAndLatLong: (NonAmbiguousAddress, LatLong) =
           NonAmbiguousAddress(line1 = this.line1, line2 = "", postalCode = this.postalCode, town = this.town, country = "France") -> LatLong(
             latitude = this.lat.toDouble,
-            longitude = this.long.toDouble)
+            longitude = this.long.toDouble
+          )
       }
 
       val rawData =
