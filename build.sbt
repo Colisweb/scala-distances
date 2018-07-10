@@ -70,6 +70,13 @@ lazy val core = project
       `circe-generic`
     ) ++ scalacacheCore ++ testKit)
 
+//// Helpers
+
+lazy val `futures` = project
+  .in(file("futures"))
+  .settings(moduleName := "scala-distances-futures")
+  .dependsOn(core)
+
 //// Providers
 
 lazy val `google-provider` = project
