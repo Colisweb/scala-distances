@@ -21,11 +21,13 @@ private[distances] object Implicits {
       * @return
       */
     def combineDuplicatesOn[B, That](key: A => B)(implicit A: Semigroup[A], bf: CanBuildFrom[Repr, A, That]): That = {
+      import cats.syntax.monoid._
+
       val acc: mutable.Map[B, A] = mutable.Map()
 
       for (a <- coll) {
         val k: B = key(a)
-        acc += k -> acc.get(k).fold(a)(A.combine(_, a))
+        acc += k -> acc.get(k).fold(a)(_ |+| a)
       }
 
       val builder = bf(coll.repr)
