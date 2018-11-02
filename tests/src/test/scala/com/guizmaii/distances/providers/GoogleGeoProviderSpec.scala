@@ -1,6 +1,7 @@
 package com.guizmaii.distances.providers
 
-import cats.effect.{Async, IO}
+import cats.effect.internals.IOContextShift
+import cats.effect.{Async, ContextShift, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.GeoProvider
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode}
@@ -10,6 +11,7 @@ import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import shapeless.CNil
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -22,9 +24,9 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
   val harnes               = LatLong(latitude = 50.4515282, longitude = 2.9047234)
   val artiguesPresBordeaux = LatLong(latitude = 44.84034490000001, longitude = -0.4408037)
 
-  def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
+  def passTests[F[+ _]: Async: Par](runSync: F[Any] => Any): Unit = {
 
-    val geocoder: GeoProvider[AIO] = GoogleGeoProvider[AIO](geoContext)
+    val geocoder: GeoProvider[F] = GoogleGeoProvider[F](geoContext)
 
     /*
     Remarque Jules:
@@ -79,12 +81,12 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |24 rue dauphine;75006;PARIS;48.8549537;2.3393333
            |30 PLACE DE LA MADELEINE;75008;PARIS;48.8708155;2.325606
            |50 rue du Docteur Blanche;75016;Paris;48.8528274;2.2643836
-           |16 RUE SAINT FIACRE  - 75002 PARIS;75002;PARIS;48.8703821;2.3459086
+           |16 RUE SAINT FIACRE  - 75002 PARIS;75002;PARIS;48.87038;2.3457822
            |4 RUE DE SONTAY;75116;PARIS;48.8703854;2.2846272
-           |7 rue Victorien Sardou;75016;Paris;48.8428041;2.2675564
+           |7 rue Victorien Sardou;75016;Paris;48.8428143;2.2676126
            |62 avenue des champs elysee;75008;Paris;48.8708509;2.3056707
            |233 Boulevard Voltaire 75011 Paris;75011;Paris 75011;48.8512903;2.3914116
-           |13 rue Henri Barbusse;92230;GENNEVILLIERS;48.9182397;2.2967879
+           |13 rue Henri Barbusse;92230;GENNEVILLIERS;48.918883;2.297148
            |35 boulevard d'Exelmans;75016;PARIS;48.84135999999999;2.2633114
            |95 avenue du General Leclerc;75014;Paris;48.8260975;2.3273668
            |12 rue de l'Assomption;75016;Paris;48.85349;2.2744602
@@ -109,6 +111,9 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
 
   "GoogleGeocoder" should {
     "pass tests with cats-effect IO" should {
+      val globalEC: ExecutionContext     = ExecutionContext.global
+      implicit val ctx: ContextShift[IO] = IOContextShift.apply(globalEC)
+
       passTests[IO](_.unsafeRunSync())
     }
     "pass tests with Monix Task" should {

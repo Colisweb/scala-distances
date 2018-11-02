@@ -8,7 +8,7 @@ import com.guizmaii.distances.Types._
 
 import scala.collection.breakOut
 
-class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cache: Cache[AIO])(implicit AIO: Async[AIO]) {
+class DistanceApi[F[_]: Par](distanceProvider: DistanceProvider[F], cache: Cache[F])(implicit F: Async[F]) {
 
   import DistanceApi._
   import cats.implicits._
@@ -19,8 +19,8 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cache: C
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode]
-  ): AIO[Map[TravelMode, Distance]] =
-    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero)(breakOut))
+  ): F[Map[TravelMode, Distance]] =
+    if (origin == destination) F.pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       travelModes
         .parTraverse { mode =>
@@ -32,16 +32,16 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cache: C
         }
         .map(_.toMap)
 
-  final def distanceFromPostalCodes(geocoder: Geocoder[AIO])(
+  final def distanceFromPostalCodes(geocoder: Geocoder[F])(
       origin: PostalCode,
       destination: PostalCode,
       travelModes: List[TravelMode]
-  ): AIO[Map[TravelMode, Distance]] =
-    if (origin == destination) AIO.pure(travelModes.map(_ -> Distance.zero)(breakOut))
+  ): F[Map[TravelMode, Distance]] =
+    if (origin == destination) F.pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
-  final def distances(paths: Seq[DirectedPath]): AIO[Map[(TravelMode, LatLong, LatLong), Distance]] = {
+  final def distances(paths: Seq[DirectedPath]): F[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     val combinedDirectedPaths: List[DirectedPath] =
       paths
         .filter(_.travelModes.nonEmpty)
@@ -51,7 +51,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cache: C
     Parallel
       .parFlatTraverse(combinedDirectedPaths) {
         case DirectedPath(origin, destination, travelModes) =>
-          if (origin == destination) AIO.pure(travelModes.map(mode => (mode, origin, destination) -> Distance.zero))
+          if (origin == destination) F.pure(travelModes.map(mode => (mode, origin, destination) -> Distance.zero))
           else {
             travelModes.parTraverse { mode =>
               cache
@@ -67,7 +67,7 @@ class DistanceApi[AIO[_]: Par](distanceProvider: DistanceProvider[AIO], cache: C
 }
 
 object DistanceApi {
-  final def apply[AIO[_]: Async: Par](provider: DistanceProvider[AIO], cacheProvider: Cache[AIO]): DistanceApi[AIO] =
+  final def apply[F[_]: Async: Par](provider: DistanceProvider[F], cacheProvider: Cache[F]): DistanceApi[F] =
     new DistanceApi(provider, cacheProvider)
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {

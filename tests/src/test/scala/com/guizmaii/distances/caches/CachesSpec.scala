@@ -52,20 +52,20 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
       }
     """
 
-  def tests[AIO[+ _]](cacheImpl: () => Cache[AIO])(runSync: AIO[Any] => Any)(implicit AIO: Async[AIO]): Unit = {
+  def tests[F[+ _]](cacheImpl: () => Cache[F])(runSync: F[Any] => Any)(implicit F: Async[F]): Unit = {
     val cache = cacheImpl()
 
-    implicit final class RichCacheProvider(val cache: Cache[AIO]) {
+    implicit final class RichCacheProvider(val cache: Cache[F]) {
       import scalacache.CatsEffect.modes.async
 
-      def removeAll(): AIO[Any] = cache.innerCache.removeAll[AIO]()(async[AIO])
+      def removeAll(): F[Any] = cache.innerCache.removeAll[F]()(async[F])
     }
 
     "cache" should {
       "save things" in {
         forAll(travelModeGen, latLongGen, latLongGen, distaceGen) { (mode, origin, destination, distance) =>
-          runSync(cache.cachingF(mode, origin, destination)(AIO.pure(distance))) shouldBe distance
-          runSync(cache.cachingF(mode, origin, destination)(AIO.raiseError(new RuntimeException).asInstanceOf[AIO[Distance]])) shouldBe distance
+          runSync(cache.cachingF(mode, origin, destination)(F.pure(distance))) shouldBe distance
+          runSync(cache.cachingF(mode, origin, destination)(F.raiseError(new RuntimeException).asInstanceOf[F[Distance]])) shouldBe distance
           runSync(cache.removeAll())
         }
       }
