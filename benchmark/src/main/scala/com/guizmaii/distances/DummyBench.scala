@@ -27,7 +27,7 @@ class DummyBench {
 
   @Benchmark
   def DummyGeoProviderWithMonix(): Unit = {
-    dummyMonix.geocode(point).runAsync
+    dummyMonix.geocode(point).runToFuture
 
     ()
   }

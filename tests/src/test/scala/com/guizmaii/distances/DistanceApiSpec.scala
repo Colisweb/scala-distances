@@ -1,7 +1,7 @@
 package com.guizmaii.distances
 
-import cats.effect.{Async, IO}
-import cats.temp.par.Par
+import cats.effect.internals.IOContextShift
+import cats.effect.{Async, ContextShift, IO}
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving}
 import com.guizmaii.distances.Types.{Distance, LatLong, PostalCode, _}
 import com.guizmaii.distances.caches.CaffeineCache
@@ -11,12 +11,17 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import squants.space.LengthConversions._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
+  import cats.temp.par._
   import com.guizmaii.distances.utils.Stubs._
+
+  val globalEC: ExecutionContext     = ExecutionContext.global
+  implicit val ctx: ContextShift[IO] = IOContextShift.apply(globalEC)
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
 
@@ -66,8 +71,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
               .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
 
             results shouldBe Map(
-              (Driving, paris01, paris02) -> Distance(1680.0 meters, 492 seconds),
-              (Driving, paris01, paris18) -> Distance(4747.0 meters, 1215 seconds)
+              (Driving, paris01, paris02) -> Distance(1680.0 meters, 471 seconds),
+              (Driving, paris01, paris18) -> Distance(4747.0 meters, 1136 seconds)
             )
 
             results((Driving, paris01, paris02)).length should be < results((Driving, paris01, paris18)).length

@@ -1,15 +1,17 @@
 package com.guizmaii.distances.providers
 
-import cats.effect.{Async, IO}
+import cats.effect.internals.IOContextShift
+import cats.effect.{Async, ContextShift, IO}
 import cats.temp.par.Par
-import com.guizmaii.distances.{DistanceProvider, GeoProvider}
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types._
 import com.guizmaii.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}
+import com.guizmaii.distances.{DistanceProvider, GeoProvider}
 import monix.eval.Task
 import org.scalatest.{Matchers, WordSpec}
 import squants.space.LengthConversions._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -34,8 +36,8 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
       val distanceBetween01And02 = runSync(distanceApi.distance(Driving, paris01, paris02)).asInstanceOf[Distance]
       val distanceBetween01And18 = runSync(distanceApi.distance(Driving, paris01, paris18)).asInstanceOf[Distance]
 
-      distanceBetween01And02 shouldBe Distance(1680.0 meters, 492 seconds)
-      distanceBetween01And18 shouldBe Distance(4747.0 meters, 1215 seconds)
+      distanceBetween01And02 shouldBe Distance(1680.0 meters, 471 seconds)
+      distanceBetween01And18 shouldBe Distance(4747.0 meters, 1136 seconds)
 
       distanceBetween01And02.length should be < distanceBetween01And18.length
       distanceBetween01And02.duration should be < distanceBetween01And18.duration
@@ -44,6 +46,9 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
   "GoogleDistanceProvider.distances" should {
     "pass tests with cats-effect IO" should {
+      val globalEC: ExecutionContext     = ExecutionContext.global
+      implicit val ctx: ContextShift[IO] = IOContextShift.apply(globalEC)
+
       passTests[IO](_.unsafeRunSync())
     }
     "pass tests with Monix Task" should {

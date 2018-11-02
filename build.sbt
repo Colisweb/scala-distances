@@ -2,7 +2,7 @@ import sbt.Keys.crossScalaVersions
 
 organization in ThisBuild := "com.guizmaii"
 
-lazy val scala212 = "2.12.6"
+lazy val scala212 = "2.12.7"
 lazy val scala211 = "2.11.12"
 
 scalaVersion in ThisBuild := scala212
@@ -14,16 +14,17 @@ scalafmtSbtCheck in ThisBuild := true
 
 //// Dependencies
 
-val scalaCacheVersion = "0.24.2"
+val scalaCacheVersion = "0.26.0"
+val circeVersion = "0.10.1"
 
-lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.2.7"
+lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.0"
 lazy val squants         = "org.typelevel"     %% "squants"             % "1.3.0"
-lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.1.0"
-lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.0.0-RC2"
-lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.1.0"
+lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.4.0"
+lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.0.0"
+lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.2.0"
 lazy val enumeratum      = "com.beachape"      %% "enumeratum"          % "1.5.13"
-lazy val `circe-generic` = "io.circe"          %% "circe-generic"       % "0.9.3"
-lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC1"
+lazy val `circe-generic` = "io.circe"          %% "circe-generic"       % circeVersion
+lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC2-c84f485"
 
 lazy val scalacacheCore =
   Seq(
@@ -44,7 +45,7 @@ lazy val testKit = {
     "org.scalacheck" %% "scalacheck"            % "1.14.0",
     "org.scalatest"  %% "scalatest"             % "3.0.5",
     "com.beachape"   %% "enumeratum-scalacheck" % "1.5.15",
-    "io.circe"       %% "circe-literal"         % "0.9.3",
+    "io.circe"       %% "circe-literal"         % circeVersion,
     monix
   ) ++ kantancsv
 }.map(_ % Test)
