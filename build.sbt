@@ -15,16 +15,17 @@ scalafmtSbtCheck in ThisBuild := true
 //// Dependencies
 
 val scalaCacheVersion = "0.26.0"
-val circeVersion = "0.10.1"
+val circeVersion      = "0.10.1"
 
-lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.0"
-lazy val squants         = "org.typelevel"     %% "squants"             % "1.3.0"
-lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.4.0"
-lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.0.0"
-lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.2.0"
-lazy val enumeratum      = "com.beachape"      %% "enumeratum"          % "1.5.13"
-lazy val `circe-generic` = "io.circe"          %% "circe-generic"       % circeVersion
-lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC2-c84f485"
+lazy val googleMaps      = "com.google.maps"      % "google-maps-services" % "0.9.0"
+lazy val squants         = "org.typelevel"        %% "squants"             % "1.3.0"
+lazy val cats            = "org.typelevel"        %% "cats-core"           % "1.4.0"
+lazy val `cats-effect`   = "org.typelevel"        %% "cats-effect"         % "1.0.0"
+lazy val `cats-par`      = "io.chrisdavenport"    %% "cats-par"            % "0.2.0"
+lazy val enumeratum      = "com.beachape"         %% "enumeratum"          % "1.5.13"
+lazy val `circe-generic` = "io.circe"             %% "circe-generic"       % circeVersion
+lazy val monix           = "io.monix"             %% "monix"               % "3.0.0-RC2-c84f485"
+lazy val simulacrum      = "com.github.mpilquist" %% "simulacrum"          % "0.14.0"
 
 lazy val scalacacheCore =
   Seq(
@@ -68,7 +69,8 @@ lazy val core = project
       `cats-effect`,
       `cats-par`,
       enumeratum,
-      `circe-generic`
+      `circe-generic`,
+      simulacrum
     ) ++ scalacacheCore ++ testKit)
 
 //// Providers

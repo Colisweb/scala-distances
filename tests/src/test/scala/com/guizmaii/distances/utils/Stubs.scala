@@ -7,9 +7,12 @@ import com.guizmaii.distances.caches.NoCache
 
 object Stubs {
 
-  def distanceProviderStub[F[_]: Async]: DistanceProvider[F] = new DistanceProvider[F] {
-    override def distance(mode: Types.TravelMode, origin: LatLong, destination: LatLong): F[Types.Distance] = ???
-  }
+  def distanceProviderStub[F[_]](implicit async: Async[F]): DistanceProvider[F] =
+    new DistanceProvider[F] {
+      override def distance(mode: Types.TravelMode, origin: LatLong, destination: LatLong): F[Types.Distance] = ???
+
+      override val F: Async[F] = async
+    }
 
   def geoProviderStub[F[_]: Async]: GeoProvider[F] = new GeoProvider[F] {
     override def geocode(point: Types.Point): F[LatLong] = ???

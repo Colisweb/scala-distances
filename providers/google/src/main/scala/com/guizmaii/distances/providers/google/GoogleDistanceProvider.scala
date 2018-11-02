@@ -17,7 +17,7 @@ object GoogleDistanceProvider {
   import com.guizmaii.distances.providers.google.utils.Implicits._
   import squants.space.LengthConversions._
 
-  final def apply[F[_]: Async](geoApiContext: GoogleGeoApiContext): DistanceProvider[F] =
+  final def apply[F[_]](geoApiContext: GoogleGeoApiContext)(implicit async: Async[F]): DistanceProvider[F] =
     new DistanceProvider[F] {
 
       override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
@@ -30,6 +30,7 @@ object GoogleDistanceProvider {
           .asEffect
           .map(r => asDistance(r.rows.head.elements.head))
 
+      override val F: Async[F] = async
     }
 
   @inline

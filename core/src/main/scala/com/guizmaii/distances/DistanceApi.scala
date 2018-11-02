@@ -4,15 +4,23 @@ import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
 import com.guizmaii.distances.Types._
+import simulacrum.typeclass
 
 import scala.collection.breakOut
 
-class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache: Cache[F]) {
+@typeclass
+trait DistanceApi[F[_]] {
 
   import DistanceApi._
   import cats.implicits._
   import cats.temp.par._
   import com.guizmaii.distances.utils.Implicits._
+
+  implicit def F: Async[F]
+  implicit def P: Par[F]
+
+  def distanceProvider: DistanceProvider[F]
+  def cache: Cache[F]
 
   final def distance(
       origin: LatLong,
@@ -65,8 +73,21 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
 }
 
 object DistanceApi {
-  final def apply[F[_]: Async: Par](provider: DistanceProvider[F], cacheProvider: Cache[F]): DistanceApi[F] =
-    new DistanceApi(provider, cacheProvider)
+  final def apply[F[_]]()(implicit async: Async[F], par: Par[F], distanceProvider0: DistanceProvider[F], cache0: Cache[F]): DistanceApi[F] =
+    new DistanceApi[F] {
+      override implicit val F: Async[F]                  = async
+      override implicit val P: Par[F]                    = par
+      override val distanceProvider: DistanceProvider[F] = distanceProvider0
+      override val cache: Cache[F]                       = cache0
+    }
+
+  final def apply[F[_]](distanceProvider0: DistanceProvider[F], cache0: Cache[F])(implicit async: Async[F], par: Par[F]): DistanceApi[F] =
+    new DistanceApi[F] {
+      override implicit val F: Async[F]                  = async
+      override implicit val P: Par[F]                    = par
+      override val distanceProvider: DistanceProvider[F] = distanceProvider0
+      override val cache: Cache[F]                       = cache0
+    }
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] =
     new Semigroup[DirectedPath] {
