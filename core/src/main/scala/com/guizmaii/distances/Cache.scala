@@ -6,7 +6,7 @@ import scalacache.{Cache => InnerCache}
 
 import scala.concurrent.duration.Duration
 
-abstract class Cache[F[_]](ttl: Option[Duration])(implicit F: Async[F]) {
+abstract class Cache[F[_]: Async](ttl: Option[Duration]) {
 
   import cats.implicits._
   import scalacache.CatsEffect.modes.async
@@ -20,6 +20,6 @@ abstract class Cache[F[_]](ttl: Option[Duration])(implicit F: Async[F]) {
   ): F[V] =
     innerCache
       .cachingF(keyParts: _*)(ttl)(f.map(encoder.apply))
-      .flatMap(json => F.fromEither(decoder.decodeJson(json)))
+      .flatMap(json => Async[F].fromEither(decoder.decodeJson(json)))
 
 }
