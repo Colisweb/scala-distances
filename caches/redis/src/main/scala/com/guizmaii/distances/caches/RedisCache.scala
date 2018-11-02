@@ -11,8 +11,8 @@ object RedisCache {
 
   import scalacache.redis.{RedisCache => InnerRedisCache}
 
-  final def apply[AIO[_]: effect.Async](config: RedisConfiguration, ttl: Option[Duration]): Cache[AIO] =
-    new Cache[AIO](ttl) {
+  final def apply[F[_]: effect.Async](config: RedisConfiguration, ttl: Option[Duration]): Cache[F] =
+    new Cache[F](ttl) {
       import scalacache.serialization.circe._
       override private[distances] implicit final val innerCache: InnerCache[Json] = InnerRedisCache[Json](config.jedisPool)
     }

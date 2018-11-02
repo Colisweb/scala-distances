@@ -11,8 +11,8 @@ object CaffeineCache {
 
   import scalacache.caffeine.{CaffeineCache => InnerCaffeineCache}
 
-  final def apply[AIO[_]: effect.Async](ttl: Option[Duration]): Cache[AIO] =
-    new Cache[AIO](ttl) {
+  final def apply[F[_]: effect.Async](ttl: Option[Duration]): Cache[F] =
+    new Cache[F](ttl) {
       override private[distances] implicit final val innerCache: InnerCache[Json] = InnerCaffeineCache[Json]
     }
 

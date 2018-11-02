@@ -3,8 +3,8 @@ package com.guizmaii.distances
 import cats.effect.Async
 import com.guizmaii.distances.Types.{LatLong, _}
 
-abstract class DistanceProvider[AIO[_]: Async] {
+abstract class DistanceProvider[F[_]: Async] {
 
-  private[distances] def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance]
+  private[distances] def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance]
 
 }

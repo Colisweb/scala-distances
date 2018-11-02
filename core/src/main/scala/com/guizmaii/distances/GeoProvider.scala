@@ -3,8 +3,8 @@ package com.guizmaii.distances
 import cats.effect.Async
 import com.guizmaii.distances.Types.{LatLong, _}
 
-abstract class GeoProvider[AIO[_]: Async] {
+abstract class GeoProvider[F[_]: Async] {
 
-  private[distances] def geocode(point: Point): AIO[LatLong]
+  private[distances] def geocode(point: Point): F[LatLong]
 
 }

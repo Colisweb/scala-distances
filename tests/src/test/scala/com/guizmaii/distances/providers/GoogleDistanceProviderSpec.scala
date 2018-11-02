@@ -19,10 +19,10 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
 
-  def passTests[AIO[+ _]: Async: Par](runSync: AIO[Any] => Any): Unit = {
+  def passTests[F[+ _]: Async: Par](runSync: F[Any] => Any): Unit = {
 
-    val geocoder: GeoProvider[AIO]         = GoogleGeoProvider[AIO](geoContext)
-    val distanceApi: DistanceProvider[AIO] = GoogleDistanceProvider[AIO](geoContext)
+    val geocoder: GeoProvider[F]         = GoogleGeoProvider[F](geoContext)
+    val distanceApi: DistanceProvider[F] = GoogleDistanceProvider[F](geoContext)
 
     s"says that Paris 02 is nearest to Paris 01 than Paris 18" in {
       val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]

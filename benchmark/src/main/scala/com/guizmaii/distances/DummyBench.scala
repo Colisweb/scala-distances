@@ -14,8 +14,8 @@ class DummyBench {
   final val point      = PostalCode("toto")
   final val latLong    = LatLong(42, 42)
 
-  final class DummyGeoProvider[AIO[_]](implicit AIO: Async[AIO]) extends GeoProvider[AIO] {
-    override private[distances] def geocode(point: Types.Point): AIO[LatLong] = AIO.pure(latLong)
+  final class DummyGeoProvider[F[_]](implicit F: Async[F]) extends GeoProvider[F] {
+    override private[distances] def geocode(point: Types.Point): F[LatLong] = F.pure(latLong)
   }
 
   @Benchmark

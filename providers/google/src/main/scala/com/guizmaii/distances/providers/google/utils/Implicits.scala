@@ -5,9 +5,9 @@ import com.google.maps.PendingResult
 
 private[google] object Implicits {
 
-  implicit final class PendingResultOps[AIO[_], T](val request: PendingResult[T])(implicit AIO: Async[AIO]) {
-    def asEffect: AIO[T] =
-      AIO.async { cb =>
+  implicit final class PendingResultOps[F[_], T](val request: PendingResult[T])(implicit F: Async[F]) {
+    def asEffect: F[T] =
+      F.async { cb =>
         request.setCallback(new PendingResult.Callback[T] {
           override def onResult(result: T): Unit     = cb(Right(result))
           override def onFailure(e: Throwable): Unit = cb(Left(e))
@@ -15,7 +15,7 @@ private[google] object Implicits {
       }
   }
 
-  implicit final class Tuple3AsyncOps[AIO[_], A](val instance: (AIO[A], AIO[A], AIO[A]))(implicit AIO: Async[AIO]) {
+  implicit final class Tuple3AsyncOps[F[_], A](val instance: (F[A], F[A], F[A]))(implicit F: Async[F]) {
     import cats.implicits._
     import cats.temp.par._
 
@@ -28,14 +28,14 @@ private[google] object Implicits {
       * else return the error of last one.
       *
       */
-    def raceInOrder3(implicit par: Par[AIO]): AIO[A] = {
+    def raceInOrder3(implicit par: Par[F]): F[A] = {
       val (a, b, c) = instance
       (a.attempt, b.attempt, c.attempt).parTupled
         .flatMap {
-          case (Right(v), _, _)             => AIO.pure(v)
-          case (Left(_), Right(v), _)       => AIO.pure(v)
-          case (Left(_), Left(_), Right(v)) => AIO.pure(v)
-          case (Left(_), Left(_), Left(e))  => AIO.raiseError(e)
+          case (Right(v), _, _)             => F.pure(v)
+          case (Left(_), Right(v), _)       => F.pure(v)
+          case (Left(_), Left(_), Right(v)) => F.pure(v)
+          case (Left(_), Left(_), Left(e))  => F.raiseError(e)
         }
     }
   }

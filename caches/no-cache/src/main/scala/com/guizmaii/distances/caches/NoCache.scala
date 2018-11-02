@@ -7,15 +7,15 @@ import scalacache.{Cache => InnerCache}
 
 object NoCache {
 
-  final def apply[AIO[_]: effect.Async](): Cache[AIO] =
-    new Cache[AIO](None) {
+  final def apply[F[_]: effect.Async](): Cache[F] =
+    new Cache[F](None) {
       override private[distances] implicit final val innerCache: InnerCache[Json] = null
 
       @inline
-      override private[distances] def cachingF[V](keyParts: Any*)(f: => AIO[V])(
+      override private[distances] def cachingF[V](keyParts: Any*)(f: => F[V])(
           implicit decoder: Decoder[V],
           encoder: Encoder[V]
-      ): AIO[V] = f
+      ): F[V] = f
     }
 
 }

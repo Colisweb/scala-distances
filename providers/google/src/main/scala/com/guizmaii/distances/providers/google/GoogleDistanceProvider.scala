@@ -17,9 +17,9 @@ object GoogleDistanceProvider {
   import com.guizmaii.distances.providers.google.utils.Implicits._
   import squants.space.LengthConversions._
 
-  final def apply[AIO[_]](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): DistanceProvider[AIO] = new DistanceProvider[AIO] {
+  final def apply[F[_]](geoApiContext: GoogleGeoApiContext)(implicit F: Async[F]): DistanceProvider[F] = new DistanceProvider[F] {
 
-    override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): AIO[Distance] =
+    override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
       DistanceMatrixApi
         .newRequest(geoApiContext.geoApiContext)
         .mode(asGoogleTravelMode(mode))

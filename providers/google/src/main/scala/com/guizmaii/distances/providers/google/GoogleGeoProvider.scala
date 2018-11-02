@@ -27,7 +27,7 @@ object GoogleGeoProvider {
   import cats.temp.par._
   import com.guizmaii.distances.providers.google.utils.Implicits._
 
-  final def apply[AIO[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit AIO: Async[AIO]): GeoProvider[AIO] = new GeoProvider[AIO] {
+  final def apply[F[_]: Par](geoApiContext: GoogleGeoApiContext)(implicit F: Async[F]): GeoProvider[F] = new GeoProvider[F] {
 
     private final def rawRequest: GeocodingApiRequest =
       GeocodingApi
@@ -35,7 +35,7 @@ object GoogleGeoProvider {
         .region("eu")
         .language("fr")
 
-    override private[distances] final def geocode(point: Point): AIO[LatLong] = point match {
+    override private[distances] final def geocode(point: Point): F[LatLong] = point match {
 
       case postalCode: PostalCode =>
         rawRequest
@@ -66,7 +66,7 @@ object GoogleGeoProvider {
        * TODO: The next step for this lib is to implement this more clever solution, but for now, use this method preferably with good quality data and/or with caution.
        */
       case address: NonAmbiguousAddress =>
-        def fetch(addr: NonAmbiguousAddress): AIO[LatLong] =
+        def fetch(addr: NonAmbiguousAddress): F[LatLong] =
           rawRequest
             .components(ComponentFilter.country(addr.country))
             .components(ComponentFilter.postalCode(addr.postalCode))
