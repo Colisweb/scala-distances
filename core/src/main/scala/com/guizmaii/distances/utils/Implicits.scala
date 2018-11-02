@@ -21,7 +21,7 @@ private[distances] object Implicits {
       * @return
       */
     def combineDuplicatesOn[B, That](key: A => B)(implicit A: Semigroup[A], bf: CanBuildFrom[Repr, A, That]): That = {
-      import cats.syntax.monoid._
+      import cats.syntax.semigroup._
 
       val acc: mutable.Map[B, A] = mutable.Map()
 
