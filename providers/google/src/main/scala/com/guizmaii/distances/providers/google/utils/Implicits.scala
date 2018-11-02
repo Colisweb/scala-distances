@@ -5,8 +5,8 @@ import com.google.maps.PendingResult
 
 private[google] object Implicits {
 
-  implicit final class PendingResultOps[F[_], T](val request: PendingResult[T])(implicit F: Async[F]) {
-    def asEffect: F[T] =
+  implicit final class PendingResultOps[F[_], T](val request: PendingResult[T]) {
+    def asEffect(implicit F: Async[F]): F[T] =
       F.async { cb =>
         request.setCallback(new PendingResult.Callback[T] {
           override def onResult(result: T): Unit     = cb(Right(result))
@@ -15,7 +15,7 @@ private[google] object Implicits {
       }
   }
 
-  implicit final class Tuple3AsyncOps[F[_], A](val instance: (F[A], F[A], F[A]))(implicit F: Async[F]) {
+  implicit final class Tuple3AsyncOps[F[_], A](val instance: (F[A], F[A], F[A])) {
     import cats.implicits._
     import cats.temp.par._
 
@@ -28,7 +28,7 @@ private[google] object Implicits {
       * else return the error of last one.
       *
       */
-    def raceInOrder3(implicit par: Par[F]): F[A] = {
+    def raceInOrder3(implicit F: Async[F], par: Par[F]): F[A] = {
       val (a, b, c) = instance
       (a.attempt, b.attempt, c.attempt).parTupled
         .flatMap {

@@ -17,26 +17,28 @@ object GoogleDistanceProvider {
   import com.guizmaii.distances.providers.google.utils.Implicits._
   import squants.space.LengthConversions._
 
-  final def apply[F[_]](geoApiContext: GoogleGeoApiContext)(implicit F: Async[F]): DistanceProvider[F] = new DistanceProvider[F] {
+  final def apply[F[_]: Async](geoApiContext: GoogleGeoApiContext): DistanceProvider[F] =
+    new DistanceProvider[F] {
 
-    override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
-      DistanceMatrixApi
-        .newRequest(geoApiContext.geoApiContext)
-        .mode(asGoogleTravelMode(mode))
-        .origins(asGoogleLatLng(origin))
-        .destinations(asGoogleLatLng(destination))
-        .units(GoogleDistanceUnit.METRIC)
-        .asEffect
-        .map(r => asDistance(r.rows.head.elements.head))
+      override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
+        DistanceMatrixApi
+          .newRequest(geoApiContext.geoApiContext)
+          .mode(asGoogleTravelMode(mode))
+          .origins(asGoogleLatLng(origin))
+          .destinations(asGoogleLatLng(destination))
+          .units(GoogleDistanceUnit.METRIC)
+          .asEffect
+          .map(r => asDistance(r.rows.head.elements.head))
 
-  }
+    }
 
   @inline
-  private[this] final def asGoogleTravelMode(travelMode: TravelMode): GoogleTravelMode = travelMode match {
-    case Driving   => DRIVING
-    case Bicycling => BICYCLING
-    case Unknown   => UNKNOWN
-  }
+  private[this] final def asGoogleTravelMode(travelMode: TravelMode): GoogleTravelMode =
+    travelMode match {
+      case Driving   => DRIVING
+      case Bicycling => BICYCLING
+      case Unknown   => UNKNOWN
+    }
 
   @inline
   private[this] final def asDistance(element: DistanceMatrixElement): Distance =

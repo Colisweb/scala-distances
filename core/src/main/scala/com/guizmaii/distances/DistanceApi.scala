@@ -1,6 +1,5 @@
 package com.guizmaii.distances
 
-import cats.Parallel
 import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
@@ -8,7 +7,7 @@ import com.guizmaii.distances.Types._
 
 import scala.collection.breakOut
 
-class DistanceApi[F[_]: Par](distanceProvider: DistanceProvider[F], cache: Cache[F])(implicit F: Async[F]) {
+class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache: Cache[F]) {
 
   import DistanceApi._
   import cats.implicits._
@@ -20,7 +19,7 @@ class DistanceApi[F[_]: Par](distanceProvider: DistanceProvider[F], cache: Cache
       destination: LatLong,
       travelModes: List[TravelMode]
   ): F[Map[TravelMode, Distance]] =
-    if (origin == destination) F.pure(travelModes.map(_ -> Distance.zero)(breakOut))
+    if (origin == destination) Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       travelModes
         .parTraverse { mode =>
@@ -37,7 +36,7 @@ class DistanceApi[F[_]: Par](distanceProvider: DistanceProvider[F], cache: Cache
       destination: PostalCode,
       travelModes: List[TravelMode]
   ): F[Map[TravelMode, Distance]] =
-    if (origin == destination) F.pure(travelModes.map(_ -> Distance.zero)(breakOut))
+    if (origin == destination) Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
 
@@ -47,11 +46,10 @@ class DistanceApi[F[_]: Par](distanceProvider: DistanceProvider[F], cache: Cache
         .filter(_.travelModes.nonEmpty)
         .combineDuplicatesOn { case DirectedPath(origin, destination, _) => (origin, destination) }(directedPathSemiGroup, breakOut)
 
-    // TODO: Replace by the syntax extension when this issue is closed: https://github.com/typelevel/cats/issues/2255
-    Parallel
-      .parFlatTraverse(combinedDirectedPaths) {
+    combinedDirectedPaths
+      .parFlatTraverse {
         case DirectedPath(origin, destination, travelModes) =>
-          if (origin == destination) F.pure(travelModes.map(mode => (mode, origin, destination) -> Distance.zero))
+          if (origin == destination) travelModes.map(mode => (mode, origin, destination) -> Distance.zero).pure[F]
           else {
             travelModes.parTraverse { mode =>
               cache
@@ -70,8 +68,9 @@ object DistanceApi {
   final def apply[F[_]: Async: Par](provider: DistanceProvider[F], cacheProvider: Cache[F]): DistanceApi[F] =
     new DistanceApi(provider, cacheProvider)
 
-  private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] = new Semigroup[DirectedPath] {
-    override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
-      DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
-  }
+  private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] =
+    new Semigroup[DirectedPath] {
+      override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
+        DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
+    }
 }
