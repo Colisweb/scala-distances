@@ -41,7 +41,7 @@ object GoogleGeoProvider {
         case postalCode: PostalCode =>
           rawRequest
             .components(ComponentFilter.postalCode(postalCode.value))
-            .asEffect
+            .asEffect[F]
             .map(r => asLatLong(r.head.geometry.location))
 
         /*
@@ -72,7 +72,7 @@ object GoogleGeoProvider {
               .components(ComponentFilter.country(addr.country))
               .components(ComponentFilter.postalCode(addr.postalCode))
               .address(s"${addr.line1} ${addr.line2} ${addr.town}")
-              .asEffect
+              .asEffect[F]
               .map(r => asLatLong(r.head.geometry.location))
 
           fetch(address)
