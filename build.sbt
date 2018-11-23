@@ -1,16 +1,14 @@
 import sbt.Keys.crossScalaVersions
 
-organization in ThisBuild := "com.guizmaii"
-
 lazy val scala212 = "2.12.7"
 lazy val scala211 = "2.11.12"
 
-scalaVersion in ThisBuild := scala212
-crossScalaVersions in ThisBuild := Seq(scala211, scala212)
-
-scalafmtOnCompile in ThisBuild := true
-scalafmtCheck in ThisBuild := true
-scalafmtSbtCheck in ThisBuild := true
+ThisBuild / organization := "com.guizmaii"
+ThisBuild / scalaVersion := scala212
+ThisBuild / crossScalaVersions := Seq(scala211, scala212)
+ThisBuild / scalafmtOnCompile := true
+ThisBuild / scalafmtCheck := true
+ThisBuild / scalafmtSbtCheck := true
 
 //// Dependencies
 
@@ -132,6 +130,7 @@ inThisBuild(
     bintrayOrganization := Some("guizmaii"),
     bintrayReleaseOnPublish := true,
     publishMavenStyle := true,
+    releaseCrossBuild := true
   )
 )
 
