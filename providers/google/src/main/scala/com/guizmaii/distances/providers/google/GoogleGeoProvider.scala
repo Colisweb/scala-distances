@@ -1,6 +1,6 @@
 package com.guizmaii.distances.providers.google
 
-import cats.effect.{Async, Sync}
+import cats.effect.{Concurrent, Sync}
 import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.GeoProvider
@@ -33,7 +33,7 @@ object GoogleGeoProvider {
   import cats.temp.par._
   import com.guizmaii.distances.providers.google.utils.Implicits._
 
-  final def apply[F[_]: Async: Par](geoApiContext: GoogleGeoApiContext): GeoProvider[F] =
+  final def apply[F[_]: Concurrent: Par](geoApiContext: GoogleGeoApiContext): GeoProvider[F] =
     new GeoProvider[F] {
 
       private final def rawRequest: F[GeocodingApiRequest] =

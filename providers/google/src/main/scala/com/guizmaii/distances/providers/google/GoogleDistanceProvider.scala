@@ -1,6 +1,6 @@
 package com.guizmaii.distances.providers.google
 
-import cats.effect.{Async, Sync}
+import cats.effect.{Concurrent, Sync}
 import com.google.maps.DistanceMatrixApi
 import com.google.maps.model.DistanceMatrixElementStatus._
 import com.google.maps.model.TravelMode._
@@ -28,7 +28,7 @@ object GoogleDistanceProvider {
   import com.guizmaii.distances.providers.google.utils.Implicits._
   import squants.space.LengthConversions._
 
-  final def apply[F[_]: Async](geoApiContext: GoogleGeoApiContext): DistanceProvider[F] =
+  final def apply[F[_]: Concurrent](geoApiContext: GoogleGeoApiContext): DistanceProvider[F] =
     new DistanceProvider[F] {
 
       override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =

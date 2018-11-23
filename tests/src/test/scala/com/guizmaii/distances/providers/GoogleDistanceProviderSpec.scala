@@ -1,7 +1,7 @@
 package com.guizmaii.distances.providers
 
 import cats.effect.internals.IOContextShift
-import cats.effect.{Async, ContextShift, IO}
+import cats.effect.{Concurrent, ContextShift, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.Types.TravelMode.Driving
 import com.guizmaii.distances.Types._
@@ -19,8 +19,7 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
 
-  def passTests[F[+ _]: Async: Par](runSync: F[Any] => Any): Unit = {
-
+  def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
     val geocoder: GeoProvider[F]         = GoogleGeoProvider[F](geoContext)
     val distanceApi: DistanceProvider[F] = GoogleDistanceProvider[F](geoContext)
 

@@ -38,6 +38,7 @@ We propose 3 `cache` implementations:
 Others:
 -------
 
+- **Google API calls should be cancelable**
 - **Improve `GoogleDistanceProvider` code, error handling and error reporting**
 - **Improve `GoogleGeoProvider` code, error handling and error reporting**
 - **Update dependencies (Monix 3.0.0-RC2, Cats 1.4.0, Cats-Effect 1.0.0)**
