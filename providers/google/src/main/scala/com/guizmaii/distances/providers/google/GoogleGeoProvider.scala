@@ -3,8 +3,14 @@ package com.guizmaii.distances.providers.google
 import cats.effect.{Async, Sync}
 import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
+import com.guizmaii.distances.GeoProvider
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, Point, PostalCode}
-import com.guizmaii.distances.{GeoProvider, PointNotFound}
+
+import scala.util.control.NoStackTrace
+
+sealed abstract class GoogleGeoProviderError(message: String) extends RuntimeException(message) with NoStackTrace
+final case class PostalCodeNotFound(message: String)          extends GoogleGeoProviderError(message)
+final case class NonAmbiguousAddressNotFound(message: String) extends GoogleGeoProviderError(message)
 
 /**
   * Remarques:
@@ -50,7 +56,7 @@ object GoogleGeoProvider {
                   Sync[F]
                     .fromOption(
                       response.headOption.map(_.geometry.location).map(asLatLong),
-                      PointNotFound(s"PostalCode ${postalCode.show} is not found by Google API")
+                      PostalCodeNotFound(s"${postalCode.show} is not found by Google API")
                     )
                 }
             }
@@ -90,22 +96,21 @@ object GoogleGeoProvider {
                     Sync[F]
                       .fromOption(
                         response.headOption.map(_.geometry.location).map(asLatLong),
-                        PointNotFound(s"""NonAmbiguousAddress "${addr.show}" is not found by Google API""")
+                        NonAmbiguousAddressNotFound(s""""${addr.show}" is not found by Google API""")
                       )
                   }
               }
 
           fetch(address)
-            .handleErrorWith {
-              case e: PointNotFound =>
-                (
-                  fetch(address.copy(line2 = "")),
-                  fetch(address.copy(line2 = "", town = "")),
-                  geocode(PostalCode(address.postalCode))
-                ).raceInOrder3
-                  .handleErrorWith { _ =>
-                    Sync[F].raiseError(e) // get back the original error
-                  }
+            .handleErrorWith { initialError =>
+              (
+                fetch(address.copy(line2 = "")),
+                fetch(address.copy(line2 = "", town = "")),
+                geocode(PostalCode(address.postalCode))
+              ).raceInOrder3
+                .handleErrorWith { _ =>
+                  Sync[F].raiseError(initialError) // get back the original error
+                }
             }
       }
     }
