@@ -81,9 +81,9 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |24 rue dauphine;75006;PARIS;48.8549537;2.3393333
            |30 PLACE DE LA MADELEINE;75008;PARIS;48.8708155;2.325606
            |50 rue du Docteur Blanche;75016;Paris;48.8528274;2.2643836
-           |16 RUE SAINT FIACRE  - 75002 PARIS;75002;PARIS;48.87038;2.3457822
+           |16 RUE SAINT FIACRE  - 75002 PARIS;75002;PARIS;48.87038219999999;2.3457877
            |4 RUE DE SONTAY;75116;PARIS;48.8703854;2.2846272
-           |7 rue Victorien Sardou;75016;Paris;48.8428143;2.2676126
+           |7 rue Victorien Sardou;75016;Paris;48.842884;2.2676531
            |62 avenue des champs elysee;75008;Paris;48.8708509;2.3056707
            |233 Boulevard Voltaire 75011 Paris;75011;Paris 75011;48.8512903;2.3914116
            |13 rue Henri Barbusse;92230;GENNEVILLIERS;48.918883;2.297148
@@ -91,9 +91,9 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |95 avenue du General Leclerc;75014;Paris;48.8260975;2.3273668
            |12 rue de l'Assomption;75016;Paris;48.85349;2.2744602
            |108 rue de Richelieu;75002;PARIS;48.8714406;2.3398815
-           |24 AVENUE MARIE ALEXIS;76370;PETIT CAUX;49.95763789999999;1.2224194
+           |24 AVENUE MARIE ALEXIS;76370;PETIT CAUX;49.96568550000001;1.196322
            |8 RUE FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
-           |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
+           |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.84034490000001;-0.4408037
            |""".stripMargin.drop(1).dropRight(1)
 
       val data: Seq[(NonAmbiguousAddress, LatLong)] =
