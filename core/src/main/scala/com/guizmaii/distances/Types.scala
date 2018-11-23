@@ -1,5 +1,6 @@
 package com.guizmaii.distances
 
+import cats.Show
 import com.guizmaii.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
 import enumeratum.{Enum, EnumEntry}
 import squants.space.Length
@@ -16,6 +17,20 @@ object Types {
   sealed trait Point                                                                                                    extends Any
   final case class PostalCode(value: String)                                                                            extends AnyVal with Point
   final case class NonAmbiguousAddress(line1: String, line2: String, postalCode: String, town: String, country: String) extends Point
+
+  object PostalCode {
+    implicit final val show: Show[PostalCode] =
+      new Show[PostalCode] {
+        override def show(p: PostalCode): String = p.value
+      }
+  }
+
+  object NonAmbiguousAddress {
+    implicit final val show: Show[NonAmbiguousAddress] =
+      new Show[NonAmbiguousAddress] {
+        override def show(a: NonAmbiguousAddress): String = s"${a.line1}, ${a.line2}, ${a.postalCode} ${a.town} ${a.country}"
+      }
+  }
 
   final case class LatLong(latitude: Double, longitude: Double)
 

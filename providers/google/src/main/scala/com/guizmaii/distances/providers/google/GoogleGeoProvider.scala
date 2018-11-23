@@ -1,10 +1,10 @@
 package com.guizmaii.distances.providers.google
 
-import cats.effect.Async
+import cats.effect.{Async, Sync}
+import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
 import com.google.maps.{GeocodingApi, GeocodingApiRequest}
 import com.guizmaii.distances.Types.{LatLong, NonAmbiguousAddress, Point, PostalCode}
-import com.google.maps.model.{ComponentFilter, LatLng => GoogleLatLng}
-import com.guizmaii.distances.GeoProvider
+import com.guizmaii.distances.{GeoProvider, PointNotFound}
 
 /**
   * Remarques:
@@ -30,19 +30,30 @@ object GoogleGeoProvider {
   final def apply[F[_]: Async: Par](geoApiContext: GoogleGeoApiContext): GeoProvider[F] =
     new GeoProvider[F] {
 
-      private final def newRawRequest: GeocodingApiRequest =
-        GeocodingApi
-          .newRequest(geoApiContext.geoApiContext)
-          .region("eu")
-          .language("fr")
+      private final def rawRequest: F[GeocodingApiRequest] =
+        Sync[F].delay {
+          GeocodingApi
+            .newRequest(geoApiContext.geoApiContext)
+            .region("eu")
+            .language("fr")
+        }
 
       override private[distances] final def geocode(point: Point): F[LatLong] = point match {
 
         case postalCode: PostalCode =>
-          newRawRequest
-            .components(ComponentFilter.postalCode(postalCode.value))
-            .asEffect[F]
-            .map(r => asLatLong(r.head.geometry.location))
+          rawRequest
+            .flatMap { request =>
+              request
+                .components(ComponentFilter.postalCode(postalCode.value))
+                .asEffect[F]
+                .flatMap { response =>
+                  Sync[F]
+                    .fromOption(
+                      response.headOption.map(_.geometry.location).map(asLatLong),
+                      PointNotFound(s"PostalCode ${postalCode.show} is not found by Google API")
+                    )
+                }
+            }
 
         /*
          * Doc about "non ambigue addresses": https://developers.google.com/maps/documentation/geocoding/best-practices#complete-address
@@ -68,21 +79,33 @@ object GoogleGeoProvider {
          */
         case address: NonAmbiguousAddress =>
           def fetch(addr: NonAmbiguousAddress): F[LatLong] =
-            newRawRequest
-              .components(ComponentFilter.country(addr.country))
-              .components(ComponentFilter.postalCode(addr.postalCode))
-              .address(s"${addr.line1} ${addr.line2} ${addr.town}")
-              .asEffect[F]
-              .map(r => asLatLong(r.head.geometry.location))
+            rawRequest
+              .flatMap { request =>
+                request
+                  .components(ComponentFilter.country(addr.country))
+                  .components(ComponentFilter.postalCode(addr.postalCode))
+                  .address(s"${addr.line1} ${addr.line2} ${addr.town}")
+                  .asEffect[F]
+                  .flatMap { response =>
+                    Sync[F]
+                      .fromOption(
+                        response.headOption.map(_.geometry.location).map(asLatLong),
+                        PointNotFound(s"""NonAmbiguousAddress "${addr.show}" is not found by Google API""")
+                      )
+                  }
+              }
 
           fetch(address)
             .handleErrorWith {
-              case _: NoSuchElementException =>
+              case e: PointNotFound =>
                 (
                   fetch(address.copy(line2 = "")),
                   fetch(address.copy(line2 = "", town = "")),
                   geocode(PostalCode(address.postalCode))
                 ).raceInOrder3
+                  .handleErrorWith { _ =>
+                    Sync[F].raiseError(e) // get back the original error
+                  }
             }
       }
     }

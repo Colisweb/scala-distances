@@ -1,5 +1,6 @@
 package com.guizmaii.distances.providers.google.utils
 
+import cats.MonadError
 import cats.effect.Async
 import com.google.maps.PendingResult
 
@@ -28,7 +29,7 @@ private[google] object Implicits {
       * else return the error of last one.
       *
       */
-    def raceInOrder3(implicit F: Async[F], par: Par[F]): F[A] = {
+    def raceInOrder3(implicit F: MonadError[F, Throwable], par: Par[F]): F[A] = {
       val (a, b, c) = instance
       (a.attempt, b.attempt, c.attempt).parTupled
         .flatMap {
