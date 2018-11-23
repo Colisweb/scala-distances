@@ -11,6 +11,30 @@ Breaking changes:
 
 - **Modularize the lib**
 
+###### Intro
+
+The lib is now composed of 3 parts: 
+  - the `core`
+  - the `providers`
+  - the `caches`
+
+###### Providers
+
+`Providers` have 2 roles:
+  - Compute distances between Gps points
+  - Geocode addresses
+  
+A `prodider` implementation can choose to implement only one of these 2 concers.
+ 
+Fow now, we propose only one `provider` implementation, based on Google APIs, which addresses the 2 concerns.
+
+###### Caches
+
+We propose 3 `cache` implementations:
+ - One "distributed" cache, based on Redis
+ - One in memory cache, based on Caffeine
+ - One which doesn't cache anything.
+
 Others:
 -------
 
