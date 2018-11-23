@@ -5,7 +5,7 @@ import com.google.maps.DistanceMatrixApi
 import com.google.maps.model.TravelMode._
 import com.google.maps.model.{DistanceMatrixElement, LatLng => GoogleLatLng, TravelMode => GoogleTravelMode, Unit => GoogleDistanceUnit}
 import com.guizmaii.distances.DistanceProvider
-import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving, Unknown}
+import com.guizmaii.distances.Types.TravelMode._
 import com.guizmaii.distances.Types.{Distance, LatLong, TravelMode}
 
 import scala.concurrent.duration._
@@ -37,6 +37,8 @@ object GoogleDistanceProvider {
     travelMode match {
       case Driving   => DRIVING
       case Bicycling => BICYCLING
+      case Walking   => WALKING
+      case Transit   => TRANSIT
       case Unknown   => UNKNOWN
     }
 

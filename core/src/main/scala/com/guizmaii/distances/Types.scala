@@ -49,6 +49,8 @@ object Types {
 
     case object Driving   extends TravelMode
     case object Bicycling extends TravelMode
+    case object Walking   extends TravelMode
+    case object Transit   extends TravelMode
     case object Unknown   extends TravelMode
   }
 
