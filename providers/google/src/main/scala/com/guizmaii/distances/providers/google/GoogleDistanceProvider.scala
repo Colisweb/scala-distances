@@ -48,7 +48,7 @@ object GoogleDistanceProvider {
                   case Some((NOT_FOUND, _)) =>
                     DistanceNotFoundForKnownReason(
                       s"""
-                           | Google Distance API didn't found the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
                            |
                            | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
                          """.stripMargin
@@ -64,7 +64,7 @@ object GoogleDistanceProvider {
                   case None =>
                     DistanceNotFoundForUnknownReason(
                       s"""
-                           | Google Distance API didn't found the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
                         """.stripMargin
                     ).asLeft
                 }
