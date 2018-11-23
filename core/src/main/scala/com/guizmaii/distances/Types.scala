@@ -35,6 +35,11 @@ object Types {
   final case class LatLong(latitude: Double, longitude: Double)
 
   object LatLong {
+    implicit final val show: Show[LatLong] =
+      new Show[LatLong] {
+        override def show(l: LatLong): String = s"(${l.latitude}, ${l.longitude})"
+      }
+
     private[distances] implicit final val encoder: Encoder[LatLong] = deriveEncoder[LatLong]
     private[distances] implicit final val decoder: Decoder[LatLong] = deriveDecoder[LatLong]
   }
@@ -67,6 +72,18 @@ object Types {
     case object Walking   extends TravelMode
     case object Transit   extends TravelMode
     case object Unknown   extends TravelMode
+
+    implicit final val show: Show[TravelMode] =
+      new Show[TravelMode] {
+        override def show(t: TravelMode): String = t match {
+          case Driving   => "driving"
+          case Bicycling => "bicycling"
+          case Walking   => "walking"
+          case Transit   => "transit"
+          case Unknown   => "unknown"
+        }
+      }
+
   }
 
 }
