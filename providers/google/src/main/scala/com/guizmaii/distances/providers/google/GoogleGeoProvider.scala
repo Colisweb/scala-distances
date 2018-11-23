@@ -30,7 +30,7 @@ object GoogleGeoProvider {
   final def apply[F[_]: Async: Par](geoApiContext: GoogleGeoApiContext): GeoProvider[F] =
     new GeoProvider[F] {
 
-      private final def rawRequest: GeocodingApiRequest =
+      private final def newRawRequest: GeocodingApiRequest =
         GeocodingApi
           .newRequest(geoApiContext.geoApiContext)
           .region("eu")
@@ -39,7 +39,7 @@ object GoogleGeoProvider {
       override private[distances] final def geocode(point: Point): F[LatLong] = point match {
 
         case postalCode: PostalCode =>
-          rawRequest
+          newRawRequest
             .components(ComponentFilter.postalCode(postalCode.value))
             .asEffect[F]
             .map(r => asLatLong(r.head.geometry.location))
@@ -68,7 +68,7 @@ object GoogleGeoProvider {
          */
         case address: NonAmbiguousAddress =>
           def fetch(addr: NonAmbiguousAddress): F[LatLong] =
-            rawRequest
+            newRawRequest
               .components(ComponentFilter.country(addr.country))
               .components(ComponentFilter.postalCode(addr.postalCode))
               .address(s"${addr.line1} ${addr.line2} ${addr.town}")
