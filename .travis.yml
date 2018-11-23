@@ -15,13 +15,7 @@ before_install:
     tar xv -C travis -f travis/local.secrets.tar;
   fi
 after_success:
-  - if [ $TRAVIS_PULL_REQUEST = 'false' ]; then
-      sbt ++$TRAVIS_SCALA_VERSION releaseEarly;
-    fi
   - bash <(curl -s https://codecov.io/bash)
-deploy:
-  on:
-    tags: true
 env:
   global:
   - secure: TBNoQkd7TUJksC3iCNtGFp3HNLQFkSldyoqU84T9XbxC07iluOC219LQnevQ6oGzngvJgteUT/1WR+WMTbrLKh+Xti0IwMYTbxPsOIA4FMKEqMbYfNdUJdrBmGExvJYX6uUCefVI85UWCeB8rFcHYTTXlyLvVUWkHljG6Wdk4Y8xIwfhs7Y/CF8s7RTsy/ellhvFEGtQgOPIXk2QP1VKEloFkI4N44EPYjT52ea6Ih4Z60pJYQE01Rt9ZmNmbFt06qe7IWiyyn6iPoEv+ZaSOgIsDCbwT7EEQhTv00KQr0Zsj1g80NSB3S+wkm+5dhA0zn5An8UjCgSPkuI6BLyzjDaMvUcKsBhZIyxLlsL38XmrncVg06yT4BA5KVsWJCZlgGIPiJk8NfDbHXBJDUMwf4mn/y2eTuE6odt1X1aGy7PpvC96yOnrpM7jVEoV7aEMjntuWXfHUQyrUs3zT9qIycIlZAF72PyaaY+oAAqonw+4nEqAWKgPE7mJt5VXGXGg8r/5c1mndD9LiO08THCQDZ/ZS0c2a6IGdho20+5HL1vsxSFJpLz+tEW7AYs1vjofs3lMeInVR/dvJHfwpsoxAEXxsafqZVS6492oN7vcHtbqT3VKMpqheySViECG42/J66UFzaCxwTCHJpZ2IDGozJuGmC8BIb3i40UgulVLxg8=

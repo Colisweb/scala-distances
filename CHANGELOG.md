@@ -17,6 +17,7 @@ Others:
 - **Improve `GoogleDistanceProvider` code, error handling and error reporting**
 - **Improve `GoogleGeoProvider` code, error handling and error reporting**
 - **Update dependencies (Monix 3.0.0-RC2, Cats 1.4.0, Cats-Effect 1.0.0)**
+- **Replace `sbt-release-early` by `sbt-release`**
 
 ## [v1.0.0-RC2] - 2018.05.16
 

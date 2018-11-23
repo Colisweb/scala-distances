@@ -124,13 +124,14 @@ lazy val noPublishSettings = Seq(
 
 inThisBuild(
   List(
+    credentials += Credentials(Path.userHome / ".bintray" / ".credentials"),
     licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
     scmInfo := Some(ScmInfo(url("https://github.com/guizmaii/scala-distances"), "scm:git:git@github.com:guizmaii/scala-distances.git")),
     homepage := Some(url("https://github.com/guizmaii/scala-distances")),
     developers := List(Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/"))),
-    pgpPublicRing := file("./travis/local.pubring.asc"),
-    pgpSecretRing := file("./travis/local.secring.asc"),
-    releaseEarlyWith := BintrayPublisher
+    bintrayOrganization := Some("guizmaii"),
+    bintrayReleaseOnPublish := true,
+    publishMavenStyle := true,
   )
 )
 
