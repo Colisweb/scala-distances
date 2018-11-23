@@ -1,7 +1,8 @@
-package com.guizmaii.distances
+package com.guizmaii.distances.benchmarks
 
 import cats.effect.{Async, IO}
 import com.guizmaii.distances.Types.{LatLong, PostalCode}
+import com.guizmaii.distances.{GeoProvider, Types}
 import monix.eval.Task
 import org.openjdk.jmh.annotations._
 
