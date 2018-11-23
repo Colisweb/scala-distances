@@ -14,7 +14,7 @@ object RedisCache {
   final def apply[F[_]: Async](config: RedisConfiguration, ttl: Option[Duration]): Cache[F] =
     new Cache[F](ttl) {
       import scalacache.serialization.circe._
-      override private[distances] implicit final val innerCache: InnerCache[Json] = InnerRedisCache[Json](config.jedisPool)
+      override private[distances] final val innerCache: InnerCache[Json] = InnerRedisCache[Json](config.jedisPool)
     }
 
 }

@@ -13,7 +13,7 @@ object CaffeineCache {
 
   final def apply[F[_]: Async](ttl: Option[Duration]): Cache[F] =
     new Cache[F](ttl) {
-      override private[distances] implicit final val innerCache: InnerCache[Json] = InnerCaffeineCache[Json]
+      override private[distances] final val innerCache: InnerCache[Json] = InnerCaffeineCache[Json]
     }
 
 }
