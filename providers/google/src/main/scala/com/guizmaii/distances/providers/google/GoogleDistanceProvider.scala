@@ -20,8 +20,7 @@ import scala.language.postfixOps
 import scala.util.control.NoStackTrace
 
 sealed abstract class GoogleDistanceProviderError(message: String) extends RuntimeException(message) with NoStackTrace
-final case class DistanceNotFoundForKnownReason(message: String)   extends GoogleDistanceProviderError(message)
-final case class DistanceNotFoundForUnknownReason(message: String) extends GoogleDistanceProviderError(message)
+final case class DistanceNotFound(message: String)                 extends GoogleDistanceProviderError(message)
 
 object GoogleDistanceProvider {
 
@@ -41,34 +40,37 @@ object GoogleDistanceProvider {
           .units(GoogleDistanceUnit.METRIC)
           .asEffect[F]
           .flatMap { response =>
-            Sync[F]
-              .fromEither {
-                getDistance(response) match {
-                  case Some((OK, distance)) => distance.asRight
-                  case Some((NOT_FOUND, _)) =>
-                    DistanceNotFoundForKnownReason(
-                      s"""
-                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                           |
-                           | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
-                         """.stripMargin
-                    ).asLeft
-                  case Some((ZERO_RESULTS, _)) =>
-                    DistanceNotFoundForKnownReason(
-                      s"""
-                           | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                           |
-                           | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
-                        """.stripMargin
-                    ).asLeft
-                  case None =>
-                    DistanceNotFoundForUnknownReason(
-                      s"""
-                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                        """.stripMargin
-                    ).asLeft
+            getDistance(response) match {
+              case Some((OK, distance)) => distance.pure[F]
+              case Some((NOT_FOUND, _)) =>
+                Sync[F].raiseError {
+                  DistanceNotFound(
+                    s"""
+                       | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                       |
+                       | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
+                    """.stripMargin
+                  )
                 }
-              }
+              case Some((ZERO_RESULTS, _)) =>
+                Sync[F].raiseError {
+                  DistanceNotFound(
+                    s"""
+                       | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                       |
+                       | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
+                    """.stripMargin
+                  )
+                }
+              case None =>
+                Sync[F].raiseError {
+                  DistanceNotFound(
+                    s"""
+                       | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                    """.stripMargin
+                  )
+                }
+            }
           }
 
     }
