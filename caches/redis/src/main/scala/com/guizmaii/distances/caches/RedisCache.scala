@@ -1,6 +1,5 @@
 package com.guizmaii.distances.caches
 
-import cats.effect
 import cats.effect.Async
 import com.guizmaii.distances.Cache
 import io.circe.Json
