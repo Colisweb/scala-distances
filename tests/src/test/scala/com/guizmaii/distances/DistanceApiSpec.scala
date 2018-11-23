@@ -1,7 +1,7 @@
 package com.guizmaii.distances
 
 import cats.effect.internals.IOContextShift
-import cats.effect.{Async, ContextShift, IO}
+import cats.effect.{Concurrent, ContextShift, IO}
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving}
 import com.guizmaii.distances.Types.{Distance, LatLong, PostalCode, _}
 import com.guizmaii.distances.caches.CaffeineCache
@@ -52,7 +52,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
-        def passTests[F[+ _]: Async: Par](runSync: F[Any] => Any): Unit = {
+        def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
           val geocoder: GeoProvider[F]    = GoogleGeoProvider[F](geoContext)
           val distanceApi: DistanceApi[F] = DistanceApi[F](GoogleDistanceProvider[F](geoContext), CaffeineCache(Some(1 days)))
           "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
