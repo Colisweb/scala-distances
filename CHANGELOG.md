@@ -6,6 +6,10 @@ More infos about this file : http://keepachangelog.com/
 
 ## [Unreleased] - no_due_date
 
+## [v1.0.0-RC6] - 2018.11.23
+
+(versions v1.0.0-RC[3,4,5] are corrupted. Do not use them)
+
 Breaking changes:
 -----------------
 
