@@ -120,19 +120,15 @@ lazy val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-inThisBuild(
-  List(
-    credentials += Credentials(Path.userHome / ".bintray" / ".credentials"),
-    licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-    scmInfo := Some(ScmInfo(url("https://github.com/guizmaii/scala-distances"), "scm:git:git@github.com:guizmaii/scala-distances.git")),
-    homepage := Some(url("https://github.com/guizmaii/scala-distances")),
-    developers := List(Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/"))),
-    bintrayOrganization := Some("guizmaii"),
-    bintrayReleaseOnPublish := true,
-    publishMavenStyle := true,
-    releaseCrossBuild := true
-  )
-)
+ThisBuild / releaseCrossBuild := true
+ThisBuild / credentials += Credentials(Path.userHome / ".bintray" / ".credentials")
+ThisBuild / licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT"))
+ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/guizmaii/scala-distances"), "scm:git:git@github.com:guizmaii/scala-distances.git"))
+ThisBuild / homepage := Some(url("https://github.com/guizmaii/scala-distances"))
+ThisBuild / developers := List(Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/")))
+ThisBuild / bintrayOrganization := Some("guizmaii")
+ThisBuild / bintrayReleaseOnPublish := true
+ThisBuild / publishMavenStyle := true
 
 //// Aliases
 
