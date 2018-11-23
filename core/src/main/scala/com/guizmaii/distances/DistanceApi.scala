@@ -38,7 +38,10 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
   ): F[Map[TravelMode, Distance]] =
     if (origin == destination) Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
-      (geocoder.geocodePostalCode(origin), geocoder.geocodePostalCode(destination)).parMapN { case (o, d) => distance(o, d, travelModes) }.flatten
+      (
+        geocoder.geocodePostalCode(origin),
+        geocoder.geocodePostalCode(destination)
+      ).parTupled.flatMap { case (o, d) => distance(o, d, travelModes) }
 
   final def distances(paths: Seq[DirectedPath]): F[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     val combinedDirectedPaths: List[DirectedPath] =
