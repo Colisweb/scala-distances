@@ -59,7 +59,7 @@ lazy val root = Project(id = "scala-distances", base = file("."))
   .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`, tests, benchmarks)
 
 lazy val core = project
-  .settings(moduleName := "scala-distances")
+  .settings(moduleName := "scala-distances-core")
   .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
   .settings(
     libraryDependencies ++= Seq(
@@ -75,7 +75,7 @@ lazy val core = project
 
 lazy val `google-provider` = project
   .in(file("providers/google"))
-  .settings(moduleName := "scala-distances-google")
+  .settings(moduleName := "scala-distances-provider-google")
   .settings(libraryDependencies += googleMaps)
   .dependsOn(core)
 
@@ -83,19 +83,19 @@ lazy val `google-provider` = project
 
 lazy val `redis-cache` = project
   .in(file("caches/redis"))
-  .settings(moduleName := "scala-distances-redis")
+  .settings(moduleName := "scala-distances-cache-redis")
   .settings(libraryDependencies += "com.github.cb372" %% "scalacache-redis" % scalaCacheVersion)
   .dependsOn(core)
 
 lazy val `caffeine-cache` = project
   .in(file("caches/caffeine"))
-  .settings(moduleName := "scala-distances-caffeine")
+  .settings(moduleName := "scala-distances-cache-caffeine")
   .settings(libraryDependencies += "com.github.cb372" %% "scalacache-caffeine" % scalaCacheVersion)
   .dependsOn(core)
 
 lazy val `no-cache` = project
   .in(file("caches/no-cache"))
-  .settings(moduleName := "scala-distances-noCache")
+  .settings(moduleName := "scala-distances-cache-noCache")
   .dependsOn(core)
 
 //// Meta projects
