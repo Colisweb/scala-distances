@@ -5,9 +5,9 @@ import com.google.maps.PendingResult
 
 private[google] object Implicits {
 
-  implicit final class PendingResultOps[F[_], T](val request: PendingResult[T]) {
-    def asEffect(implicit F: Async[F]): F[T] =
-      F.async { cb =>
+  implicit final class PendingResultOps[T](val request: PendingResult[T]) {
+    def asEffect[F[_]: Async]: F[T] =
+      Async[F].async { cb =>
         request.setCallback(new PendingResult.Callback[T] {
           override def onResult(result: T): Unit     = cb(Right(result))
           override def onFailure(e: Throwable): Unit = cb(Left(e))

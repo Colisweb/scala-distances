@@ -27,7 +27,7 @@ object GoogleDistanceProvider {
           .origins(asGoogleLatLng(origin))
           .destinations(asGoogleLatLng(destination))
           .units(GoogleDistanceUnit.METRIC)
-          .asEffect
+          .asEffect[F]
           .map(r => asDistance(r.rows.head.elements.head))
 
     }
