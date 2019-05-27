@@ -13,7 +13,7 @@ compile scala-distances:
     - sbt compile test:compile it:compile stash
   artifacts:
     paths:
-      - stash-pure-malt
+      - stash-scala-distances
     expire_in: 2 hrs
   cache:
     key: "sbt-scala-distances"
