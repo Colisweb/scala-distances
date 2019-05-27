@@ -1,0 +1,21 @@
+stages:
+  - build
+
+# --------
+# Compile
+# --------
+compile scala-distances:
+  stage: build
+  image: colisweb/scala-sbt-gke:adoptjdk11-1.2.8-8.11.3-9.2.7.0
+  tags:
+    - aws
+  script:
+    - sbt compile test:compile it:compile stash
+  artifacts:
+    paths:
+      - stash-pure-malt
+    expire_in: 2 hrs
+  cache:
+    key: "sbt-scala-distances"
+    paths:
+      - sbt-base
