@@ -10,12 +10,11 @@ import com.guizmaii.distances.caches.NoCache
 object Stubs {
 
   def distanceProviderStub[F[_]: Async]: DistanceProvider[F] = new DistanceProvider[F] {
-    override def distance(mode: Types.TravelMode, origin: LatLong, destination: LatLong): F[Types.Distance] = ???
-    override def distanceAtDepartureTime(
+    override def distance(
         mode: Types.TravelMode,
         origin: LatLong,
         destination: LatLong,
-        departureTime: Instant
+        maybeDepartureTime: Option[Instant] = None
     ): F[Types.Distance] = ???
   }
 

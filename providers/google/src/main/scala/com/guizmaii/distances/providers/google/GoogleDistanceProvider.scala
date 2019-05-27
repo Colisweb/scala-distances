@@ -77,23 +77,17 @@ object GoogleDistanceProvider {
             }
           }
 
-      override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
-        handleGoogleResponse(buildGoogleRequest(mode, origin, destination).asEffect[F], mode, origin, destination)
-
-      override private[distances] final def distanceAtDepartureTime(
+      override private[distances] final def distance(
           mode: TravelMode,
           origin: LatLong,
           destination: LatLong,
-          departure: Instant
+          maybeDepartureTime: Option[Instant] = None
       ): F[Distance] = {
-        val googleRequest =
-          buildGoogleRequest(mode, origin, destination)
-            .departureTime(departure)
-            .asEffect[F]
+        val baseRequest        = buildGoogleRequest(mode, origin, destination)
+        val googleFinalRequest = maybeDepartureTime.fold(baseRequest)(baseRequest.departureTime).asEffect[F]
 
-        handleGoogleResponse(googleRequest, mode, origin, destination)
+        handleGoogleResponse(googleFinalRequest, mode, origin, destination)
       }
-
     }
 
   @inline

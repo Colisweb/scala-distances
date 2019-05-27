@@ -7,8 +7,10 @@ import com.guizmaii.distances.Types.{LatLong, _}
 
 abstract class DistanceProvider[F[_]: Async] {
 
-  private[distances] def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance]
-
-  private[distances] def distanceAtDepartureTime(mode: TravelMode, origin: LatLong, destination: LatLong, departure: Instant): F[Distance]
-
+  private[distances] def distance(
+      mode: TravelMode,
+      origin: LatLong,
+      destination: LatLong,
+      maybeDepartureTime: Option[Instant] = None
+  ): F[Distance]
 }

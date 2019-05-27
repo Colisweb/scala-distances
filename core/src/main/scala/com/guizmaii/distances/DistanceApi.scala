@@ -73,10 +73,7 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
       .parTraverse { mode =>
         cache
           .cachingF(mode, origin, destination, maybeDepartureTime) {
-            maybeDepartureTime match {
-              case Some(departureTime) => distanceProvider.distanceAtDepartureTime(mode, origin, destination, departureTime)
-              case None                => distanceProvider.distance(mode, origin, destination)
-            }
+            distanceProvider.distance(mode, origin, destination, maybeDepartureTime)
           }
           .map((mode, origin, destination) -> _)
       }
@@ -89,8 +86,6 @@ object DistanceApi {
     new DistanceApi(provider, cacheProvider)
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] =
-    new Semigroup[DirectedPath] {
-      override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
-        DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
-    }
+    (x: DirectedPath, y: DirectedPath) =>
+      DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
 }
