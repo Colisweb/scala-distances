@@ -22,20 +22,13 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
       travelModes: List[TravelMode],
       maybeDepartureTime: Option[Instant] = None
   ): F[Map[TravelMode, Distance]] =
-    if (origin == destination) Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
+    if (origin == destination)
+      Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
-      travelModes
-        .parTraverse { mode =>
-          cache
-            .cachingF(mode, origin, destination, maybeDepartureTime) {
-              maybeDepartureTime match {
-                case Some(departureTime) => distanceProvider.distanceAtDepartureTime(mode, origin, destination, departureTime)
-                case None                => distanceProvider.distance(mode, origin, destination)
-              }
-            }
-            .map(mode -> _)
+      parDistances(travelModes, origin, destination, maybeDepartureTime)
+        .map { distances =>
+          distances.map { case ((travelMode, _, _), distance) => travelMode -> distance }.toMap
         }
-        .map(_.toMap)
 
   final def distanceFromPostalCodes(geocoder: Geocoder[F])(
       origin: PostalCode,
@@ -62,23 +55,33 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
     combinedDirectedPaths
       .parFlatTraverse {
         case DirectedPath(origin, destination, travelModes) =>
-          if (origin == destination) travelModes.map(mode => (mode, origin, destination) -> Distance.zero).pure[F]
-          else {
-            travelModes
-              .parTraverse { mode =>
-                cache
-                  .cachingF(mode, origin, destination, maybeDepartureTime) {
-                    maybeDepartureTime match {
-                      case Some(departureTime) => distanceProvider.distanceAtDepartureTime(mode, origin, destination, departureTime)
-                      case None                => distanceProvider.distance(mode, origin, destination)
-                    }
-                  }
-                  .map((mode, origin, destination) -> _)
-              }
-          }
+          if (origin == destination)
+            travelModes.map(mode => (mode, origin, destination) -> Distance.zero).pure[F]
+          else
+            parDistances(travelModes, origin, destination, maybeDepartureTime)
       }
       .map(_.toMap)
   }
+
+  private[this] final def parDistances(
+      modes: List[TravelMode],
+      origin: LatLong,
+      destination: LatLong,
+      maybeDepartureTime: Option[Instant]
+  ): F[List[((TravelMode, LatLong, LatLong), Distance)]] = {
+    modes
+      .parTraverse { mode =>
+        cache
+          .cachingF(mode, origin, destination, maybeDepartureTime) {
+            maybeDepartureTime match {
+              case Some(departureTime) => distanceProvider.distanceAtDepartureTime(mode, origin, destination, departureTime)
+              case None                => distanceProvider.distance(mode, origin, destination)
+            }
+          }
+          .map((mode, origin, destination) -> _)
+      }
+  }
+
 }
 
 object DistanceApi {
