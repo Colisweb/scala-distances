@@ -1,7 +1,9 @@
 package com.guizmaii.distances.providers.google
 
+import java.time.Instant
+
 import cats.effect.{Concurrent, Sync}
-import com.google.maps.DistanceMatrixApi
+import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
 import com.google.maps.model.DistanceMatrixElementStatus._
 import com.google.maps.model.TravelMode._
 import com.google.maps.model.{
@@ -31,14 +33,16 @@ object GoogleDistanceProvider {
   final def apply[F[_]: Concurrent](geoApiContext: GoogleGeoApiContext): DistanceProvider[F] =
     new DistanceProvider[F] {
 
-      override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
+      def buildGoogleRequest(mode: TravelMode, origin: LatLong, destination: LatLong): DistanceMatrixApiRequest =
         DistanceMatrixApi
           .newRequest(geoApiContext.geoApiContext)
           .mode(asGoogleTravelMode(mode))
           .origins(asGoogleLatLng(origin))
           .destinations(asGoogleLatLng(destination))
           .units(GoogleDistanceUnit.METRIC)
-          .asEffect[F]
+
+      def handleGoogleResponse(response: F[DistanceMatrix], mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
+        response
           .flatMap { response =>
             getDistance(response) match {
               case Some((OK, distance)) => distance.pure[F]
@@ -48,8 +52,8 @@ object GoogleDistanceProvider {
                     s"""
                        | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
                        |
-                       | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
-                    """.stripMargin
+                         | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
+                      """.stripMargin
                   )
                 }
               case Some((ZERO_RESULTS, _)) =>
@@ -58,8 +62,8 @@ object GoogleDistanceProvider {
                     s"""
                        | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
                        |
-                       | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
-                    """.stripMargin
+                         | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
+                      """.stripMargin
                   )
                 }
               case None =>
@@ -67,11 +71,28 @@ object GoogleDistanceProvider {
                   DistanceNotFound(
                     s"""
                        | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                    """.stripMargin
+                      """.stripMargin
                   )
                 }
             }
           }
+
+      override private[distances] final def distance(mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
+        handleGoogleResponse(buildGoogleRequest(mode, origin, destination).asEffect[F], mode, origin, destination)
+
+      override private[distances] final def distanceAtDepartureTime(
+          mode: TravelMode,
+          origin: LatLong,
+          destination: LatLong,
+          departure: Instant
+      ): F[Distance] = {
+        val googleRequest =
+          buildGoogleRequest(mode, origin, destination)
+            .departureTime(departure)
+            .asEffect[F]
+
+        handleGoogleResponse(googleRequest, mode, origin, destination)
+      }
 
     }
 

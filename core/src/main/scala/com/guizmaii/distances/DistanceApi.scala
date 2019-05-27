@@ -1,5 +1,7 @@
 package com.guizmaii.distances
 
+import java.time.Instant
+
 import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
@@ -17,15 +19,19 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
   final def distance(
       origin: LatLong,
       destination: LatLong,
-      travelModes: List[TravelMode]
+      travelModes: List[TravelMode],
+      maybeDepartureTime: Option[Instant] = None
   ): F[Map[TravelMode, Distance]] =
     if (origin == destination) Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       travelModes
         .parTraverse { mode =>
           cache
-            .cachingF(mode, origin, destination) {
-              distanceProvider.distance(mode, origin, destination)
+            .cachingF(mode, origin, destination, maybeDepartureTime) {
+              maybeDepartureTime match {
+                case Some(departureTime) => distanceProvider.distanceAtDepartureTime(mode, origin, destination, departureTime)
+                case None                => distanceProvider.distance(mode, origin, destination)
+              }
             }
             .map(mode -> _)
         }
@@ -34,16 +40,20 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
   final def distanceFromPostalCodes(geocoder: Geocoder[F])(
       origin: PostalCode,
       destination: PostalCode,
-      travelModes: List[TravelMode]
+      travelModes: List[TravelMode],
+      maybeDepartureTime: Option[Instant] = None
   ): F[Map[TravelMode, Distance]] =
     if (origin == destination) Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       (
         geocoder.geocodePostalCode(origin),
         geocoder.geocodePostalCode(destination)
-      ).parTupled.flatMap { case (o, d) => distance(o, d, travelModes) }
+      ).parTupled.flatMap { case (orig, dest) => distance(orig, dest, travelModes, maybeDepartureTime) }
 
-  final def distances(paths: Seq[DirectedPath]): F[Map[(TravelMode, LatLong, LatLong), Distance]] = {
+  final def distances(
+      paths: Seq[DirectedPath],
+      maybeDepartureTime: Option[Instant] = None
+  ): F[Map[(TravelMode, LatLong, LatLong), Distance]] = {
     val combinedDirectedPaths: List[DirectedPath] =
       paths
         .filter(_.travelModes.nonEmpty)
@@ -54,13 +64,17 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
         case DirectedPath(origin, destination, travelModes) =>
           if (origin == destination) travelModes.map(mode => (mode, origin, destination) -> Distance.zero).pure[F]
           else {
-            travelModes.parTraverse { mode =>
-              cache
-                .cachingF(mode, origin, destination) {
-                  distanceProvider.distance(mode, origin, destination)
-                }
-                .map((mode, origin, destination) -> _)
-            }
+            travelModes
+              .parTraverse { mode =>
+                cache
+                  .cachingF(mode, origin, destination, maybeDepartureTime) {
+                    maybeDepartureTime match {
+                      case Some(departureTime) => distanceProvider.distanceAtDepartureTime(mode, origin, destination, departureTime)
+                      case None                => distanceProvider.distance(mode, origin, destination)
+                    }
+                  }
+                  .map((mode, origin, destination) -> _)
+              }
           }
       }
       .map(_.toMap)

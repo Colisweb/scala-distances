@@ -70,9 +70,10 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
               .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
 
-            results shouldBe Map(
-              (Driving, paris01, paris02) -> Distance(1680.0 meters, 472 seconds),
-              (Driving, paris01, paris18) -> Distance(4747.0 meters, 1136 seconds)
+            // We only check the length as travel duration varies over time & traffic
+            results.mapValues(_.length) shouldBe Map(
+              (Driving, paris01, paris02) -> 1680.0.meters,
+              (Driving, paris01, paris18) -> 4747.0.meters
             )
 
             results((Driving, paris01, paris02)).length should be < results((Driving, paris01, paris18)).length
