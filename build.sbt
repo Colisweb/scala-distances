@@ -1,6 +1,6 @@
 import sbt.Keys.crossScalaVersions
 
-lazy val scala212 = "2.12.7"
+lazy val scala212 = "2.12.8"
 lazy val scala211 = "2.11.12"
 
 ThisBuild / organization := "com.guizmaii"
@@ -16,7 +16,7 @@ val scalaCacheVersion = "0.26.0"
 val circeVersion      = "0.10.1"
 
 lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.0"
-lazy val squants         = "org.typelevel"     %% "squants"             % "1.4.0"
+lazy val squants         = "org.typelevel"     %% "squants"             % "1.3.0"
 lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.4.0"
 lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.0.0"
 lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.2.0"
