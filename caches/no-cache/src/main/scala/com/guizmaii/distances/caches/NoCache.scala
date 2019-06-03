@@ -12,7 +12,7 @@ object NoCache {
       override private[distances] final val innerCache: InnerCache[Json] = null
 
       @inline
-      override private[distances] def cachingF[V](keyParts: Any*)(f: => F[V])(
+      override def cachingF[V](keyParts: Any*)(f: => F[V])(
           implicit decoder: Decoder[V],
           encoder: Encoder[V]
       ): F[V] = f

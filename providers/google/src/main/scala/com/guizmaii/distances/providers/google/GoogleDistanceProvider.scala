@@ -77,7 +77,7 @@ object GoogleDistanceProvider {
             }
           }
 
-      override private[distances] final def distance(
+      override final def distance(
           mode: TravelMode,
           origin: LatLong,
           destination: LatLong,
