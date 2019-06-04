@@ -79,7 +79,7 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |17 rue Francois Miron;75004;Paris;48.8557984;2.3570898
            |1 RUE DANTON;75006;PARIS;48.8528005;2.3427676
            |24 rue dauphine;75006;PARIS;48.8549537;2.3393333
-           |30 PLACE DE LA MADELEINE;75008;PARIS;48.8708155;2.325606
+           |30 PLACE DE LA MADELEINE;75008;PARIS;48.8708059;2.3256792
            |50 rue du Docteur Blanche;75016;Paris;48.8528274;2.2643836
            |16 RUE SAINT FIACRE  - 75002 PARIS;75002;PARIS;48.87038219999999;2.3457877
            |4 RUE DE SONTAY;75116;PARIS;48.8703854;2.2846272
@@ -93,7 +93,7 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |108 rue de Richelieu;75002;PARIS;48.8714406;2.3398815
            |24 AVENUE MARIE ALEXIS;76370;PETIT CAUX;49.96568550000001;1.196322
            |8 RUE FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
-           |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.84034490000001;-0.4408037
+           |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
            |""".stripMargin.drop(1).dropRight(1)
 
       val data: Seq[(NonAmbiguousAddress, LatLong)] =

@@ -1,6 +1,6 @@
 import sbt.Keys.crossScalaVersions
 
-lazy val scala212 = "2.12.7"
+lazy val scala212 = "2.12.8"
 lazy val scala211 = "2.11.12"
 
 ThisBuild / organization := "com.guizmaii"
@@ -16,7 +16,7 @@ val scalaCacheVersion = "0.26.0"
 val circeVersion      = "0.10.1"
 
 lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.0"
-lazy val squants         = "org.typelevel"     %% "squants"             % "1.4.0"
+lazy val squants         = "org.typelevel"     %% "squants"             % "1.3.0"
 lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.4.0"
 lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.0.0"
 lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.2.0"
@@ -123,10 +123,18 @@ lazy val noPublishSettings = Seq(
 ThisBuild / releaseCrossBuild := true
 ThisBuild / credentials += Credentials(Path.userHome / ".bintray" / ".credentials")
 ThisBuild / licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT"))
-ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/guizmaii/scala-distances"), "scm:git:git@github.com:guizmaii/scala-distances.git"))
-ThisBuild / homepage := Some(url("https://github.com/guizmaii/scala-distances"))
-ThisBuild / developers := List(Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/")))
-ThisBuild / bintrayOrganization := Some("guizmaii")
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://gitlab.com/colisweb-open-source/scala-distances"),
+    "scm:git:git@gitlab.com:colisweb-open-source/scala-distances.git"
+  )
+)
+ThisBuild / homepage := Some(url("https://gitlab.com/colisweb-open-source/scala-distances"))
+ThisBuild / developers := List(
+  Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/")),
+  Developer("simooonbar", "Simon Bar", "simon.bar@colisweb.com", url("https://gitlab.com/snatz"))
+)
+ThisBuild / bintrayOrganization := Some("colisweb")
 ThisBuild / bintrayReleaseOnPublish := true
 ThisBuild / publishMavenStyle := true
 
