@@ -5,11 +5,13 @@ import java.time.Instant
 import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
+import com.guizmaii.distances.Cache.CachingF
+import com.guizmaii.distances.DistanceProvider.DistanceF
 import com.guizmaii.distances.Types._
 
 import scala.collection.breakOut
 
-class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache: Cache[F]) {
+class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[F, Distance]) {
 
   import DistanceApi._
   import cats.implicits._
@@ -71,19 +73,17 @@ class DistanceApi[F[_]: Async: Par](distanceProvider: DistanceProvider[F], cache
   ): F[List[((TravelMode, LatLong, LatLong), Distance)]] = {
     modes
       .parTraverse { mode =>
-        cache
-          .cachingF(mode, origin, destination, maybeDepartureTime) {
-            distanceProvider.distance(mode, origin, destination, maybeDepartureTime)
-          }
-          .map((mode, origin, destination) -> _)
+        cachingF(mode, origin, destination, maybeDepartureTime) {
+          distanceF(mode, origin, destination, maybeDepartureTime)
+        }.map((mode, origin, destination) -> _)
       }
   }
 
 }
 
 object DistanceApi {
-  final def apply[F[_]: Async: Par](provider: DistanceProvider[F], cacheProvider: Cache[F]): DistanceApi[F] =
-    new DistanceApi(provider, cacheProvider)
+  final def apply[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[F, Distance]): DistanceApi[F] =
+    new DistanceApi(distanceF, cachingF)
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] =
     new Semigroup[DirectedPath] {

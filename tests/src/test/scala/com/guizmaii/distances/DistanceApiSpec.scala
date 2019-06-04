@@ -2,8 +2,10 @@ package com.guizmaii.distances
 
 import cats.effect.internals.IOContextShift
 import cats.effect.{Concurrent, ContextShift, IO}
+import com.guizmaii.distances.Cache.CachingF
+import com.guizmaii.distances.DistanceProvider.DistanceF
 import com.guizmaii.distances.Types.TravelMode.{Bicycling, Driving}
-import com.guizmaii.distances.Types.{Distance, LatLong, PostalCode, _}
+import com.guizmaii.distances.Types._
 import com.guizmaii.distances.caches.CaffeineCache
 import com.guizmaii.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}
 import monix.eval.Task
@@ -29,9 +31,11 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distance" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val distanceApi: DistanceApi[IO] = DistanceApi[IO](distanceProviderStub[IO], CaffeineCache(Some(1 days)))
-          val latLong                      = LatLong(0.0, 0.0)
-          val expectedResult               = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
+          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF[Distance]
+          val distanceF: DistanceF[IO]         = distanceProviderStub[IO].distance
+          val distanceApi: DistanceApi[IO]     = DistanceApi[IO](distanceF, cachingF)
+          val latLong                          = LatLong(0.0, 0.0)
+          val expectedResult                   = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
           distanceApi.distance(latLong, latLong, Driving :: Bicycling :: Nil).unsafeRunSync() shouldBe expectedResult
         }
       }
@@ -40,9 +44,11 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distanceFromPostalCodes" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val distanceApi: DistanceApi[IO] = DistanceApi[IO](distanceProviderStub[IO], CaffeineCache(Some(1 days)))
-          val postalCode                   = PostalCode("59000")
-          val expectedResult               = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
+          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF[Distance]
+          val distanceF: DistanceF[IO]         = distanceProviderStub[IO].distance
+          val distanceApi: DistanceApi[IO]     = DistanceApi[IO](distanceF, cachingF)
+          val postalCode                       = PostalCode("59000")
+          val expectedResult                   = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
           distanceApi
             .distanceFromPostalCodes(geocoderStub)(postalCode, postalCode, Driving :: Bicycling :: Nil)
             .unsafeRunSync() shouldBe expectedResult
@@ -53,8 +59,11 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
         def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
-          val geocoder: GeoProvider[F]    = GoogleGeoProvider[F](geoContext)
-          val distanceApi: DistanceApi[F] = DistanceApi[F](GoogleDistanceProvider[F](geoContext), CaffeineCache(Some(1 days)))
+          val geocoder: GeoProvider[F]        = GoogleGeoProvider[F](geoContext)
+          val cachingF: CachingF[F, Distance] = CaffeineCache[F](Some(1 days)).cachingF[Distance]
+          val distanceF: DistanceF[F]         = GoogleDistanceProvider[F](geoContext).distance
+          val distanceApi: DistanceApi[F]     = DistanceApi[F](distanceF, cachingF)
+
           "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
             val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]
             val paris02 = runSync(geocoder.geocode(PostalCode("75002"))).asInstanceOf[LatLong]

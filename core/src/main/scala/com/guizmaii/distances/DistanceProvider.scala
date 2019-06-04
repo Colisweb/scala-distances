@@ -14,3 +14,7 @@ abstract class DistanceProvider[F[_]: Async] {
       maybeDepartureTime: Option[Instant] = None
   ): F[Distance]
 }
+
+object DistanceProvider {
+  type DistanceF[F[_]] = (TravelMode, LatLong, LatLong, Option[Instant]) => F[Distance]
+}
