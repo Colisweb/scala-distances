@@ -86,6 +86,8 @@ object DistanceApi {
     new DistanceApi(provider, cacheProvider)
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] =
-    (x: DirectedPath, y: DirectedPath) =>
-      DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
+    new Semigroup[DirectedPath] {
+      override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
+        DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
+    }
 }
