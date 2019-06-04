@@ -3,7 +3,7 @@ import sbt.Keys.crossScalaVersions
 lazy val scala212 = "2.12.8"
 lazy val scala211 = "2.11.12"
 
-ThisBuild / organization := "com.guizmaii"
+ThisBuild / organization := "com.colisweb"
 ThisBuild / scalaVersion := scala212
 ThisBuild / crossScalaVersions := Seq(scala211, scala212)
 ThisBuild / scalafmtOnCompile := true
