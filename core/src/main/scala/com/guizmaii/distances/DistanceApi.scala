@@ -73,9 +73,10 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
   ): F[List[((TravelMode, LatLong, LatLong), Distance)]] = {
     modes
       .parTraverse { mode =>
-        cachingF(mode, origin, destination, maybeDepartureTime) {
-          distanceF(mode, origin, destination, maybeDepartureTime)
-        }.map((mode, origin, destination) -> _)
+        val distanceFn = distanceF(mode, origin, destination, maybeDepartureTime)
+
+        cachingF(distanceFn, Distance.decoder, Distance.encoder, mode, origin, destination, maybeDepartureTime)
+          .map((mode, origin, destination) -> _)
       }
   }
 

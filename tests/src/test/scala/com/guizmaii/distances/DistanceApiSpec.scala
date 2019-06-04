@@ -20,6 +20,7 @@ import scala.language.postfixOps
 class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
   import cats.temp.par._
+
   import com.guizmaii.distances.utils.Stubs._
 
   val globalEC: ExecutionContext     = ExecutionContext.global
@@ -31,7 +32,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distance" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF[Distance]
+          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF
           val distanceF: DistanceF[IO]         = distanceProviderStub[IO].distance
           val distanceApi: DistanceApi[IO]     = DistanceApi[IO](distanceF, cachingF)
           val latLong                          = LatLong(0.0, 0.0)
@@ -44,7 +45,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distanceFromPostalCodes" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF[Distance]
+          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF
           val distanceF: DistanceF[IO]         = distanceProviderStub[IO].distance
           val distanceApi: DistanceApi[IO]     = DistanceApi[IO](distanceF, cachingF)
           val postalCode                       = PostalCode("59000")
@@ -60,7 +61,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
       "pass the same test suite than GoogleDistanceProvider" should {
         def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
           val geocoder: GeoProvider[F]        = GoogleGeoProvider[F](geoContext)
-          val cachingF: CachingF[F, Distance] = CaffeineCache[F](Some(1 days)).cachingF[Distance]
+          val cachingF: CachingF[F, Distance] = CaffeineCache[F](Some(1 days)).cachingF
           val distanceF: DistanceF[F]         = GoogleDistanceProvider[F](geoContext).distance
           val distanceApi: DistanceApi[F]     = DistanceApi[F](distanceF, cachingF)
 
