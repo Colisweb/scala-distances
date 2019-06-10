@@ -1,6 +1,5 @@
 package com.guizmaii.distances.providers
 
-import cats.effect.internals.IOContextShift
 import cats.effect.{Concurrent, ContextShift, IO}
 import cats.temp.par.Par
 import com.guizmaii.distances.GeoProvider
@@ -111,8 +110,8 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
 
   "GoogleGeocoder" should {
     "pass tests with cats-effect IO" should {
-      val globalEC: ExecutionContext     = ExecutionContext.global
-      implicit val ctx: ContextShift[IO] = IOContextShift.apply(globalEC)
+      val globalExecutionContext: ExecutionContext = ExecutionContext.global
+      implicit val ctx: ContextShift[IO]           = IO.contextShift(globalExecutionContext)
 
       passTests[IO](_.unsafeRunSync())
     }

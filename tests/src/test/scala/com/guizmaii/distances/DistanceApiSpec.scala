@@ -1,6 +1,5 @@
 package com.guizmaii.distances
 
-import cats.effect.internals.IOContextShift
 import cats.effect.{Concurrent, ContextShift, IO}
 import com.guizmaii.distances.Cache.CachingF
 import com.guizmaii.distances.DistanceProvider.DistanceF
@@ -23,8 +22,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
   import com.guizmaii.distances.utils.Stubs._
 
-  val globalEC: ExecutionContext     = ExecutionContext.global
-  implicit val ctx: ContextShift[IO] = IOContextShift.apply(globalEC)
+  val globalExecutionContext: ExecutionContext = ExecutionContext.global
+  implicit val contextShift: ContextShift[IO]  = IO.contextShift(globalExecutionContext)
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
 

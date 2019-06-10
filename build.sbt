@@ -13,16 +13,25 @@ ThisBuild / scalafmtSbtCheck := true
 //// Dependencies
 
 val scalaCacheVersion = "0.26.0"
-val circeVersion      = "0.10.1"
 
 lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.0"
 lazy val squants         = "org.typelevel"     %% "squants"             % "1.3.0"
 lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.4.0"
-lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.0.0"
+lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.3.0"
 lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.2.0"
 lazy val enumeratum      = "com.beachape"      %% "enumeratum"          % "1.5.13"
-lazy val `circe-generic` = "io.circe"          %% "circe-generic"       % circeVersion
 lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC2"
+
+lazy val circeVersion      = "0.11.0"
+
+lazy val circeCore          = "io.circe" %% "circe-core"           % circeVersion
+lazy val circeGeneric       = "io.circe" %% "circe-generic"        % circeVersion
+lazy val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
+lazy val circeParser        = "io.circe" %% "circe-parser"         % circeVersion
+lazy val circeRefined       = "io.circe" %% "circe-refined"        % circeVersion
+lazy val circeOptics        = "io.circe" %% "circe-optics"         % circeVersion
+
+lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericExtras, circeParser, circeRefined, circeOptics)
 
 lazy val scalacacheCore =
   Seq(
@@ -66,8 +75,7 @@ lazy val core = project
       `cats-effect`,
       `cats-par`,
       enumeratum,
-      `circe-generic`
-    ) ++ scalacacheCore ++ testKit)
+    ) ++ scalacacheCore ++ circeAll ++ testKit)
 
 //// Providers
 

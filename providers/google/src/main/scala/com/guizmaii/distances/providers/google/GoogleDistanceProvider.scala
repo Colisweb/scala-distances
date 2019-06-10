@@ -37,7 +37,7 @@ object GoogleDistanceProvider {
         DistanceMatrixApi
           .newRequest(geoApiContext.geoApiContext)
           .mode(asGoogleTravelMode(mode))
-          .origins(asGoogleLatLng(origin))
+          .origins(asGoogleLatLng(origin)) // TODO: Multiple origins?
           .destinations(asGoogleLatLng(destination))
           .units(GoogleDistanceUnit.METRIC)
 

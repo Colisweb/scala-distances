@@ -22,8 +22,7 @@ abstract class Cache[F[_]: Async](ttl: Option[Duration]) {
 
 object Cache {
 
-  /** V is the cached value
-    * Any* corresponds to the key parts of V see [[InnerCache.cachingF()]]
-   **/
+  // V is the cached value
+  // Any* corresponds to the key parts of V see [[InnerCache.cachingF()]]
   type CachingF[F[_], V] = (F[V], Decoder[V], Encoder[V], Any*) => F[V]
 }
