@@ -5,7 +5,7 @@ import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.DistanceProvider.DistanceF
 import com.colisweb.distances.Types.TravelMode.{Bicycling, Driving}
 import com.colisweb.distances.Types._
-import com.colisweb.distances.caches.CaffeineCache
+import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
 import com.colisweb.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}
 import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
@@ -58,9 +58,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
-        def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
+        def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any, cachingF: CachingF[F, Distance]): Unit = {
           val geocoder: GeoProvider[F]        = GoogleGeoProvider[F](geoContext)
-          val cachingF: CachingF[F, Distance] = CaffeineCache[F](Some(1 days)).cachingF
           val distanceF: DistanceF[F]         = GoogleDistanceProvider[F](geoContext).distance
           val distanceApi: DistanceApi[F]     = DistanceApi[F](distanceF, cachingF)
 
@@ -90,13 +89,30 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           }
         }
 
-        "pass tests with cats-effect IO" should {
-          passTests[IO](_.unsafeRunSync())
+        "pass tests with cats-effect and Caffeine" should {
+          passTests[IO](_.unsafeRunSync(), CaffeineCache[IO](Some(1 days)).cachingF)
         }
-        "pass tests with Monix Task" should {
+
+        "pass tests with cats-effect and Redis" should {
+          passTests[IO](
+            _.unsafeRunSync(),
+            RedisCache[IO](RedisConfiguration("locahost", 6379), Some(1 days)).cachingF
+          )
+        }
+
+        "pass tests with Monix and Caffeine" should {
           import monix.execution.Scheduler.Implicits.global
 
-          passTests[Task](_.runSyncUnsafe(10 seconds))
+          passTests[Task](_.runSyncUnsafe(10 seconds), CaffeineCache[Task](Some(1 days)).cachingF)
+        }
+
+        "pass tests with Monix and Redis" should {
+          import monix.execution.Scheduler.Implicits.global
+
+          passTests[Task](
+            _.runSyncUnsafe(10 seconds),
+            RedisCache[Task](RedisConfiguration("locahost", 6379), Some(1 days)).cachingF
+          )
         }
       }
     }
