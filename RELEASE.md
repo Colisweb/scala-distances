@@ -1,9 +1,14 @@
-# How to release this lib ?
+# Release process
 
-To release this lib, for now, you should manually lannch:
+## Setup
 
-```bash
-$ sbt release cross
-```
+* Create an account on Bintray and link it to the organization `colisweb`
+* Retrieve your Bintray API key
+* Install `sbt-bintray` sbt plugin
+* Launch `sbt bintrayChangeCredentials`
+* Follow the instructions (they may repeat)
 
-If you forget the `cross` in the command line, the lib will not be cross published.
+## Release
+
+* Update `version.sbt`
+* Launch `sbt release cross`
