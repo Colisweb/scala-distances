@@ -77,6 +77,16 @@ object GoogleDistanceProvider {
             }
           }
 
+      /**
+        * Call the Google Maps API with the following arguments.
+        * /!\ Using the maybeDepartureTime argument results in a twice higher API call cost & traffic taken into account.
+        * @param mode Transportation mode (driving, bicycle...)
+        * @param origin Origin point
+        * @param destination Destination point
+        * @param maybeDepartureTime The departure time of the vehicle.
+        *                           This makes Google Maps take the traffic into account.
+        * @return An Async typeclass instance of [[Distance]]
+        */
       override final def distance(
           mode: TravelMode,
           origin: LatLong,

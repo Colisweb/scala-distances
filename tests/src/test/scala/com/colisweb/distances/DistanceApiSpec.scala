@@ -59,9 +59,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
         def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any, cachingF: CachingF[F, Distance]): Unit = {
-          val geocoder: GeoProvider[F]        = GoogleGeoProvider[F](geoContext)
-          val distanceF: DistanceF[F]         = GoogleDistanceProvider[F](geoContext).distance
-          val distanceApi: DistanceApi[F]     = DistanceApi[F](distanceF, cachingF)
+          val geocoder: GeoProvider[F]    = GoogleGeoProvider[F](geoContext)
+          val distanceF: DistanceF[F]     = GoogleDistanceProvider[F](geoContext).distance
+          val distanceApi: DistanceApi[F] = DistanceApi[F](distanceF, cachingF)
 
           "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
             val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]
