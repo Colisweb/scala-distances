@@ -17,7 +17,7 @@ object Gens {
   final val lengthGen: Gen[Length]     = Gen.posNum[Double].map(_ meters)
   final val durationGen: Gen[Duration] = Gen.posNum[Int].map(_ seconds)
 
-  final val distaceGen: Gen[Distance] = for {
+  final val distanceGen: Gen[Distance] = for {
     length   <- lengthGen
     duration <- durationGen
   } yield Distance(length = length, duration = duration)
@@ -63,7 +63,7 @@ object Gens {
     name     <- nameGen
     age      <- ageGen
     latLong  <- latLongGen
-    distance <- distaceGen
+    distance <- distanceGen
   } yield
     Toto(
       name = name,

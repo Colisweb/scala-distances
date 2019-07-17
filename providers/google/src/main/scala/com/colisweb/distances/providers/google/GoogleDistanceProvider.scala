@@ -80,6 +80,7 @@ object GoogleDistanceProvider {
       /**
         * Call the Google Maps API with the following arguments.
         * /!\ Using the maybeDepartureTime argument results in a twice higher API call cost & traffic taken into account.
+        *
         * @param mode Transportation mode (driving, bicycle...)
         * @param origin Origin point
         * @param destination Destination point
@@ -117,8 +118,16 @@ object GoogleDistanceProvider {
       element <- row.elements.headOption
     } yield
       element.status match {
-        case OK => OK -> Distance(length = element.distance.inMeters meters, duration = element.duration.inSeconds seconds)
-        case e  => e  -> null // Very bad !
+        case OK =>
+          val durationInTraffic = Option(element.durationInTraffic).map(_.inSeconds seconds).getOrElse(0 seconds)
+          val travelDuration    = element.duration.inSeconds seconds
+
+          OK -> Distance(
+            length = element.distance.inMeters meters,
+            duration = travelDuration.plus(durationInTraffic)
+          )
+
+        case e => e -> null // Very bad !
       }
 
   @inline

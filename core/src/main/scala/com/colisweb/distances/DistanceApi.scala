@@ -29,7 +29,7 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
     else
       parDistances(travelModes, origin, destination, maybeDepartureTime)
         .map { distances =>
-          distances.map { case ((travelMode, _, _), distance) => travelMode -> distance }.toMap
+          distances.map { case ((travelMode, _, _, _), distance) => travelMode -> distance }.toMap
         }
 
   final def distanceFromPostalCodes(geocoder: Geocoder[F])(
@@ -48,7 +48,7 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
   final def distances(
       paths: Seq[DirectedPath],
       maybeDepartureTime: Option[Instant] = None
-  ): F[Map[(TravelMode, LatLong, LatLong), Distance]] = {
+  ): F[Map[(TravelMode, LatLong, LatLong, Option[Instant]), Distance]] = {
     val combinedDirectedPaths: List[DirectedPath] =
       paths
         .filter(_.travelModes.nonEmpty)
@@ -58,7 +58,7 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
       .parFlatTraverse {
         case DirectedPath(origin, destination, travelModes) =>
           if (origin == destination)
-            travelModes.map(mode => (mode, origin, destination) -> Distance.zero).pure[F]
+            travelModes.map(mode => (mode, origin, destination, maybeDepartureTime) -> Distance.zero).pure[F]
           else
             parDistances(travelModes, origin, destination, maybeDepartureTime)
       }
@@ -70,13 +70,13 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
       origin: LatLong,
       destination: LatLong,
       maybeDepartureTime: Option[Instant]
-  ): F[List[((TravelMode, LatLong, LatLong), Distance)]] = {
+  ): F[List[((TravelMode, LatLong, LatLong, Option[Instant]), Distance)]] = {
     modes
       .parTraverse { mode =>
-        val distanceFn = distanceF(mode, origin, destination, maybeDepartureTime)
+        val distance = distanceF(mode, origin, destination, maybeDepartureTime)
 
-        cachingF(distanceFn, Distance.decoder, Distance.encoder, mode, origin, destination, maybeDepartureTime)
-          .map((mode, origin, destination) -> _)
+        cachingF(distance, Distance.decoder, Distance.encoder, mode, origin, destination, maybeDepartureTime)
+          .map((mode, origin, destination, maybeDepartureTime) -> _)
       }
   }
 

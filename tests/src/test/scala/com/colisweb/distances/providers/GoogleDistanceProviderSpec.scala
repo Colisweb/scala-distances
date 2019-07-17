@@ -34,7 +34,7 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
       val distanceBetween01And02 = runSync(distanceApi.distance(Driving, paris01, paris02)).asInstanceOf[Distance]
       val distanceBetween01And18 = runSync(distanceApi.distance(Driving, paris01, paris18)).asInstanceOf[Distance]
 
-      // We only check the length as travel duration varies over time & traffic
+      // We only check the length as durations varies over time & traffic
       distanceBetween01And02.length shouldBe 2136.0.meters
       distanceBetween01And18.length shouldBe 4747.0.meters
 

@@ -1,5 +1,7 @@
 package com.colisweb.distances
 
+import java.time.Instant
+
 import cats.effect.{Concurrent, ContextShift, IO}
 import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.DistanceProvider.DistanceF
@@ -74,16 +76,16 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             val driveFrom01to18 = DirectedPath(origin = paris01, destination = paris18, Driving :: Nil)
 
             val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
-              .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
+              .asInstanceOf[Map[(TravelMode, LatLong, LatLong, Option[Instant]), Distance]]
 
             // We only check the length as travel duration varies over time & traffic
             results.mapValues(_.length) shouldBe Map(
-              (Driving, paris01, paris02) -> 1024.meters,
-              (Driving, paris01, paris18) -> 3429.meters
+              (Driving, paris01, paris02, None) -> 1024.meters,
+              (Driving, paris01, paris18, None) -> 3429.meters
             )
 
-            results((Driving, paris01, paris02)).length should be < results((Driving, paris01, paris18)).length
-            results((Driving, paris01, paris02)).duration should be < results((Driving, paris01, paris18)).duration
+            results((Driving, paris01, paris02, None)).length should be < results((Driving, paris01, paris18, None)).length
+            results((Driving, paris01, paris02, None)).duration should be < results((Driving, paris01, paris18, None)).duration
           }
         }
 
