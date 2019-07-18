@@ -1,5 +1,7 @@
 package com.colisweb.distances
 
+import java.time.Instant
+
 import cats.Show
 import com.colisweb.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
 import enumeratum.{Enum, EnumEntry}
@@ -66,7 +68,19 @@ object Types {
     private[distances] implicit final val decoder: Decoder[Distance] = deriveDecoder[Distance]
   }
 
-  final case class DirectedPath(origin: LatLong, destination: LatLong, travelModes: List[TravelMode])
+  final case class DirectedPathMultipleModes(
+      origin: LatLong,
+      destination: LatLong,
+      travelModes: List[TravelMode],
+      maybeDepartureTime: Option[Instant] = None
+  )
+
+  final case class DirectedPath(
+      origin: LatLong,
+      destination: LatLong,
+      travelMode: TravelMode,
+      maybeDepartureTime: Option[Instant] = None
+  )
 
   sealed trait TravelMode extends EnumEntry
   object TravelMode extends Enum[TravelMode] {

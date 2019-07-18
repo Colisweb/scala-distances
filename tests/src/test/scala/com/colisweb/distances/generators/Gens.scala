@@ -31,12 +31,12 @@ object Gens {
 
   final val travelModeGen: Gen[TravelMode] = implicitly[Arbitrary[TravelMode]].arbitrary
 
-  final val directedPathGen: Gen[DirectedPath] = for {
+  final val directedPathGen: Gen[DirectedPathMultipleModes] = for {
     origin      <- latLongGen
     destination <- latLongGen
     travelModes <- Gen.nonEmptyListOf(travelModeGen)
   } yield
-    DirectedPath(
+    DirectedPathMultipleModes(
       origin = origin,
       destination = destination,
       travelModes = travelModes

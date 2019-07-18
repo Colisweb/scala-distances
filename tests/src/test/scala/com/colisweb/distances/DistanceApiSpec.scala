@@ -1,7 +1,5 @@
 package com.colisweb.distances
 
-import java.time.Instant
-
 import cats.effect.{Concurrent, ContextShift, IO}
 import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.DistanceProvider.DistanceF
@@ -72,20 +70,23 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             paris02 shouldBe LatLong(48.8675641, 2.34399)
             paris18 shouldBe LatLong(48.891305, 2.3529867)
 
-            val driveFrom01to02 = DirectedPath(origin = paris01, destination = paris02, Driving :: Nil)
-            val driveFrom01to18 = DirectedPath(origin = paris01, destination = paris18, Driving :: Nil)
+            val driveFrom01to02 = DirectedPathMultipleModes(origin = paris01, destination = paris02, Driving :: Nil)
+            val driveFrom01to18 = DirectedPathMultipleModes(origin = paris01, destination = paris18, Driving :: Nil)
 
             val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
-              .asInstanceOf[Map[(TravelMode, LatLong, LatLong, Option[Instant]), Distance]]
+              .asInstanceOf[Map[DirectedPath, Distance]]
 
             // We only check the length as travel duration varies over time & traffic
             results.mapValues(_.length) shouldBe Map(
-              (Driving, paris01, paris02, None) -> 1024.meters,
-              (Driving, paris01, paris18, None) -> 3429.meters
+              DirectedPath(paris01, paris02, Driving, None) -> 1024.meters,
+              DirectedPath(paris01, paris18, Driving, None) -> 3429.meters
             )
 
-            results((Driving, paris01, paris02, None)).length should be < results((Driving, paris01, paris18, None)).length
-            results((Driving, paris01, paris02, None)).duration should be < results((Driving, paris01, paris18, None)).duration
+            results(DirectedPath(paris01, paris02, Driving, None)).length should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).length
+
+            results(DirectedPath(paris01, paris02, Driving, None)).duration should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).duration
           }
         }
 
