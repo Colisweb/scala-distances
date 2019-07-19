@@ -1,0 +1,22 @@
+stages:
+  - build
+  - test
+
+compile scala sources:
+  stage: build
+  script:
+    - sbt test:compile
+
+sbt test:
+  stage: test
+  script:
+    - sbt coverage test coverageReport
+
+image: hseeberger/scala-sbt:11.0.3_1.2.8_2.12.8
+variables:
+  SBT_OPTS: "-Dsbt.global.base=sbt-cache/sbtboot -Dsbt.boot.directory=sbt-cache/boot -Dsbt.ivy.home=sbt-cache/ivy"
+  COURSIER_CACHE: "sbt-cache/coursier"
+cache:
+  key: "sbt-$CI_BUILD_REF_NAME"
+  paths:
+    - sbt-cache
