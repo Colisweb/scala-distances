@@ -8,6 +8,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 final case class GoogleGeoApiContext(apiKey: String, connectTimeout: Duration, readTimeout: Duration, queryRateLimit: Int) {
+  assert(apiKey.trim.nonEmpty, "apiKey must be a non empty String")
 
   /**
     * More infos about the rate limit:
@@ -26,7 +27,7 @@ final case class GoogleGeoApiContext(apiKey: String, connectTimeout: Duration, r
     *  - 1000 elements per second (EPS), calculated as the sum of client-side and server-side queries.
     * ```
     */
-  final val geoApiContext: GeoApiContext =
+  val geoApiContext: GeoApiContext =
     new GeoApiContext.Builder()
       .apiKey(apiKey)
       .connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
