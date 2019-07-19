@@ -86,7 +86,7 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
       tests[IO](() => CaffeineCache(Some(1 day)))(_.unsafeRunSync())
     }
     "pass RedisCache" should {
-      tests[IO](() => RedisCache(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.unsafeRunSync())
+      tests[IO](() => RedisCache(redisConfiguration, Some(1 day)))(_.unsafeRunSync())
     }
   }
   "with Monix Task" should {
@@ -96,8 +96,10 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
       tests[Task](() => CaffeineCache(Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
     "pass RedisCache" should {
-      tests[Task](() => RedisCache(RedisConfiguration("127.0.0.1", 6379), Some(1 day)))(_.runSyncUnsafe(10 seconds))
+      tests[Task](() => RedisCache(redisConfiguration, Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
   }
 
+  def redisConfiguration =
+    RedisConfiguration(sys.env.getOrElse("REDIS_HOST", "127.0.0.1"), 6379)
 }
