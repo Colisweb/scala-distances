@@ -4,7 +4,26 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
-## [Unreleased] - no_due_date
+## [v1.0.2] - 2019.07.19
+
+* Fix on the Google Maps response when the `departureTime` argument was specified: the API response was not properly 
+taken into account.
+
+## [v1.0.1] - 2019.06.11
+
+* `DistanceApi` now takes an optional argument `departureTime` which specifies when the vehicle will commit the travel.
+This is argument is transmitted to Google Maps API to retrieve the time passed in traffic, if specified and available.
+Warning: specifying this argument results in a API call cost doubled, at the time of writing.
+
+## [v1.0.0] - 2019.06.04
+
+### Breaking changes:
+
+* Rename packagfe to `com.colisweb.distances`.
+* `DistanceApi[F]` now takes as inputs distance and caching functions instead of provider instances. 
+ 
+### Others
+* Update dependencies (cats-effect 1.3.0, circe 0.11.0)
 
 ## [v1.0.0-RC6] - 2018.11.23
 
