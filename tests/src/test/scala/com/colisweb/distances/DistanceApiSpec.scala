@@ -1,5 +1,7 @@
 package com.colisweb.distances
 
+import java.time.Instant
+
 import cats.effect.{Concurrent, ContextShift, IO}
 import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.DistanceProvider.DistanceF
@@ -11,6 +13,7 @@ import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import squants.space.LengthConversions._
+import squants.space.Meters
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -87,6 +90,30 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
             results(DirectedPath(paris01, paris02, Driving, None)).duration should be <
               results(DirectedPath(paris01, paris18, Driving, None)).duration
+          }
+
+          val origin          = LatLong(48.8640493, 2.3310526)
+          val destination     = LatLong(48.8675641, 2.34399)
+          val length          = Meters(1024)
+          val travelDuration  = 73728.millis
+          val trafficDuration = 5.minutes
+
+          "not takes into account traffic when not asked to with a driving travel mode" in {
+            val result = Map(Driving -> Distance(length, travelDuration))
+
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, None)) shouldBe result
+          }
+
+          "takes into account traffic when asked with a driving travel mode" in {
+            val result = Map(Driving -> Distance(length, travelDuration + trafficDuration))
+
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(Instant.now))) shouldBe result
+          }
+
+          "not takes into account traffic when asked with a bicycling travel mode" in {
+            val result = Map(Bicycling -> Distance(length, travelDuration))
+
+            runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(Instant.now))) shouldBe result
           }
         }
 

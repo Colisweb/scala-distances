@@ -52,7 +52,7 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
       val distanceApi = GoogleDistanceProvider[F](geoContext)
       val tryResult   = Try(runSync(distanceApi.distance(Driving, origin, destination, Some(at))))
 
-      tryResult shouldBe a [Failure[_]]
+      tryResult shouldBe a[Failure[_]]
     }
   }
 
