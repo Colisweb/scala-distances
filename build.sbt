@@ -50,7 +50,7 @@ lazy val testKit = {
 
   Seq(
     "org.scalacheck" %% "scalacheck"            % "1.14.0",
-    "org.scalatest"  %% "scalatest"             % "3.0.5",
+    "org.scalatest"  %% "scalatest"             % "3.0.8",
     "com.beachape"   %% "enumeratum-scalacheck" % "1.5.15",
     "io.circe"       %% "circe-literal"         % circeVersion,
     monix
