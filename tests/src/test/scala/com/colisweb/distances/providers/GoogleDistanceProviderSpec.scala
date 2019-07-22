@@ -1,5 +1,7 @@
 package com.colisweb.distances.providers
 
+import java.time.Instant
+
 import cats.effect.{Concurrent, ContextShift, IO}
 import cats.temp.par.Par
 import com.colisweb.distances.Types.TravelMode.Driving
@@ -13,6 +15,7 @@ import squants.space.LengthConversions._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.util.{Failure, Try}
 
 class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
@@ -34,12 +37,22 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
       val distanceBetween01And02 = runSync(distanceApi.distance(Driving, paris01, paris02)).asInstanceOf[Distance]
       val distanceBetween01And18 = runSync(distanceApi.distance(Driving, paris01, paris18)).asInstanceOf[Distance]
 
-      // We only check the length as travel duration varies over time & traffic
-      distanceBetween01And02.length shouldBe 2136.0.meters
-      distanceBetween01And18.length shouldBe 4747.0.meters
+      // We only check the length as durations varies over time & traffic
+      distanceBetween01And02.length.value shouldBe 2136.0 +- 200.0
+      distanceBetween01And18.length.value shouldBe 4747.0 +- 200.0
 
       distanceBetween01And02.length should be < distanceBetween01And18.length
       distanceBetween01And02.duration should be < distanceBetween01And18.duration
+    }
+
+    "returns an error if asked for a past traffic" in {
+      val origin      = LatLong(48.8640493, 2.3310526)
+      val destination = LatLong(48.8675641, 2.34399)
+      val at          = Instant.now.minusSeconds(60)
+      val distanceApi = GoogleDistanceProvider[F](geoContext)
+      val tryResult   = Try(runSync(distanceApi.distance(Driving, origin, destination, Some(at))))
+
+      tryResult shouldBe a[Failure[_]]
     }
   }
 
@@ -50,6 +63,7 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
       passTests[IO](_.unsafeRunSync())
     }
+
     "pass tests with Monix Task" should {
       import monix.execution.Scheduler.Implicits.global
 
