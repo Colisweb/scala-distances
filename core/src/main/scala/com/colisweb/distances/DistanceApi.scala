@@ -29,7 +29,7 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
     else
       parDistances(travelModes, origin, destination, maybeDepartureTime)
         .map { distances =>
-          distances.map { case ((travelMode, _, _), distance) => travelMode -> distance }.toMap
+          distances.map { case (DirectedPath(_, _, travelMode, _), distance) => travelMode -> distance }.toMap
         }
 
   final def distanceFromPostalCodes(geocoder: Geocoder[F])(
@@ -45,20 +45,20 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
         geocoder.geocodePostalCode(destination)
       ).parTupled.flatMap { case (orig, dest) => distance(orig, dest, travelModes, maybeDepartureTime) }
 
-  final def distances(
-      paths: Seq[DirectedPath],
-      maybeDepartureTime: Option[Instant] = None
-  ): F[Map[(TravelMode, LatLong, LatLong), Distance]] = {
-    val combinedDirectedPaths: List[DirectedPath] =
+  final def distances(paths: Seq[DirectedPathMultipleModes]): F[Map[DirectedPath, Distance]] = {
+    val combinedDirectedPaths: List[DirectedPathMultipleModes] =
       paths
         .filter(_.travelModes.nonEmpty)
-        .combineDuplicatesOn { case DirectedPath(origin, destination, _) => (origin, destination) }(directedPathSemiGroup, breakOut)
+        .combineDuplicatesOn { case DirectedPathMultipleModes(origin, destination, _, _) => (origin, destination) }(
+          directedPathSemiGroup,
+          breakOut
+        )
 
     combinedDirectedPaths
       .parFlatTraverse {
-        case DirectedPath(origin, destination, travelModes) =>
+        case DirectedPathMultipleModes(origin, destination, travelModes, maybeDepartureTime) =>
           if (origin == destination)
-            travelModes.map(mode => (mode, origin, destination) -> Distance.zero).pure[F]
+            travelModes.map(mode => DirectedPath(origin, destination, mode, maybeDepartureTime) -> Distance.zero).pure[F]
           else
             parDistances(travelModes, origin, destination, maybeDepartureTime)
       }
@@ -70,13 +70,13 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
       origin: LatLong,
       destination: LatLong,
       maybeDepartureTime: Option[Instant]
-  ): F[List[((TravelMode, LatLong, LatLong), Distance)]] = {
+  ): F[List[(DirectedPath, Distance)]] = {
     modes
       .parTraverse { mode =>
-        val distanceFn = distanceF(mode, origin, destination, maybeDepartureTime)
+        val distance = distanceF(mode, origin, destination, maybeDepartureTime)
 
-        cachingF(distanceFn, Distance.decoder, Distance.encoder, mode, origin, destination, maybeDepartureTime)
-          .map((mode, origin, destination) -> _)
+        cachingF(distance, Distance.decoder, Distance.encoder, mode, origin, destination, maybeDepartureTime)
+          .map(DirectedPath(origin, destination, mode, maybeDepartureTime) -> _)
       }
   }
 
@@ -86,9 +86,9 @@ object DistanceApi {
   final def apply[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[F, Distance]): DistanceApi[F] =
     new DistanceApi(distanceF, cachingF)
 
-  private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPath] =
-    new Semigroup[DirectedPath] {
-      override def combine(x: DirectedPath, y: DirectedPath): DirectedPath =
-        DirectedPath(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
+  private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPathMultipleModes] =
+    new Semigroup[DirectedPathMultipleModes] {
+      override def combine(x: DirectedPathMultipleModes, y: DirectedPathMultipleModes): DirectedPathMultipleModes =
+        DirectedPathMultipleModes(origin = x.origin, destination = x.destination, (x.travelModes ++ y.travelModes).distinct)
     }
 }

@@ -1,9 +1,11 @@
 package com.colisweb.distances.providers.google
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import cats.effect.{Concurrent, Sync}
-import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
+import com.colisweb.distances.DistanceProvider
+import com.colisweb.distances.Types.TravelMode._
+import com.colisweb.distances.Types.{Distance, LatLong, TravelMode}
 import com.google.maps.model.DistanceMatrixElementStatus._
 import com.google.maps.model.TravelMode._
 import com.google.maps.model.{
@@ -13,9 +15,7 @@ import com.google.maps.model.{
   TravelMode => GoogleTravelMode,
   Unit => GoogleDistanceUnit
 }
-import com.colisweb.distances.DistanceProvider
-import com.colisweb.distances.Types.TravelMode._
-import com.colisweb.distances.Types.{Distance, LatLong, TravelMode}
+import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -23,6 +23,7 @@ import scala.util.control.NoStackTrace
 
 sealed abstract class GoogleDistanceProviderError(message: String) extends RuntimeException(message) with NoStackTrace
 final case class DistanceNotFound(message: String)                 extends GoogleDistanceProviderError(message)
+final case class PastTraffic(message: String)                      extends GoogleDistanceProviderError(message)
 
 object GoogleDistanceProvider {
 
@@ -80,6 +81,7 @@ object GoogleDistanceProvider {
       /**
         * Call the Google Maps API with the following arguments.
         * /!\ Using the maybeDepartureTime argument results in a twice higher API call cost & traffic taken into account.
+        *
         * @param mode Transportation mode (driving, bicycle...)
         * @param origin Origin point
         * @param destination Destination point
@@ -93,10 +95,23 @@ object GoogleDistanceProvider {
           destination: LatLong,
           maybeDepartureTime: Option[Instant] = None
       ): F[Distance] = {
-        val baseRequest        = buildGoogleRequest(mode, origin, destination)
-        val googleFinalRequest = maybeDepartureTime.fold(baseRequest)(baseRequest.departureTime).asEffect[F]
+        maybeDepartureTime match {
+          case Some(departureTime) if departureTime.isBefore(Instant.now()) =>
+            Sync[F].raiseError {
+              PastTraffic(
+                s"""
+                   | Google Distance API does not handle past traffic requests.
+                   | At ${LocalDateTime.ofInstant(departureTime, ZoneOffset.UTC)} from ${origin.show} to ${destination.show}.
+                 """.stripMargin
+              )
+            }
 
-        handleGoogleResponse(googleFinalRequest, mode, origin, destination)
+          case _ =>
+            val baseRequest        = buildGoogleRequest(mode, origin, destination)
+            val googleFinalRequest = maybeDepartureTime.fold(baseRequest)(baseRequest.departureTime).asEffect[F]
+
+            handleGoogleResponse(googleFinalRequest, mode, origin, destination)
+        }
       }
     }
 
@@ -117,8 +132,16 @@ object GoogleDistanceProvider {
       element <- row.elements.headOption
     } yield
       element.status match {
-        case OK => OK -> Distance(length = element.distance.inMeters meters, duration = element.duration.inSeconds seconds)
-        case e  => e  -> null // Very bad !
+        case OK =>
+          val durationInTraffic = Option(element.durationInTraffic).map(_.inSeconds seconds).getOrElse(0 seconds)
+          val travelDuration    = element.duration.inSeconds seconds
+
+          OK -> Distance(
+            length = element.distance.inMeters meters,
+            duration = travelDuration.plus(durationInTraffic)
+          )
+
+        case e => e -> null // Very bad !
       }
 
   @inline
