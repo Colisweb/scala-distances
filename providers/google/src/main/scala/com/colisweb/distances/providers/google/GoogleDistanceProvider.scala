@@ -2,10 +2,9 @@ package com.colisweb.distances.providers.google
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 
-import cats.effect.{Concurrent, Sync}
-import com.colisweb.distances.TrafficModel._
-import com.colisweb.distances.Types.LatLong._
+import cats.effect.Concurrent
 import com.colisweb.distances.TravelMode._
+import com.colisweb.distances.Types.LatLong._
 import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
 import com.colisweb.distances.{DistanceProvider, TravelMode}
 import com.google.maps.model.DistanceMatrixElementStatus._
@@ -14,11 +13,6 @@ import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.control.NoStackTrace
-
-sealed abstract class GoogleDistanceProviderError(message: String) extends RuntimeException(message) with NoStackTrace
-final case class DistanceNotFound(message: String)                 extends GoogleDistanceProviderError(message)
-final case class PastTraffic(message: String)                      extends GoogleDistanceProviderError(message)
 
 object GoogleDistanceProvider {
 
@@ -26,10 +20,16 @@ object GoogleDistanceProvider {
   import com.colisweb.distances.providers.google.utils.Implicits._
   import squants.space.LengthConversions._
 
-  final def apply[F[_]: Concurrent](geoApiContext: GoogleGeoApiContext): DistanceProvider[F] =
-    new DistanceProvider[F] {
+  final def apply[F[_]: Concurrent](
+      geoApiContext: GoogleGeoApiContext
+  ): DistanceProvider[F, GoogleDistanceProviderError] =
+    new DistanceProvider[F, GoogleDistanceProviderError] {
 
-      def buildGoogleRequest(mode: TravelMode, origins: List[LatLong], destinations: List[LatLong]): DistanceMatrixApiRequest =
+      def buildGoogleRequest(
+          mode: TravelMode,
+          origins: List[LatLong],
+          destinations: List[LatLong]
+      ): DistanceMatrixApiRequest =
         DistanceMatrixApi
           .newRequest(geoApiContext.geoApiContext)
           .mode(mode.asGoogle)
@@ -47,50 +47,16 @@ object GoogleDistanceProvider {
       def handleGoogleResponse(
           response: F[DistanceMatrix],
           mode: TravelMode,
-          origins: List[LatLong],
-          destinations: List[LatLong]
-      ): F[List[Distance]] =
-        response.flatMap { response =>
-          val orderedPairs = origins.flatMap(origin => destinations.map(origin -> _))
-
-          getDistances(response)
+          orderedPairs: List[(LatLong, LatLong)]
+      ): F[Map[(LatLong, LatLong), Either[GoogleDistanceProviderError, Distance]]] =
+        response.map { distanceMatrix =>
+          getDistances(distanceMatrix)
             .zip(orderedPairs)
             .map {
               case ((status, maybeDistance), (origin, destination)) =>
-                (status, maybeDistance) match {
-                  case (OK, Some(distance)) => distance.pure[F]
-                  case (NOT_FOUND, _) =>
-                    Sync[F].raiseError[Distance] {
-                      DistanceNotFound(
-                        s"""
-                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                           |
-                           | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
-                      """.stripMargin
-                      )
-                    }
-
-                  case (ZERO_RESULTS, _) =>
-                    Sync[F].raiseError[Distance] {
-                      DistanceNotFound(
-                        s"""
-                           | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                           |
-                           | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
-                      """.stripMargin
-                      )
-                    }
-
-                  case (_, None) =>
-                    Sync[F].raiseError[Distance] {
-                      DistanceNotFound(
-                        s"""
-                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                      """.stripMargin
-                      )
-                    }
-                }
+                (origin, destination) -> handleMatrixElementStatus(mode, status, maybeDistance, origin, destination)
             }
+            .toMap
         }
 
       override final def distance(
@@ -98,8 +64,8 @@ object GoogleDistanceProvider {
           origin: LatLong,
           destination: LatLong,
           maybeTrafficHandling: Option[TrafficHandling] = None
-      ): F[Distance] =
-        multipleDistances(mode, List(origin), List(destination), maybeTrafficHandling).map(_.head)
+      ): F[Either[GoogleDistanceProviderError, Distance]] =
+        batchDistances(mode, List(origin), List(destination), maybeTrafficHandling).map(_.values.head)
 
       /**
         * Call the Google Maps API with the following arguments.
@@ -112,39 +78,88 @@ object GoogleDistanceProvider {
         *                             If defined, this makes Google Maps take the traffic into account.
         * @return An Async typeclass instance of [[Distance]]
         */
-      override final def multipleDistances(
+      override final def batchDistances(
           mode: TravelMode,
           origins: List[LatLong],
           destinations: List[LatLong],
           maybeTrafficHandling: Option[TrafficHandling] = None
-      ): List[F[Distance]] = {
+      ): F[Map[(LatLong, LatLong), Either[GoogleDistanceProviderError, Distance]]] = {
+        val orderedPairs = origins.flatMap(origin => destinations.map(origin -> _))
+
         maybeTrafficHandling match {
           case Some(TrafficHandling(departureTime, trafficModel)) if departureTime.isBefore(Instant.now()) =>
-            Sync[F].raiseError {
-              PastTraffic(
-                s"""
-                   | Google Distance API does not handle past traffic requests.
-                   | At ${LocalDateTime.ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${origins.show} to ${destinations.show}.
-                 """.stripMargin
-              )
-            }
+            val map: Map[(LatLong, LatLong), Either[GoogleDistanceProviderError, Distance]] =
+              orderedPairs.map {
+                case (origin, destination) =>
+                  (origin, destination) ->
+                    Left[GoogleDistanceProviderError, Distance](
+                      PastTraffic(
+                        s"""
+                           | Google Distance API does not handle past traffic requests.
+                           | At ${LocalDateTime
+                             .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${origin.show} to ${destination.show}.
+                        """.stripMargin
+                      )
+                    )
+              }.toMap
+
+            map.pure[F]
 
           case _ =>
             val baseRequest        = buildGoogleRequest(mode, origins, destinations)
             val googleFinalRequest = maybeTrafficHandling.fold(baseRequest)(requestWithTraffic(baseRequest)).asEffect[F]
 
-            handleGoogleResponse(googleFinalRequest, mode, origins, destinations).map { response =>
-              response.map {
-                case Right(distance) => distance.pure[F]
-                case Left(error) => Sync[F].raiseError(error)
-              }
-            }
+            handleGoogleResponse(googleFinalRequest, mode, orderedPairs)
         }
       }
     }
 
+  private[this] def handleMatrixElementStatus(
+      mode: TravelMode,
+      status: DistanceMatrixElementStatus,
+      maybeDistance: Option[Distance],
+      origin: LatLong,
+      destination: LatLong
+  ): Either[GoogleDistanceProviderError, Distance] = {
+    (status, maybeDistance) match {
+      case (OK, Some(distance)) => Right(distance)
+      case (NOT_FOUND, _) =>
+        Left[GoogleDistanceProviderError, Distance](
+          DistanceNotFound(
+            s"""
+               | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+               |
+               | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
+                      """.stripMargin
+          )
+        )
+
+      case (ZERO_RESULTS, _) =>
+        Left[GoogleDistanceProviderError, Distance](
+          NoResults(
+            s"""
+               | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+               |
+               | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
+                      """.stripMargin
+          )
+        )
+
+      case (_, None) =>
+        Left[GoogleDistanceProviderError, Distance](
+          UnknownGoogleError(
+            s"""
+               | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                      """.stripMargin
+          )
+        )
+    }
+  }
+
   @inline
-  private[this] final def getDistances(distanceMatrix: DistanceMatrix): List[(DistanceMatrixElementStatus, Option[Distance])] =
+  private[this] final def getDistances(
+      distanceMatrix: DistanceMatrix
+  ): List[(DistanceMatrixElementStatus, Option[Distance])] =
     (for {
       row     <- distanceMatrix.rows
       element <- row.elements
@@ -158,7 +173,8 @@ object GoogleDistanceProvider {
             Distance(
               length = element.distance.inMeters meters,
               duration = travelDuration.plus(durationInTraffic)
-            ))
+            )
+          )
 
         case e => e -> None
       }

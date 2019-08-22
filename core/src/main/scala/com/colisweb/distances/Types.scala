@@ -4,7 +4,6 @@ import java.time.Instant
 
 import cats.Show
 import com.colisweb.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
-import com.google.maps.model.{LatLng => GoogleLatLng}
 import squants.space.Length
 
 import scala.concurrent.duration._
@@ -35,7 +34,8 @@ object Types {
   object NonAmbiguousAddress {
     implicit final val show: Show[NonAmbiguousAddress] =
       new Show[NonAmbiguousAddress] {
-        override def show(a: NonAmbiguousAddress): String = s"${a.line1}, ${a.line2}, ${a.postalCode} ${a.town} ${a.country}"
+        override def show(a: NonAmbiguousAddress): String =
+          s"${a.line1}, ${a.line2}, ${a.postalCode} ${a.town} ${a.country}"
       }
   }
 
@@ -49,10 +49,6 @@ object Types {
 
     private[distances] implicit final val encoder: Encoder[LatLong] = deriveEncoder[LatLong]
     private[distances] implicit final val decoder: Decoder[LatLong] = deriveDecoder[LatLong]
-
-    implicit final class ToGoogle(latLong: LatLong) {
-      def asGoogle: GoogleLatLng = new GoogleLatLng(latLong.latitude, latLong.longitude)
-    }
   }
 
   final case class Distance(length: Length, duration: Duration)

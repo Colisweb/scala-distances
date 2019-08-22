@@ -101,10 +101,11 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
       val data: Seq[(NonAmbiguousAddress, LatLong)] =
         rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(_.toAddressAndLatLong)
 
-      def testNonAmbigueAddressGeocoder: ((NonAmbiguousAddress, LatLong)) => Unit = { (address: NonAmbiguousAddress, latLong: LatLong) =>
-        s"$address should be located at $latLong}" in {
-          runSync(geocoder.geocode(address)) shouldBe latLong
-        }
+      def testNonAmbigueAddressGeocoder: ((NonAmbiguousAddress, LatLong)) => Unit = {
+        (address: NonAmbiguousAddress, latLong: LatLong) =>
+          s"$address should be located at $latLong}" in {
+            runSync(geocoder.geocode(address)) shouldBe latLong
+          }
       }.tupled
 
       data.foreach(testNonAmbigueAddressGeocoder.apply)

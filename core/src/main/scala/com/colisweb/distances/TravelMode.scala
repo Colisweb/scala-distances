@@ -1,8 +1,6 @@
 package com.colisweb.distances
 
 import cats.Show
-import com.google.maps.model.TravelMode._
-import com.google.maps.model.{TravelMode => GoogleTravelMode}
 import enumeratum.{Enum, EnumEntry}
 
 import scala.collection.immutable
@@ -26,15 +24,5 @@ object TravelMode extends Enum[TravelMode] {
         case Transit   => "transit"
         case Unknown   => "unknown"
       }
-  }
-
-  implicit final class ToGoogleType(model: TravelMode) {
-    def asGoogle: GoogleTravelMode = model match {
-      case Driving   => DRIVING
-      case Bicycling => BICYCLING
-      case Walking   => WALKING
-      case Transit   => TRANSIT
-      case Unknown   => UNKNOWN
-    }
   }
 }

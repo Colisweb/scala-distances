@@ -76,8 +76,7 @@ lazy val core = project
       `cats-effect`,
       `cats-par`,
       enumeratum,
-      okHttpLoggingInterceptor,
-      googleMaps
+      okHttpLoggingInterceptor
     ) ++ scalacacheCore ++ circeAll ++ testKit)
 
 //// Providers
@@ -85,6 +84,7 @@ lazy val core = project
 lazy val `google-provider` = project
   .in(file("providers/google"))
   .settings(moduleName := "scala-distances-provider-google")
+  .settings(libraryDependencies += googleMaps)
   .dependsOn(core)
 
 //// Caches

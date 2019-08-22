@@ -51,6 +51,6 @@ final case class GoogleGeoApiContext(
 }
 
 object GoogleGeoApiContext {
-  final def apply(googleApiKey: String, loggingF: String => Unit = _ => ()): Google GeoApiContext =
+  final def apply(googleApiKey: String, loggingF: String => Unit = _ => ()): GoogleGeoApiContext =
     new GoogleGeoApiContext(googleApiKey, 1 second, 1 second, 1000, loggingF)
 }

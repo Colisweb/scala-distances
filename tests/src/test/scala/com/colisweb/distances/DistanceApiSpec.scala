@@ -4,7 +4,6 @@ import java.time.Instant
 
 import cats.effect.{Concurrent, ContextShift, IO}
 import com.colisweb.distances.Cache.CachingF
-import com.colisweb.distances.DistanceProvider.DistanceF
 import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
@@ -35,11 +34,11 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distance" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF
-          val distanceF: DistanceF[IO]         = distanceProviderStub[IO].distance
-          val distanceApi: DistanceApi[IO]     = DistanceApi[IO](distanceF, cachingF)
-          val latLong                          = LatLong(0.0, 0.0)
-          val expectedResult                   = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
+          val cachingF: CachingF[IO, Distance]   = CaffeineCache[IO](Some(1 days)).cachingF
+          val stub: DistanceProvider[IO, Unit]   = distanceProviderStub[IO, Unit]
+          val distanceApi: DistanceApi[IO, Unit] = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cachingF)
+          val latLong                            = LatLong(0.0, 0.0)
+          val expectedResult                     = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
           distanceApi.distance(latLong, latLong, Driving :: Bicycling :: Nil).unsafeRunSync() shouldBe expectedResult
         }
       }
@@ -48,11 +47,11 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distanceFromPostalCodes" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cachingF: CachingF[IO, Distance] = CaffeineCache[IO](Some(1 days)).cachingF
-          val distanceF: DistanceF[IO]         = distanceProviderStub[IO].distance
-          val distanceApi: DistanceApi[IO]     = DistanceApi[IO](distanceF, cachingF)
-          val postalCode                       = PostalCode("59000")
-          val expectedResult                   = Map((Driving, Distance.zero), (Bicycling, Distance.zero))
+          val cachingF: CachingF[IO, Distance]   = CaffeineCache[IO](Some(1 days)).cachingF
+          val stub                               = distanceProviderStub[IO, Unit]
+          val distanceApi: DistanceApi[IO, Unit] = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cachingF)
+          val postalCode                         = PostalCode("59000")
+          val expectedResult                     = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
           distanceApi
             .distanceFromPostalCodes(geocoderStub)(postalCode, postalCode, Driving :: Bicycling :: Nil)
             .unsafeRunSync() shouldBe expectedResult
@@ -63,8 +62,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
         def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any, cachingF: CachingF[F, Distance]): Unit = {
-          val geocoder: GeoProvider[F]    = GoogleGeoProvider[F](geoContext)
-          val distanceApi: DistanceApi[F] = DistanceApi[F](mockedDistanceF[F], cachingF)
+          val geocoder: GeoProvider[F] = GoogleGeoProvider[F](geoContext)
+          val distanceApi: DistanceApi[F, Unit] =
+            DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cachingF)
 
           "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
             val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]
@@ -79,19 +79,19 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             val driveFrom01to18 = DirectedPathMultipleModes(origin = paris01, destination = paris18, Driving :: Nil)
 
             val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
-              .asInstanceOf[Map[DirectedPath, Distance]]
+              .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
 
             // We only check the length as travel duration varies over time & traffic
-            results.mapValues(_.length) shouldBe Map(
+            results.mapValues(_.right.get.length) shouldBe Map(
               DirectedPath(paris01, paris02, Driving, None) -> 1024.meters,
               DirectedPath(paris01, paris18, Driving, None) -> 3429.meters
             )
 
-            results(DirectedPath(paris01, paris02, Driving, None)).length should be <
-              results(DirectedPath(paris01, paris18, Driving, None)).length
+            results(DirectedPath(paris01, paris02, Driving, None)).right.get.length should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).right.get.length
 
-            results(DirectedPath(paris01, paris02, Driving, None)).duration should be <
-              results(DirectedPath(paris01, paris18, Driving, None)).duration
+            results(DirectedPath(paris01, paris02, Driving, None)).right.get.length should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).right.get.length
           }
 
           val origin         = LatLong(48.8640493, 2.3310526)
@@ -100,34 +100,34 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           val travelDuration = 73728.millis
 
           "not takes into account traffic when not asked to with a driving travel mode" in {
-            val result = Map(Driving -> Distance(length, travelDuration))
+            val result = Map(Driving -> Right(Distance(length, travelDuration)))
 
             runSync(distanceApi.distance(origin, destination, Driving :: Nil, None)) shouldBe result
           }
 
           "takes into account traffic when asked to with a driving travel mode and a best guess estimation" in {
-            val result          = Map(Driving -> Distance(length, travelDuration + 5.minutes))
+            val result          = Map(Driving -> Right(Distance(length, travelDuration + 5.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
 
             runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
           }
 
           "takes into account traffic when asked to with a driving travel mode and an optimistic estimation" in {
-            val result          = Map(Driving -> Distance(length, travelDuration + 2.minutes))
+            val result          = Map(Driving -> Right(Distance(length, travelDuration + 2.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Optimistic)
 
             runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
           }
 
           "takes into account traffic when asked to with a driving travel mode and a pessimistic estimation" in {
-            val result          = Map(Driving -> Distance(length, travelDuration + 10.minutes))
+            val result          = Map(Driving -> Right(Distance(length, travelDuration + 10.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Pessimistic)
 
             runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
           }
 
           "not takes into account traffic when asked to with a bicycling travel mode" in {
-            val result          = Map(Bicycling -> Distance(length, travelDuration))
+            val result          = Map(Bicycling -> Right(Distance(length, travelDuration)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
 
             runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(trafficHandling))) shouldBe result
