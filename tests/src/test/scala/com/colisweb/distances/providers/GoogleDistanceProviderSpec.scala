@@ -19,7 +19,9 @@ import scala.util.{Failure, Try}
 
 class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
-  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
+  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=(.*)&", "key=REDACTED&"))
+
+  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
   def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
     val geocoder: GeoProvider[F]         = GoogleGeoProvider[F](geoContext)
