@@ -3,7 +3,6 @@ package com.colisweb.distances.providers.google
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import cats.effect.{Concurrent, Sync}
-import com.colisweb.distances.TrafficModel._
 import com.colisweb.distances.Types.LatLong._
 import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
