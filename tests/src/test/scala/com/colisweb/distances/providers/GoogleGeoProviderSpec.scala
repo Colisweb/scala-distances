@@ -16,7 +16,7 @@ import scala.language.postfixOps
 
 class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 
-  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=(.*)&", "key=REDACTED&"))
+  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
