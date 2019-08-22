@@ -4,10 +4,9 @@ import java.time.Instant
 
 import cats.Show
 import com.colisweb.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
-import enumeratum.{Enum, EnumEntry}
+import com.google.maps.model.{LatLng => GoogleLatLng}
 import squants.space.Length
 
-import scala.collection.immutable
 import scala.concurrent.duration._
 
 object Types {
@@ -50,6 +49,10 @@ object Types {
 
     private[distances] implicit final val encoder: Encoder[LatLong] = deriveEncoder[LatLong]
     private[distances] implicit final val decoder: Decoder[LatLong] = deriveDecoder[LatLong]
+
+    implicit final class ToGoogle(latLong: LatLong) {
+      def asGoogle: GoogleLatLng = new GoogleLatLng(latLong.latitude, latLong.longitude)
+    }
   }
 
   final case class Distance(length: Length, duration: Duration)
@@ -83,44 +86,4 @@ object Types {
   )
 
   final case class TrafficHandling(departureTime: Instant, trafficModel: TrafficModel)
-
-  sealed trait TravelMode extends EnumEntry
-  object TravelMode extends Enum[TravelMode] {
-    val values: immutable.IndexedSeq[TravelMode] = findValues
-
-    case object Driving   extends TravelMode
-    case object Bicycling extends TravelMode
-    case object Walking   extends TravelMode
-    case object Transit   extends TravelMode
-    case object Unknown   extends TravelMode
-
-    implicit final val show: Show[TravelMode] = new Show[TravelMode] {
-      override def show(travelMode: TravelMode): String =
-        travelMode match {
-          case Driving   => "driving"
-          case Bicycling => "bicycling"
-          case Walking   => "walking"
-          case Transit   => "transit"
-          case Unknown   => "unknown"
-        }
-    }
-  }
-
-  sealed trait TrafficModel extends EnumEntry
-  object TrafficModel extends Enum[TravelMode] {
-    val values: immutable.IndexedSeq[TravelMode] = findValues
-
-    case object BestGuess   extends TrafficModel
-    case object Optimistic  extends TrafficModel
-    case object Pessimistic extends TrafficModel
-
-    implicit final val show: Show[TrafficModel] = new Show[TrafficModel] {
-      override def show(trafficModel: TrafficModel): String =
-        trafficModel match {
-          case BestGuess   => "best_guess"
-          case Optimistic  => "optimistic"
-          case Pessimistic => "pessimistic"
-        }
-    }
-  }
 }

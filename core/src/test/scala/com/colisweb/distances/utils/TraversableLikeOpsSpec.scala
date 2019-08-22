@@ -2,7 +2,7 @@ package com.colisweb.distances.utils
 
 import cats.kernel.Semigroup
 import com.colisweb.distances.DistanceApi
-import com.colisweb.distances.Types.TravelMode._
+import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types.{DirectedPathMultipleModes, LatLong}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures

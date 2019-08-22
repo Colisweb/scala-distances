@@ -3,21 +3,13 @@ package com.colisweb.distances.providers.google
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import cats.effect.{Concurrent, Sync}
-import com.colisweb.distances.DistanceProvider
-import com.colisweb.distances.Types.TrafficModel._
-import com.colisweb.distances.Types.TravelMode._
-import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling, TrafficModel, TravelMode}
+import com.colisweb.distances.TrafficModel._
+import com.colisweb.distances.Types.LatLong._
+import com.colisweb.distances.TravelMode._
+import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
+import com.colisweb.distances.{DistanceProvider, TravelMode}
 import com.google.maps.model.DistanceMatrixElementStatus._
-import com.google.maps.model.TravelMode._
-import com.google.maps.model.TrafficModel._
-import com.google.maps.model.{
-  DistanceMatrix,
-  DistanceMatrixElementStatus,
-  LatLng => GoogleLatLng,
-  TrafficModel => GoogleTrafficModel,
-  TravelMode => GoogleTravelMode,
-  Unit => GoogleDistanceUnit
-}
+import com.google.maps.model.{DistanceMatrix, DistanceMatrixElementStatus, Unit => GoogleDistanceUnit}
 import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
 
 import scala.concurrent.duration._
@@ -40,9 +32,9 @@ object GoogleDistanceProvider {
       def buildGoogleRequest(mode: TravelMode, origin: LatLong, destination: LatLong): DistanceMatrixApiRequest =
         DistanceMatrixApi
           .newRequest(geoApiContext.geoApiContext)
-          .mode(asGoogleTravelMode(mode))
-          .origins(asGoogleLatLng(origin)) // TODO: Multiple origins?
-          .destinations(asGoogleLatLng(destination))
+          .mode(mode.asGoogle)
+          .origins(origin.asGoogle) // TODO: Multiple origins?
+          .destinations(destination.asGoogle)
           .units(GoogleDistanceUnit.METRIC)
 
       def requestWithTraffic(request: DistanceMatrixApiRequest)(
@@ -50,7 +42,7 @@ object GoogleDistanceProvider {
       ): DistanceMatrixApiRequest =
         request
           .departureTime(trafficHandling.departureTime)
-          .trafficModel(asGoogleTrafficModel(trafficHandling.trafficModel))
+          .trafficModel(trafficHandling.trafficModel.asGoogle)
 
       def handleGoogleResponse(response: F[DistanceMatrix], mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
         response
@@ -127,24 +119,6 @@ object GoogleDistanceProvider {
     }
 
   @inline
-  private[this] final def asGoogleTravelMode(travelMode: TravelMode): GoogleTravelMode =
-    travelMode match {
-      case Driving   => DRIVING
-      case Bicycling => BICYCLING
-      case Walking   => WALKING
-      case Transit   => TRANSIT
-      case Unknown   => UNKNOWN
-    }
-
-  @inline
-  private[this] final def asGoogleTrafficModel(trafficModel: TrafficModel): GoogleTrafficModel =
-    trafficModel match {
-      case BestGuess   => BEST_GUESS
-      case Optimistic  => OPTIMISTIC
-      case Pessimistic => PESSIMISTIC
-    }
-
-  @inline
   private[this] final def getDistance(distanceMatrix: DistanceMatrix): Option[(DistanceMatrixElementStatus, Distance)] =
     for {
       row     <- distanceMatrix.rows.headOption
@@ -162,8 +136,4 @@ object GoogleDistanceProvider {
 
         case e => e -> null // Very bad !
       }
-
-  @inline
-  private[this] final def asGoogleLatLng(latLong: LatLong): GoogleLatLng = new GoogleLatLng(latLong.latitude, latLong.longitude)
-
 }

@@ -4,10 +4,10 @@ import java.time.Instant
 
 import cats.effect.{Concurrent, ContextShift, IO}
 import cats.temp.par.Par
-import com.colisweb.distances.Types.TravelMode.Driving
+import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}
-import com.colisweb.distances.{DistanceProvider, GeoProvider}
+import com.colisweb.distances.{DistanceProvider, GeoProvider, TrafficModel}
 import monix.eval.Task
 import org.scalatest.{Matchers, WordSpec}
 import squants.space.LengthConversions._

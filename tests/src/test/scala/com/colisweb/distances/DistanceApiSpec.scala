@@ -5,7 +5,7 @@ import java.time.Instant
 import cats.effect.{Concurrent, ContextShift, IO}
 import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.DistanceProvider.DistanceF
-import com.colisweb.distances.Types.TravelMode.{Bicycling, Driving}
+import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
 import com.colisweb.distances.providers.google.{GoogleGeoApiContext, GoogleGeoProvider}

@@ -2,7 +2,7 @@ package com.colisweb.distances.utils
 
 import cats.Monad
 import cats.effect.Async
-import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling, TrafficModel, TravelMode}
+import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
 import com.colisweb.distances.{DistanceProvider, _}
 import com.colisweb.distances.caches.NoCache
 import squants.motion.KilometersPerHour
