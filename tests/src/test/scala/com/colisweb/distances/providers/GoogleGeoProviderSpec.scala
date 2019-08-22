@@ -67,10 +67,11 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
 
       final case class TestAddress(line1: String, postalCode: String, town: String, lat: String, long: String) {
         def toAddressAndLatLong: (NonAmbiguousAddress, LatLong) =
-          NonAmbiguousAddress(line1 = this.line1, line2 = "", postalCode = this.postalCode, town = this.town, country = "France") -> LatLong(
-            latitude = this.lat.toDouble,
-            longitude = this.long.toDouble
-          )
+          NonAmbiguousAddress(line1 = line1, line2 = "", postalCode = postalCode, town = town, country = "France") ->
+            LatLong(
+              latitude = lat.toDouble,
+              longitude = long.toDouble
+            )
       }
 
       val rawData =
@@ -92,7 +93,7 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
            |95 avenue du General Leclerc;75014;Paris;48.8260975;2.3273668
            |12 rue de l'Assomption;75016;Paris;48.85349;2.2744602
            |108 rue de Richelieu;75002;PARIS;48.8714406;2.3398815
-           |24 AVENUE MARIE ALEXIS;76370;PETIT CAUX;49.96568550000001;1.196322
+           |24 AVENUE MARIE ALEXIS;76370;Saint-Martin-en-Campagne;49.96568550000001;1.196322
            |8 RUE FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
            |8 RUE des FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
            |""".stripMargin.drop(1).dropRight(1)
