@@ -4,14 +4,17 @@ import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import cats.effect.{Concurrent, Sync}
 import com.colisweb.distances.DistanceProvider
+import com.colisweb.distances.Types.TrafficModel._
 import com.colisweb.distances.Types.TravelMode._
-import com.colisweb.distances.Types.{Distance, LatLong, TravelMode}
+import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling, TrafficModel, TravelMode}
 import com.google.maps.model.DistanceMatrixElementStatus._
 import com.google.maps.model.TravelMode._
+import com.google.maps.model.TrafficModel._
 import com.google.maps.model.{
   DistanceMatrix,
   DistanceMatrixElementStatus,
   LatLng => GoogleLatLng,
+  TrafficModel => GoogleTrafficModel,
   TravelMode => GoogleTravelMode,
   Unit => GoogleDistanceUnit
 }
@@ -41,6 +44,13 @@ object GoogleDistanceProvider {
           .origins(asGoogleLatLng(origin)) // TODO: Multiple origins?
           .destinations(asGoogleLatLng(destination))
           .units(GoogleDistanceUnit.METRIC)
+
+      def requestWithTraffic(request: DistanceMatrixApiRequest)(
+          trafficHandling: TrafficHandling
+      ): DistanceMatrixApiRequest =
+        request
+          .departureTime(trafficHandling.departureTime)
+          .trafficModel(asGoogleTrafficModel(trafficHandling.trafficModel))
 
       def handleGoogleResponse(response: F[DistanceMatrix], mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
         response
@@ -80,35 +90,36 @@ object GoogleDistanceProvider {
 
       /**
         * Call the Google Maps API with the following arguments.
-        * /!\ Using the maybeDepartureTime argument results in a twice higher API call cost & traffic taken into account.
+        * /!\ Using the maybeTrafficHandling argument results in a twice higher API call cost & traffic taken into account.
         *
         * @param mode Transportation mode (driving, bicycle...)
         * @param origin Origin point
         * @param destination Destination point
-        * @param maybeDepartureTime The departure time of the vehicle.
-        *                           This makes Google Maps take the traffic into account.
+        * @param maybeTrafficHandling The traffic parameters, which are the departure time and the traffic estimation model.
+        *                             If defined, this makes Google Maps take the traffic into account.
         * @return An Async typeclass instance of [[Distance]]
         */
       override final def distance(
           mode: TravelMode,
           origin: LatLong,
           destination: LatLong,
-          maybeDepartureTime: Option[Instant] = None
+          maybeTrafficHandling: Option[TrafficHandling] = None
       ): F[Distance] = {
-        maybeDepartureTime match {
-          case Some(departureTime) if departureTime.isBefore(Instant.now()) =>
+        maybeTrafficHandling match {
+          case Some(TrafficHandling(departureTime, trafficModel)) if departureTime.isBefore(Instant.now()) =>
             Sync[F].raiseError {
               PastTraffic(
                 s"""
                    | Google Distance API does not handle past traffic requests.
-                   | At ${LocalDateTime.ofInstant(departureTime, ZoneOffset.UTC)} from ${origin.show} to ${destination.show}.
+                   | At ${LocalDateTime
+                     .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${origin.show} to ${destination.show}.
                  """.stripMargin
               )
             }
 
           case _ =>
             val baseRequest        = buildGoogleRequest(mode, origin, destination)
-            val googleFinalRequest = maybeDepartureTime.fold(baseRequest)(baseRequest.departureTime).asEffect[F]
+            val googleFinalRequest = maybeTrafficHandling.fold(baseRequest)(requestWithTraffic(baseRequest)).asEffect[F]
 
             handleGoogleResponse(googleFinalRequest, mode, origin, destination)
         }
@@ -123,6 +134,14 @@ object GoogleDistanceProvider {
       case Walking   => WALKING
       case Transit   => TRANSIT
       case Unknown   => UNKNOWN
+    }
+
+  @inline
+  private[this] final def asGoogleTrafficModel(trafficModel: TrafficModel): GoogleTrafficModel =
+    trafficModel match {
+      case BestGuess   => BEST_GUESS
+      case Optimistic  => OPTIMISTIC
+      case Pessimistic => PESSIMISTIC
     }
 
   @inline

@@ -44,11 +44,11 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
     }
 
     "returns an error if asked for a past traffic" in {
-      val origin      = LatLong(48.8640493, 2.3310526)
-      val destination = LatLong(48.8675641, 2.34399)
-      val at          = Instant.now.minusSeconds(60)
-      val distanceApi = GoogleDistanceProvider[F](geoContext)
-      val tryResult   = Try(runSync(distanceApi.distance(Driving, origin, destination, Some(at))))
+      val origin          = LatLong(48.8640493, 2.3310526)
+      val destination     = LatLong(48.8675641, 2.34399)
+      val trafficHandling = TrafficHandling(Instant.now.minusSeconds(60), TrafficModel.BestGuess)
+      val distanceApi     = GoogleDistanceProvider[F](geoContext)
+      val tryResult       = Try(runSync(distanceApi.distance(Driving, origin, destination, Some(trafficHandling))))
 
       tryResult shouldBe a[Failure[_]]
     }

@@ -72,19 +72,20 @@ object Types {
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode],
-      maybeDepartureTime: Option[Instant] = None
+      maybeTrafficHandling: Option[TrafficHandling] = None
   )
 
   final case class DirectedPath(
       origin: LatLong,
       destination: LatLong,
       travelMode: TravelMode,
-      maybeDepartureTime: Option[Instant] = None
+      maybeTrafficHandling: Option[TrafficHandling] = None
   )
+
+  final case class TrafficHandling(departureTime: Instant, trafficModel: TrafficModel)
 
   sealed trait TravelMode extends EnumEntry
   object TravelMode extends Enum[TravelMode] {
-
     val values: immutable.IndexedSeq[TravelMode] = findValues
 
     case object Driving   extends TravelMode
@@ -93,17 +94,33 @@ object Types {
     case object Transit   extends TravelMode
     case object Unknown   extends TravelMode
 
-    implicit final val show: Show[TravelMode] =
-      new Show[TravelMode] {
-        override def show(t: TravelMode): String = t match {
+    implicit final val show: Show[TravelMode] = new Show[TravelMode] {
+      override def show(travelMode: TravelMode): String =
+        travelMode match {
           case Driving   => "driving"
           case Bicycling => "bicycling"
           case Walking   => "walking"
           case Transit   => "transit"
           case Unknown   => "unknown"
         }
-      }
-
+    }
   }
 
+  sealed trait TrafficModel extends EnumEntry
+  object TrafficModel extends Enum[TravelMode] {
+    val values: immutable.IndexedSeq[TravelMode] = findValues
+
+    case object BestGuess   extends TrafficModel
+    case object Optimistic  extends TrafficModel
+    case object Pessimistic extends TrafficModel
+
+    implicit final val show: Show[TrafficModel] = new Show[TrafficModel] {
+      override def show(trafficModel: TrafficModel): String =
+        trafficModel match {
+          case BestGuess   => "best_guess"
+          case Optimistic  => "optimistic"
+          case Pessimistic => "pessimistic"
+        }
+    }
+  }
 }

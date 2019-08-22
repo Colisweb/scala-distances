@@ -1,7 +1,5 @@
 package com.colisweb.distances
 
-import java.time.Instant
-
 import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
@@ -22,12 +20,12 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
       origin: LatLong,
       destination: LatLong,
       travelModes: List[TravelMode],
-      maybeDepartureTime: Option[Instant] = None
+      maybeTrafficHandling: Option[TrafficHandling] = None
   ): F[Map[TravelMode, Distance]] =
     if (origin == destination)
       Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
-      parDistances(travelModes, origin, destination, maybeDepartureTime)
+      parDistances(travelModes, origin, destination, maybeTrafficHandling)
         .map { distances =>
           distances.map { case (DirectedPath(_, _, travelMode, _), distance) => travelMode -> distance }.toMap
         }
@@ -36,14 +34,14 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
       origin: PostalCode,
       destination: PostalCode,
       travelModes: List[TravelMode],
-      maybeDepartureTime: Option[Instant] = None
+      maybeTrafficHandling: Option[TrafficHandling] = None
   ): F[Map[TravelMode, Distance]] =
     if (origin == destination) Async[F].pure(travelModes.map(_ -> Distance.zero)(breakOut))
     else
       (
         geocoder.geocodePostalCode(origin),
         geocoder.geocodePostalCode(destination)
-      ).parTupled.flatMap { case (orig, dest) => distance(orig, dest, travelModes, maybeDepartureTime) }
+      ).parTupled.flatMap { case (orig, dest) => distance(orig, dest, travelModes, maybeTrafficHandling) }
 
   final def distances(paths: Seq[DirectedPathMultipleModes]): F[Map[DirectedPath, Distance]] = {
     val combinedDirectedPaths: List[DirectedPathMultipleModes] =
@@ -69,14 +67,14 @@ class DistanceApi[F[_]: Async: Par](distanceF: DistanceF[F], cachingF: CachingF[
       modes: List[TravelMode],
       origin: LatLong,
       destination: LatLong,
-      maybeDepartureTime: Option[Instant]
+      maybeTrafficHandling: Option[TrafficHandling]
   ): F[List[(DirectedPath, Distance)]] = {
     modes
       .parTraverse { mode =>
-        val distance = distanceF(mode, origin, destination, maybeDepartureTime)
+        val distance = distanceF(mode, origin, destination, maybeTrafficHandling)
 
-        cachingF(distance, Distance.decoder, Distance.encoder, mode, origin, destination, maybeDepartureTime)
-          .map(DirectedPath(origin, destination, mode, maybeDepartureTime) -> _)
+        cachingF(distance, Distance.decoder, Distance.encoder, mode, origin, destination, maybeTrafficHandling)
+          .map(DirectedPath(origin, destination, mode, maybeTrafficHandling) -> _)
       }
   }
 

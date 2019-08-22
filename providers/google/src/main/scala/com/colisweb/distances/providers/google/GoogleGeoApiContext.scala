@@ -35,7 +35,6 @@ final case class GoogleGeoApiContext(
     *  - 1000 elements per second (EPS), calculated as the sum of client-side and server-side queries.
     * ```
     */
-
   private val logging: HttpLoggingInterceptor = new HttpLoggingInterceptor((message: String) => loggingF(message))
   logging.level(Level.BASIC)
 

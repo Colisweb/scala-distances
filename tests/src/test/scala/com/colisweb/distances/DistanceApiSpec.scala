@@ -94,11 +94,10 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
               results(DirectedPath(paris01, paris18, Driving, None)).duration
           }
 
-          val origin          = LatLong(48.8640493, 2.3310526)
-          val destination     = LatLong(48.8675641, 2.34399)
-          val length          = Meters(1024)
-          val travelDuration  = 73728.millis
-          val trafficDuration = 5.minutes
+          val origin         = LatLong(48.8640493, 2.3310526)
+          val destination    = LatLong(48.8675641, 2.34399)
+          val length         = Meters(1024)
+          val travelDuration = 73728.millis
 
           "not takes into account traffic when not asked to with a driving travel mode" in {
             val result = Map(Driving -> Distance(length, travelDuration))
@@ -106,16 +105,32 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             runSync(distanceApi.distance(origin, destination, Driving :: Nil, None)) shouldBe result
           }
 
-          "takes into account traffic when asked with a driving travel mode" in {
-            val result = Map(Driving -> Distance(length, travelDuration + trafficDuration))
+          "takes into account traffic when asked to with a driving travel mode and a best guess estimation" in {
+            val result          = Map(Driving -> Distance(length, travelDuration + 5.minutes))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
 
-            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(Instant.now))) shouldBe result
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
           }
 
-          "not takes into account traffic when asked with a bicycling travel mode" in {
-            val result = Map(Bicycling -> Distance(length, travelDuration))
+          "takes into account traffic when asked to with a driving travel mode and an optimistic estimation" in {
+            val result          = Map(Driving -> Distance(length, travelDuration + 2.minutes))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Optimistic)
 
-            runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(Instant.now))) shouldBe result
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+          }
+
+          "takes into account traffic when asked to with a driving travel mode and a pessimistic estimation" in {
+            val result          = Map(Driving -> Distance(length, travelDuration + 10.minutes))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Pessimistic)
+
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+          }
+
+          "not takes into account traffic when asked to with a bicycling travel mode" in {
+            val result          = Map(Bicycling -> Distance(length, travelDuration))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
+
+            runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(trafficHandling))) shouldBe result
           }
         }
 
