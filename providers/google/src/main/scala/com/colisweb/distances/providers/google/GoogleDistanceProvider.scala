@@ -29,12 +29,12 @@ object GoogleDistanceProvider {
   final def apply[F[_]: Concurrent](geoApiContext: GoogleGeoApiContext): DistanceProvider[F] =
     new DistanceProvider[F] {
 
-      def buildGoogleRequest(mode: TravelMode, origin: LatLong, destination: LatLong): DistanceMatrixApiRequest =
+      def buildGoogleRequest(mode: TravelMode, origins: List[LatLong], destinations: List[LatLong]): DistanceMatrixApiRequest =
         DistanceMatrixApi
           .newRequest(geoApiContext.geoApiContext)
           .mode(mode.asGoogle)
-          .origins(origin.asGoogle) // TODO: Multiple origins?
-          .destinations(destination.asGoogle)
+          .origins(origins.map(_.asGoogle): _*)
+          .destinations(destinations.map(_.asGoogle): _*)
           .units(GoogleDistanceUnit.METRIC)
 
       def requestWithTraffic(request: DistanceMatrixApiRequest)(
@@ -44,96 +44,123 @@ object GoogleDistanceProvider {
           .departureTime(trafficHandling.departureTime)
           .trafficModel(trafficHandling.trafficModel.asGoogle)
 
-      def handleGoogleResponse(response: F[DistanceMatrix], mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
-        response
-          .flatMap { response =>
-            getDistance(response) match {
-              case Some((OK, distance)) => distance.pure[F]
-              case Some((NOT_FOUND, _)) =>
-                Sync[F].raiseError {
-                  DistanceNotFound(
-                    s"""
-                       | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                       |
-                         | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
+      def handleGoogleResponse(
+          response: F[DistanceMatrix],
+          mode: TravelMode,
+          origins: List[LatLong],
+          destinations: List[LatLong]
+      ): F[List[Distance]] =
+        response.flatMap { response =>
+          val orderedPairs = origins.flatMap(origin => destinations.map(origin -> _))
+
+          getDistances(response)
+            .zip(orderedPairs)
+            .map {
+              case ((status, maybeDistance), (origin, destination)) =>
+                (status, maybeDistance) match {
+                  case (OK, Some(distance)) => distance.pure[F]
+                  case (NOT_FOUND, _) =>
+                    Sync[F].raiseError[Distance] {
+                      DistanceNotFound(
+                        s"""
+                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                           |
+                           | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
                       """.stripMargin
-                  )
-                }
-              case Some((ZERO_RESULTS, _)) =>
-                Sync[F].raiseError {
-                  DistanceNotFound(
-                    s"""
-                       | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                       |
-                         | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
+                      )
+                    }
+
+                  case (ZERO_RESULTS, _) =>
+                    Sync[F].raiseError[Distance] {
+                      DistanceNotFound(
+                        s"""
+                           | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                           |
+                           | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
                       """.stripMargin
-                  )
-                }
-              case None =>
-                Sync[F].raiseError {
-                  DistanceNotFound(
-                    s"""
-                       | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
+                      )
+                    }
+
+                  case (_, None) =>
+                    Sync[F].raiseError[Distance] {
+                      DistanceNotFound(
+                        s"""
+                           | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
                       """.stripMargin
-                  )
+                      )
+                    }
                 }
             }
-          }
+        }
+
+      override final def distance(
+          mode: TravelMode,
+          origin: LatLong,
+          destination: LatLong,
+          maybeTrafficHandling: Option[TrafficHandling] = None
+      ): F[Distance] =
+        multipleDistances(mode, List(origin), List(destination), maybeTrafficHandling).map(_.head)
 
       /**
         * Call the Google Maps API with the following arguments.
         * /!\ Using the maybeTrafficHandling argument results in a twice higher API call cost & traffic taken into account.
         *
         * @param mode Transportation mode (driving, bicycle...)
-        * @param origin Origin point
-        * @param destination Destination point
+        * @param origins Origin points
+        * @param destinations Destination points
         * @param maybeTrafficHandling The traffic parameters, which are the departure time and the traffic estimation model.
         *                             If defined, this makes Google Maps take the traffic into account.
         * @return An Async typeclass instance of [[Distance]]
         */
-      override final def distance(
+      override final def multipleDistances(
           mode: TravelMode,
-          origin: LatLong,
-          destination: LatLong,
+          origins: List[LatLong],
+          destinations: List[LatLong],
           maybeTrafficHandling: Option[TrafficHandling] = None
-      ): F[Distance] = {
+      ): List[F[Distance]] = {
         maybeTrafficHandling match {
           case Some(TrafficHandling(departureTime, trafficModel)) if departureTime.isBefore(Instant.now()) =>
             Sync[F].raiseError {
               PastTraffic(
                 s"""
                    | Google Distance API does not handle past traffic requests.
-                   | At ${LocalDateTime
-                     .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${origin.show} to ${destination.show}.
+                   | At ${LocalDateTime.ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${origins.show} to ${destinations.show}.
                  """.stripMargin
               )
             }
 
           case _ =>
-            val baseRequest        = buildGoogleRequest(mode, origin, destination)
+            val baseRequest        = buildGoogleRequest(mode, origins, destinations)
             val googleFinalRequest = maybeTrafficHandling.fold(baseRequest)(requestWithTraffic(baseRequest)).asEffect[F]
 
-            handleGoogleResponse(googleFinalRequest, mode, origin, destination)
+            handleGoogleResponse(googleFinalRequest, mode, origins, destinations).map { response =>
+              response.map {
+                case Right(distance) => distance.pure[F]
+                case Left(error) => Sync[F].raiseError(error)
+              }
+            }
         }
       }
     }
 
   @inline
-  private[this] final def getDistance(distanceMatrix: DistanceMatrix): Option[(DistanceMatrixElementStatus, Distance)] =
-    for {
-      row     <- distanceMatrix.rows.headOption
-      element <- row.elements.headOption
-    } yield
+  private[this] final def getDistances(distanceMatrix: DistanceMatrix): List[(DistanceMatrixElementStatus, Option[Distance])] =
+    (for {
+      row     <- distanceMatrix.rows
+      element <- row.elements
+    } yield {
       element.status match {
         case OK =>
           val durationInTraffic = Option(element.durationInTraffic).map(_.inSeconds seconds).getOrElse(0 seconds)
           val travelDuration    = element.duration.inSeconds seconds
 
-          OK -> Distance(
-            length = element.distance.inMeters meters,
-            duration = travelDuration.plus(durationInTraffic)
-          )
+          OK -> Some(
+            Distance(
+              length = element.distance.inMeters meters,
+              duration = travelDuration.plus(durationInTraffic)
+            ))
 
-        case e => e -> null // Very bad !
+        case e => e -> None
       }
+    }).toList
 }
