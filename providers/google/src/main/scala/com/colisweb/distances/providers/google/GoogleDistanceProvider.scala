@@ -1,21 +1,15 @@
 package com.colisweb.distances.providers.google
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import cats.effect.{Concurrent, Sync}
-import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
+import com.colisweb.distances.Types.LatLong._
+import com.colisweb.distances.TravelMode._
+import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
+import com.colisweb.distances.{DistanceProvider, TravelMode}
 import com.google.maps.model.DistanceMatrixElementStatus._
-import com.google.maps.model.TravelMode._
-import com.google.maps.model.{
-  DistanceMatrix,
-  DistanceMatrixElementStatus,
-  LatLng => GoogleLatLng,
-  TravelMode => GoogleTravelMode,
-  Unit => GoogleDistanceUnit
-}
-import com.colisweb.distances.DistanceProvider
-import com.colisweb.distances.Types.TravelMode._
-import com.colisweb.distances.Types.{Distance, LatLong, TravelMode}
+import com.google.maps.model.{DistanceMatrix, DistanceMatrixElementStatus, Unit => GoogleDistanceUnit}
+import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -23,6 +17,7 @@ import scala.util.control.NoStackTrace
 
 sealed abstract class GoogleDistanceProviderError(message: String) extends RuntimeException(message) with NoStackTrace
 final case class DistanceNotFound(message: String)                 extends GoogleDistanceProviderError(message)
+final case class PastTraffic(message: String)                      extends GoogleDistanceProviderError(message)
 
 object GoogleDistanceProvider {
 
@@ -36,10 +31,17 @@ object GoogleDistanceProvider {
       def buildGoogleRequest(mode: TravelMode, origin: LatLong, destination: LatLong): DistanceMatrixApiRequest =
         DistanceMatrixApi
           .newRequest(geoApiContext.geoApiContext)
-          .mode(asGoogleTravelMode(mode))
-          .origins(asGoogleLatLng(origin)) // TODO: Multiple origins?
-          .destinations(asGoogleLatLng(destination))
+          .mode(mode.asGoogle)
+          .origins(origin.asGoogle) // TODO: Multiple origins?
+          .destinations(destination.asGoogle)
           .units(GoogleDistanceUnit.METRIC)
+
+      def requestWithTraffic(request: DistanceMatrixApiRequest)(
+          trafficHandling: TrafficHandling
+      ): DistanceMatrixApiRequest =
+        request
+          .departureTime(trafficHandling.departureTime)
+          .trafficModel(trafficHandling.trafficModel.asGoogle)
 
       def handleGoogleResponse(response: F[DistanceMatrix], mode: TravelMode, origin: LatLong, destination: LatLong): F[Distance] =
         response
@@ -79,35 +81,40 @@ object GoogleDistanceProvider {
 
       /**
         * Call the Google Maps API with the following arguments.
-        * /!\ Using the maybeDepartureTime argument results in a twice higher API call cost & traffic taken into account.
+        * /!\ Using the maybeTrafficHandling argument results in a twice higher API call cost & traffic taken into account.
+        *
         * @param mode Transportation mode (driving, bicycle...)
         * @param origin Origin point
         * @param destination Destination point
-        * @param maybeDepartureTime The departure time of the vehicle.
-        *                           This makes Google Maps take the traffic into account.
+        * @param maybeTrafficHandling The traffic parameters, which are the departure time and the traffic estimation model.
+        *                             If defined, this makes Google Maps take the traffic into account.
         * @return An Async typeclass instance of [[Distance]]
         */
       override final def distance(
           mode: TravelMode,
           origin: LatLong,
           destination: LatLong,
-          maybeDepartureTime: Option[Instant] = None
+          maybeTrafficHandling: Option[TrafficHandling] = None
       ): F[Distance] = {
-        val baseRequest        = buildGoogleRequest(mode, origin, destination)
-        val googleFinalRequest = maybeDepartureTime.fold(baseRequest)(baseRequest.departureTime).asEffect[F]
+        maybeTrafficHandling match {
+          case Some(TrafficHandling(departureTime, trafficModel)) if departureTime.isBefore(Instant.now()) =>
+            Sync[F].raiseError {
+              PastTraffic(
+                s"""
+                   | Google Distance API does not handle past traffic requests.
+                   | At ${LocalDateTime
+                     .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${origin.show} to ${destination.show}.
+                 """.stripMargin
+              )
+            }
 
-        handleGoogleResponse(googleFinalRequest, mode, origin, destination)
+          case _ =>
+            val baseRequest        = buildGoogleRequest(mode, origin, destination)
+            val googleFinalRequest = maybeTrafficHandling.fold(baseRequest)(requestWithTraffic(baseRequest)).asEffect[F]
+
+            handleGoogleResponse(googleFinalRequest, mode, origin, destination)
+        }
       }
-    }
-
-  @inline
-  private[this] final def asGoogleTravelMode(travelMode: TravelMode): GoogleTravelMode =
-    travelMode match {
-      case Driving   => DRIVING
-      case Bicycling => BICYCLING
-      case Walking   => WALKING
-      case Transit   => TRANSIT
-      case Unknown   => UNKNOWN
     }
 
   @inline
@@ -117,11 +124,15 @@ object GoogleDistanceProvider {
       element <- row.elements.headOption
     } yield
       element.status match {
-        case OK => OK -> Distance(length = element.distance.inMeters meters, duration = element.duration.inSeconds seconds)
-        case e  => e  -> null // Very bad !
+        case OK =>
+          val durationInTraffic = Option(element.durationInTraffic).map(_.inSeconds seconds).getOrElse(0 seconds)
+          val travelDuration    = element.duration.inSeconds seconds
+
+          OK -> Distance(
+            length = element.distance.inMeters meters,
+            duration = travelDuration.plus(durationInTraffic)
+          )
+
+        case e => e -> null // Very bad !
       }
-
-  @inline
-  private[this] final def asGoogleLatLng(latLong: LatLong): GoogleLatLng = new GoogleLatLng(latLong.latitude, latLong.longitude)
-
 }

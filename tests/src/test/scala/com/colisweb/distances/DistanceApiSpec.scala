@@ -1,9 +1,11 @@
 package com.colisweb.distances
 
+import java.time.Instant
+
 import cats.effect.{Concurrent, ContextShift, IO}
 import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.DistanceProvider.DistanceF
-import com.colisweb.distances.Types.TravelMode.{Bicycling, Driving}
+import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
 import com.colisweb.distances.providers.google.{GoogleGeoApiContext, GoogleGeoProvider}
@@ -11,6 +13,7 @@ import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import squants.space.LengthConversions._
+import squants.space.Meters
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -24,7 +27,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
   val globalExecutionContext: ExecutionContext = ExecutionContext.global
   implicit val contextShift: ContextShift[IO]  = IO.contextShift(globalExecutionContext)
 
-  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
+  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
+
+  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
   "DistanceApi" should {
     "#distance" should {
@@ -70,20 +75,62 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             paris02 shouldBe LatLong(48.8675641, 2.34399)
             paris18 shouldBe LatLong(48.891305, 2.3529867)
 
-            val driveFrom01to02 = DirectedPath(origin = paris01, destination = paris02, Driving :: Nil)
-            val driveFrom01to18 = DirectedPath(origin = paris01, destination = paris18, Driving :: Nil)
+            val driveFrom01to02 = DirectedPathMultipleModes(origin = paris01, destination = paris02, Driving :: Nil)
+            val driveFrom01to18 = DirectedPathMultipleModes(origin = paris01, destination = paris18, Driving :: Nil)
 
             val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
-              .asInstanceOf[Map[(TravelMode, LatLong, LatLong), Distance]]
+              .asInstanceOf[Map[DirectedPath, Distance]]
 
             // We only check the length as travel duration varies over time & traffic
             results.mapValues(_.length) shouldBe Map(
-              (Driving, paris01, paris02) -> 1024.meters,
-              (Driving, paris01, paris18) -> 3429.meters
+              DirectedPath(paris01, paris02, Driving, None) -> 1024.meters,
+              DirectedPath(paris01, paris18, Driving, None) -> 3429.meters
             )
 
-            results((Driving, paris01, paris02)).length should be < results((Driving, paris01, paris18)).length
-            results((Driving, paris01, paris02)).duration should be < results((Driving, paris01, paris18)).duration
+            results(DirectedPath(paris01, paris02, Driving, None)).length should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).length
+
+            results(DirectedPath(paris01, paris02, Driving, None)).duration should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).duration
+          }
+
+          val origin         = LatLong(48.8640493, 2.3310526)
+          val destination    = LatLong(48.8675641, 2.34399)
+          val length         = Meters(1024)
+          val travelDuration = 73728.millis
+
+          "not takes into account traffic when not asked to with a driving travel mode" in {
+            val result = Map(Driving -> Distance(length, travelDuration))
+
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, None)) shouldBe result
+          }
+
+          "takes into account traffic when asked to with a driving travel mode and a best guess estimation" in {
+            val result          = Map(Driving -> Distance(length, travelDuration + 5.minutes))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
+
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+          }
+
+          "takes into account traffic when asked to with a driving travel mode and an optimistic estimation" in {
+            val result          = Map(Driving -> Distance(length, travelDuration + 2.minutes))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Optimistic)
+
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+          }
+
+          "takes into account traffic when asked to with a driving travel mode and a pessimistic estimation" in {
+            val result          = Map(Driving -> Distance(length, travelDuration + 10.minutes))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Pessimistic)
+
+            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+          }
+
+          "not takes into account traffic when asked to with a bicycling travel mode" in {
+            val result          = Map(Bicycling -> Distance(length, travelDuration))
+            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
+
+            runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(trafficHandling))) shouldBe result
           }
         }
 

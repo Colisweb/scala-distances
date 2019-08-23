@@ -1,11 +1,11 @@
 package com.colisweb.distances
 
+import java.time.Instant
+
 import cats.Show
 import com.colisweb.distances.utils.circe.{LengthSerializer, ScalaDurationSerializer}
-import enumeratum.{Enum, EnumEntry}
 import squants.space.Length
 
-import scala.collection.immutable
 import scala.concurrent.duration._
 
 object Types {
@@ -66,30 +66,19 @@ object Types {
     private[distances] implicit final val decoder: Decoder[Distance] = deriveDecoder[Distance]
   }
 
-  final case class DirectedPath(origin: LatLong, destination: LatLong, travelModes: List[TravelMode])
+  final case class DirectedPathMultipleModes(
+      origin: LatLong,
+      destination: LatLong,
+      travelModes: List[TravelMode],
+      maybeTrafficHandling: Option[TrafficHandling] = None
+  )
 
-  sealed trait TravelMode extends EnumEntry
-  object TravelMode extends Enum[TravelMode] {
+  final case class DirectedPath(
+      origin: LatLong,
+      destination: LatLong,
+      travelMode: TravelMode,
+      maybeTrafficHandling: Option[TrafficHandling] = None
+  )
 
-    val values: immutable.IndexedSeq[TravelMode] = findValues
-
-    case object Driving   extends TravelMode
-    case object Bicycling extends TravelMode
-    case object Walking   extends TravelMode
-    case object Transit   extends TravelMode
-    case object Unknown   extends TravelMode
-
-    implicit final val show: Show[TravelMode] =
-      new Show[TravelMode] {
-        override def show(t: TravelMode): String = t match {
-          case Driving   => "driving"
-          case Bicycling => "bicycling"
-          case Walking   => "walking"
-          case Transit   => "transit"
-          case Unknown   => "unknown"
-        }
-      }
-
-  }
-
+  final case class TrafficHandling(departureTime: Instant, trafficModel: TrafficModel)
 }
