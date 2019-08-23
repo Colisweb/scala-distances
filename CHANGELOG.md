@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
+## [unreleased] - 2019.08.23
+
+* Add a function to `GoogleGeoApiContext` to handle logging of HTTP calls from Google Maps with 
+`OkHttpLoggingInterceptor`.
+
 ## [v1.0.2] - 2019.07.19
 
 * Fix on the Google Maps response when the `departureTime` argument was specified: the API response was not properly 
