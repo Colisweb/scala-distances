@@ -63,7 +63,7 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
 
     "cache" should {
       "save things" in {
-        forAll(travelModeGen, latLongGen, latLongGen, distaceGen) { (mode, origin, destination, distance) =>
+        forAll(travelModeGen, latLongGen, latLongGen, distanceGen) { (mode, origin, destination, distance) =>
           runSync(cache.cachingF(F.pure(distance), Distance.decoder, Distance.encoder, mode, origin, destination)) shouldBe distance
           runSync(
             cache.cachingF(

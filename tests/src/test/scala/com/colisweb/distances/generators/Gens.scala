@@ -1,5 +1,6 @@
 package com.colisweb.distances.generators
 
+import com.colisweb.distances.TravelMode
 import com.colisweb.distances.Types._
 import com.colisweb.distances.caches.Toto
 import org.scalacheck.{Arbitrary, Gen}
@@ -17,7 +18,7 @@ object Gens {
   final val lengthGen: Gen[Length]     = Gen.posNum[Double].map(_ meters)
   final val durationGen: Gen[Duration] = Gen.posNum[Int].map(_ seconds)
 
-  final val distaceGen: Gen[Distance] = for {
+  final val distanceGen: Gen[Distance] = for {
     length   <- lengthGen
     duration <- durationGen
   } yield Distance(length = length, duration = duration)
@@ -31,12 +32,12 @@ object Gens {
 
   final val travelModeGen: Gen[TravelMode] = implicitly[Arbitrary[TravelMode]].arbitrary
 
-  final val directedPathGen: Gen[DirectedPath] = for {
+  final val directedPathGen: Gen[DirectedPathMultipleModes] = for {
     origin      <- latLongGen
     destination <- latLongGen
     travelModes <- Gen.nonEmptyListOf(travelModeGen)
   } yield
-    DirectedPath(
+    DirectedPathMultipleModes(
       origin = origin,
       destination = destination,
       travelModes = travelModes
@@ -63,7 +64,7 @@ object Gens {
     name     <- nameGen
     age      <- ageGen
     latLong  <- latLongGen
-    distance <- distaceGen
+    distance <- distanceGen
   } yield
     Toto(
       name = name,
