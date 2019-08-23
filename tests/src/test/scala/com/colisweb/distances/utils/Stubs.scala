@@ -3,8 +3,8 @@ package com.colisweb.distances.utils
 import cats.Monad
 import cats.effect.Async
 import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
-import com.colisweb.distances.{DistanceProvider, _}
 import com.colisweb.distances.caches.NoCache
+import com.colisweb.distances.{DistanceProvider, _}
 import squants.motion.KilometersPerHour
 import squants.space.Meters
 
@@ -12,8 +12,6 @@ import scala.concurrent.duration._
 import scala.math._
 
 object Stubs {
-  import cats.implicits._
-
   def distanceProviderStub[F[_]: Async, E]: DistanceProvider[F, E] =
     new DistanceProvider[F, E] {
       override def distance(
@@ -57,40 +55,19 @@ object Stubs {
       origins: List[LatLong],
       destinations: List[LatLong],
       maybeTrafficHandling: Option[TrafficHandling]
-  ): F[Map[(LatLong, LatLong), Either[Unit, Distance]]] = {
-    val orderedPairs = origins.flatMap(origin => destinations.map(origin -> _))
+  ): F[Map[(LatLong, LatLong), Either[Unit, Distance]]] =
+    Monad[F].pure {
+      origins
+        .flatMap(origin => destinations.map(origin -> _))
+        .map {
+          case (origin, destination) =>
+            val either: Either[Unit, Distance] =
+              Right[Unit, Distance](mockDistance(mode, origin, destination, maybeTrafficHandling))
 
-    orderedPairs
-      .map {
-        case (origin, destination) =>
-          val distance       = Meters(haversine(origin, destination).round)
-          val travelDuration = (distance / KilometersPerHour(50)).toSeconds.seconds
-
-          val trafficDuration =
-            maybeTrafficHandling match {
-              case Some(TrafficHandling(_, trafficModel)) =>
-                mode match {
-                  case TravelMode.Driving =>
-                    trafficModel match {
-                      case TrafficModel.BestGuess   => 5.minutes
-                      case TrafficModel.Optimistic  => 2.minutes
-                      case TrafficModel.Pessimistic => 10.minutes
-                    }
-
-                  case _ => 0.minute
-                }
-
-              case None => 0.minute
-            }
-
-          val either: Either[Unit, Distance] =
-            Right[Unit, Distance](Distance(distance, travelDuration + trafficDuration))
-
-          (origin, destination) -> either
-      }
-      .toMap
-      .pure[F]
-  }
+            (origin, destination) -> either
+        }
+        .toMap
+    }
 
   def mockedDistanceF[F[_]: Monad](
       mode: TravelMode,
@@ -98,28 +75,34 @@ object Stubs {
       destination: LatLong,
       maybeTrafficHandling: Option[TrafficHandling]
   ): F[Either[Unit, Distance]] =
-    Monad[F].pure {
-      val distance       = Meters(haversine(origin, destination).round)
-      val travelDuration = (distance / KilometersPerHour(50)).toSeconds.seconds
+    Monad[F].pure(Right(mockDistance(mode, origin, destination, maybeTrafficHandling)))
 
-      val trafficDuration =
-        maybeTrafficHandling match {
-          case Some(TrafficHandling(_, trafficModel)) =>
-            mode match {
-              case TravelMode.Driving =>
-                trafficModel match {
-                  case TrafficModel.BestGuess   => 5.minutes
-                  case TrafficModel.Optimistic  => 2.minutes
-                  case TrafficModel.Pessimistic => 10.minutes
-                }
+  private def mockDistance[F[_]: Monad](
+      mode: TravelMode,
+      origin: LatLong,
+      destination: LatLong,
+      maybeTrafficHandling: Option[TrafficHandling]
+  ): Distance = {
+    val distance       = Meters(haversine(origin, destination).round)
+    val travelDuration = (distance / KilometersPerHour(50)).toSeconds.seconds
 
-              case _ => 0.minute
-            }
+    val trafficDuration =
+      maybeTrafficHandling match {
+        case Some(TrafficHandling(_, trafficModel)) =>
+          mode match {
+            case TravelMode.Driving =>
+              trafficModel match {
+                case TrafficModel.BestGuess   => 5.minutes
+                case TrafficModel.Optimistic  => 2.minutes
+                case TrafficModel.Pessimistic => 10.minutes
+              }
 
-          case None => 0.minute
-        }
+            case _ => 0.minute
+          }
 
-      Right(Distance(distance, travelDuration + trafficDuration))
-    }
+        case None => 0.minute
+      }
 
+    Distance(distance, travelDuration + trafficDuration)
+  }
 }
