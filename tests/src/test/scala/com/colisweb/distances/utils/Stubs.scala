@@ -1,10 +1,8 @@
 package com.colisweb.distances.utils
 
-import java.time.Instant
-
 import cats.Monad
 import cats.effect.Async
-import com.colisweb.distances.Types.{Distance, LatLong, TravelMode}
+import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
 import com.colisweb.distances.{DistanceProvider, _}
 import com.colisweb.distances.caches.NoCache
 import squants.motion.KilometersPerHour
@@ -20,7 +18,7 @@ object Stubs {
         mode: TravelMode,
         origin: LatLong,
         destination: LatLong,
-        maybeDepartureTime: Option[Instant] = None
+        maybeTrafficHandling: Option[TrafficHandling] = None
     ): F[Types.Distance] = ???
   }
 
@@ -49,21 +47,30 @@ object Stubs {
       mode: TravelMode,
       origin: LatLong,
       destination: LatLong,
-      maybeDepartureTime: Option[Instant]
-  ): F[Distance] = {
+      maybeTrafficHandling: Option[TrafficHandling]
+  ): F[Distance] =
     Monad[F].pure {
       val distance       = Meters(haversine(origin, destination).round)
       val travelDuration = (distance / KilometersPerHour(50)).toSeconds.seconds
-      val trafficDuration = mode match {
-        case TravelMode.Driving => 5.minutes
-        case _                  => 0.minute
-      }
 
-      maybeDepartureTime match {
-        case Some(_) => Distance(distance, travelDuration + trafficDuration)
-        case None    => Distance(distance, travelDuration)
-      }
+      val trafficDuration =
+        maybeTrafficHandling match {
+          case Some(TrafficHandling(_, trafficModel)) =>
+            mode match {
+              case TravelMode.Driving =>
+                trafficModel match {
+                  case TrafficModel.BestGuess   => 5.minutes
+                  case TrafficModel.Optimistic  => 2.minutes
+                  case TrafficModel.Pessimistic => 10.minutes
+                }
+
+              case _ => 0.minute
+            }
+
+          case None => 0.minute
+        }
+
+      Distance(distance, travelDuration + trafficDuration)
     }
-  }
 
 }
