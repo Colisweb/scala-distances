@@ -27,7 +27,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
   val globalExecutionContext: ExecutionContext = ExecutionContext.global
   implicit val contextShift: ContextShift[IO]  = IO.contextShift(globalExecutionContext)
 
-  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
+  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
+
+  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
   "DistanceApi" should {
     "#distance" should {

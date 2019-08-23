@@ -19,7 +19,9 @@ import scala.util.{Failure, Try}
 
 class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
-  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
+  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
+
+  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
   def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
     val geocoder: GeoProvider[F]         = GoogleGeoProvider[F](geoContext)
@@ -36,10 +38,6 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
       val distanceBetween01And02 = runSync(distanceApi.distance(Driving, paris01, paris02)).asInstanceOf[Distance]
       val distanceBetween01And18 = runSync(distanceApi.distance(Driving, paris01, paris18)).asInstanceOf[Distance]
-
-      // We only check the length as durations varies over time & traffic
-      distanceBetween01And02.length.value shouldBe 2136.0 +- 200.0
-      distanceBetween01And18.length.value shouldBe 4747.0 +- 200.0
 
       distanceBetween01And02.length should be < distanceBetween01And18.length
       distanceBetween01And02.duration should be < distanceBetween01And18.duration
