@@ -8,6 +8,11 @@ More infos about this file : http://keepachangelog.com/
 
 * Add a function to `GoogleGeoApiContext` to handle logging of HTTP calls from Google Maps with 
 `OkHttpLoggingInterceptor`.
+* Complete the Google traffic estimation models with optimistic and pessimistic models. Modify the `maybeDepartureTime`
+argument to a `Option[TrafficHandling]` which is composed of the departure time (`Instant`) and of the traffic model 
+(`TrafficModel`), everywhere `maybeDepartureTime` was used.
+* Add `.asGoogle` helper method to convert `scala-distances` types (`LatLong`, `TrafficModel`, `TravelMode`) to 
+Google types.
 
 ## [v1.0.2] - 2019.07.19
 
