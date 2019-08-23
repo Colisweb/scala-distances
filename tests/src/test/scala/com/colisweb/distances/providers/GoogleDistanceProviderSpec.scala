@@ -4,10 +4,10 @@ import java.time.Instant
 
 import cats.effect.{Concurrent, ContextShift, IO}
 import cats.temp.par.Par
-import com.colisweb.distances.Types.TravelMode.Driving
+import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.providers.google.{GoogleDistanceProvider, GoogleGeoApiContext, GoogleGeoProvider}
-import com.colisweb.distances.{DistanceProvider, GeoProvider}
+import com.colisweb.distances.{DistanceProvider, GeoProvider, TrafficModel}
 import monix.eval.Task
 import org.scalatest.{Matchers, WordSpec}
 import squants.space.LengthConversions._
@@ -19,7 +19,9 @@ import scala.util.{Failure, Try}
 
 class GoogleDistanceProviderSpec extends WordSpec with Matchers {
 
-  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"))
+  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
+
+  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
   def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
     val geocoder: GeoProvider[F]         = GoogleGeoProvider[F](geoContext)
@@ -37,20 +39,16 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
       val distanceBetween01And02 = runSync(distanceApi.distance(Driving, paris01, paris02)).asInstanceOf[Distance]
       val distanceBetween01And18 = runSync(distanceApi.distance(Driving, paris01, paris18)).asInstanceOf[Distance]
 
-      // We only check the length as durations varies over time & traffic
-      distanceBetween01And02.length.value shouldBe 2136.0 +- 200.0
-      distanceBetween01And18.length.value shouldBe 4747.0 +- 200.0
-
       distanceBetween01And02.length should be < distanceBetween01And18.length
       distanceBetween01And02.duration should be < distanceBetween01And18.duration
     }
 
     "returns an error if asked for a past traffic" in {
-      val origin      = LatLong(48.8640493, 2.3310526)
-      val destination = LatLong(48.8675641, 2.34399)
-      val at          = Instant.now.minusSeconds(60)
-      val distanceApi = GoogleDistanceProvider[F](geoContext)
-      val tryResult   = Try(runSync(distanceApi.distance(Driving, origin, destination, Some(at))))
+      val origin          = LatLong(48.8640493, 2.3310526)
+      val destination     = LatLong(48.8675641, 2.34399)
+      val trafficHandling = TrafficHandling(Instant.now.minusSeconds(60), TrafficModel.BestGuess)
+      val distanceApi     = GoogleDistanceProvider[F](geoContext)
+      val tryResult       = Try(runSync(distanceApi.distance(Driving, origin, destination, Some(trafficHandling))))
 
       tryResult shouldBe a[Failure[_]]
     }

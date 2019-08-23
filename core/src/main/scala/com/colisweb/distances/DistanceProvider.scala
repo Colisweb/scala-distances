@@ -1,7 +1,5 @@
 package com.colisweb.distances
 
-import java.time.Instant
-
 import cats.effect.Async
 import com.colisweb.distances.Types._
 
@@ -11,10 +9,10 @@ abstract class DistanceProvider[F[_]: Async] {
       mode: TravelMode,
       origin: LatLong,
       destination: LatLong,
-      maybeDepartureTime: Option[Instant] = None
+      maybeTrafficHandling: Option[TrafficHandling] = None
   ): F[Distance]
 }
 
 object DistanceProvider {
-  type DistanceF[F[_]] = (TravelMode, LatLong, LatLong, Option[Instant]) => F[Distance]
+  type DistanceF[F[_]] = (TravelMode, LatLong, LatLong, Option[TrafficHandling]) => F[Distance]
 }
