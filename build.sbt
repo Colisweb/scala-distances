@@ -24,7 +24,7 @@ lazy val monix           = "io.monix"          %% "monix"               % "3.0.0
 lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor" % "4.1.0"
 
 lazy val circeVersion      = "0.11.1"
-lazy val circeOpticsVersion = "0.10.0"
+lazy val circeOpticsVersion = "0.11.0"
 
 lazy val circeCore          = "io.circe" %% "circe-core"           % circeVersion
 lazy val circeGeneric       = "io.circe" %% "circe-generic"        % circeVersion
