@@ -4,6 +4,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
+## [v1.1.0] - 2019.08.26
+
+* Add a function to `GoogleGeoApiContext` to handle logging of HTTP calls from Google Maps with 
+`OkHttpLoggingInterceptor`.
+* Complete the Google traffic estimation models with optimistic and pessimistic models. Modify the `maybeDepartureTime`
+argument to a `Option[TrafficHandling]` which is composed of the departure time (`Instant`) and of the traffic model 
+(`TrafficModel`), everywhere `maybeDepartureTime` was used.
+* Add `.asGoogle` helper method to convert `scala-distances` types (`LatLong`, `TrafficModel`, `TravelMode`) to 
+Google types.
+* Update some dependencies (notably `cats-effect` 1.4.0, `google-maps-services` 0.9.4).
+
 ## [v1.0.2] - 2019.07.19
 
 * Fix on the Google Maps response when the `departureTime` argument was specified: the API response was not properly 
@@ -19,7 +30,7 @@ Warning: specifying this argument results in a API call cost doubled, at the tim
 
 ### Breaking changes:
 
-* Rename packagfe to `com.colisweb.distances`.
+* Rename package to `com.colisweb.distances`.
 * `DistanceApi[F]` now takes as inputs distance and caching functions instead of provider instances. 
  
 ### Others

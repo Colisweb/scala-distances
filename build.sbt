@@ -14,22 +14,24 @@ ThisBuild / scalafmtSbtCheck := true
 
 val scalaCacheVersion = "0.26.0"
 
-lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.3"
+lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.4"
 lazy val squants         = "org.typelevel"     %% "squants"             % "1.4.0"
 lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.6.1"
-lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.3.1"
+lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.4.0"
 lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.2.1"
 lazy val enumeratum      = "com.beachape"      %% "enumeratum"          % "1.5.13"
 lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC2"
+lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor" % "4.1.0"
 
-lazy val circeVersion      = "0.11.0"
+lazy val circeVersion      = "0.11.1"
+lazy val circeOpticsVersion = "0.11.0"
 
 lazy val circeCore          = "io.circe" %% "circe-core"           % circeVersion
 lazy val circeGeneric       = "io.circe" %% "circe-generic"        % circeVersion
 lazy val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 lazy val circeParser        = "io.circe" %% "circe-parser"         % circeVersion
 lazy val circeRefined       = "io.circe" %% "circe-refined"        % circeVersion
-lazy val circeOptics        = "io.circe" %% "circe-optics"         % circeVersion
+lazy val circeOptics        = "io.circe" %% "circe-optics"         % circeOpticsVersion
 
 lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericExtras, circeParser, circeRefined, circeOptics)
 
@@ -51,7 +53,7 @@ lazy val testKit = {
   Seq(
     "org.scalacheck" %% "scalacheck"            % "1.14.0",
     "org.scalatest"  %% "scalatest"             % "3.0.5",
-    "com.beachape"   %% "enumeratum-scalacheck" % "1.5.15",
+    "com.beachape"   %% "enumeratum-scalacheck" % "1.5.16",
     "io.circe"       %% "circe-literal"         % circeVersion,
     monix
   ) ++ kantancsv
@@ -75,6 +77,7 @@ lazy val core = project
       `cats-effect`,
       `cats-par`,
       enumeratum,
+      okHttpLoggingInterceptor
     ) ++ scalacacheCore ++ circeAll ++ testKit)
 
 //// Providers
