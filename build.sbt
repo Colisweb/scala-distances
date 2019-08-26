@@ -24,13 +24,14 @@ lazy val monix           = "io.monix"          %% "monix"               % "3.0.0
 lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor" % "4.1.0"
 
 lazy val circeVersion      = "0.11.1"
+lazy val circeOpticsVersion = "0.10.0"
 
 lazy val circeCore          = "io.circe" %% "circe-core"           % circeVersion
 lazy val circeGeneric       = "io.circe" %% "circe-generic"        % circeVersion
 lazy val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
 lazy val circeParser        = "io.circe" %% "circe-parser"         % circeVersion
 lazy val circeRefined       = "io.circe" %% "circe-refined"        % circeVersion
-lazy val circeOptics        = "io.circe" %% "circe-optics"         % circeVersion
+lazy val circeOptics        = "io.circe" %% "circe-optics"         % circeOpticsVersion
 
 lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericExtras, circeParser, circeRefined, circeOptics)
 
