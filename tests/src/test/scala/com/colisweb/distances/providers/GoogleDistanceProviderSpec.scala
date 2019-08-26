@@ -9,10 +9,9 @@ import com.colisweb.distances.Types._
 import com.colisweb.distances.providers.google.{
   GoogleDistanceProvider,
   GoogleDistanceProviderError,
-  GoogleGeoApiContext,
-  GoogleGeoProvider
+  GoogleGeoApiContext
 }
-import com.colisweb.distances.{DistanceProvider, GeoProvider, TrafficModel}
+import com.colisweb.distances.{DistanceProvider, TrafficModel}
 import monix.eval.Task
 import org.scalatest.{Matchers, WordSpec}
 import squants.space.LengthConversions._
@@ -28,18 +27,13 @@ class GoogleDistanceProviderSpec extends WordSpec with Matchers {
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
   def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
-    val geocoder: GeoProvider[F]                                      = GoogleGeoProvider[F](geoContext)
     val distanceApi: DistanceProvider[F, GoogleDistanceProviderError] = GoogleDistanceProvider[F](geoContext)
 
+    val paris01 = LatLong(48.8640493, 2.3310526)
+    val paris02 = LatLong(48.8675641, 2.34399)
+    val paris18 = LatLong(48.891305, 2.3529867)
+
     s"says that Paris 02 is nearest to Paris 01 than Paris 18" in {
-      val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]
-      val paris02 = runSync(geocoder.geocode(PostalCode("75002"))).asInstanceOf[LatLong]
-      val paris18 = runSync(geocoder.geocode(PostalCode("75018"))).asInstanceOf[LatLong]
-
-      paris01 shouldBe LatLong(48.8640493, 2.3310526)
-      paris02 shouldBe LatLong(48.8675641, 2.34399)
-      paris18 shouldBe LatLong(48.891305, 2.3529867)
-
       val distanceBetween01And02 = runSync(distanceApi.distance(Driving, paris01, paris02))
         .asInstanceOf[Right[GoogleDistanceProviderError, Distance]]
 

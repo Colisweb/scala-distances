@@ -7,7 +7,7 @@ import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
-import com.colisweb.distances.providers.google.{GoogleGeoApiContext, GoogleGeoProvider}
+import com.colisweb.distances.providers.google.GoogleGeoApiContext
 import monix.eval.Task
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
@@ -62,19 +62,14 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
         def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any, cachingF: CachingF[F, Distance]): Unit = {
-          val geocoder: GeoProvider[F] = GoogleGeoProvider[F](geoContext)
           val distanceApi: DistanceApi[F, Unit] =
             DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cachingF)
 
-          val paris01 = runSync(geocoder.geocode(PostalCode("75001"))).asInstanceOf[LatLong]
-          val paris02 = runSync(geocoder.geocode(PostalCode("75002"))).asInstanceOf[LatLong]
-          val paris18 = runSync(geocoder.geocode(PostalCode("75018"))).asInstanceOf[LatLong]
+          val paris01 = LatLong(48.8640493, 2.3310526)
+          val paris02 = LatLong(48.8675641, 2.34399)
+          val paris18 = LatLong(48.891305, 2.3529867)
 
-          "say that Paris 02 is closer to Paris 01 than Paris 18" in {
-            paris01 shouldBe LatLong(48.8640493, 2.3310526)
-            paris02 shouldBe LatLong(48.8675641, 2.34399)
-            paris18 shouldBe LatLong(48.891305, 2.3529867)
-
+          "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
             val driveFrom01to02 = DirectedPathMultipleModes(origin = paris01, destination = paris02, Driving :: Nil)
             val driveFrom01to18 = DirectedPathMultipleModes(origin = paris01, destination = paris18, Driving :: Nil)
 
@@ -145,13 +140,15 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
           val origins      = List(LatLong(48.86, 2.33), LatLong(48.87, 2.34), LatLong(48.88, 2.35))
           val destinations = List(LatLong(48.85, 2.32), LatLong(48.84, 2.31), LatLong(48.83, 2.3))
+          val pairs        = origins.flatMap(origin => destinations.map(origin -> _))
 
           "return all the uncached distances in a batch distances computation" in {
             val results =
               runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
                 .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
 
-            results.size shouldBe 9
+            results.keys should contain theSameElementsAs pairs
+            results.values.forall(_.isRight) shouldBe true
           }
         }
 
