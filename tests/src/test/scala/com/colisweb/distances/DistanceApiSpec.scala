@@ -3,7 +3,6 @@ package com.colisweb.distances
 import java.time.Instant
 
 import cats.effect.{Concurrent, ContextShift, IO}
-import com.colisweb.distances.Cache.CachingF
 import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
@@ -34,11 +33,12 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distance" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cachingF: CachingF[IO, Distance]   = CaffeineCache[IO](Some(1 days)).cachingF
-          val stub: DistanceProvider[IO, Unit]   = distanceProviderStub[IO, Unit]
-          val distanceApi: DistanceApi[IO, Unit] = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cachingF)
-          val latLong                            = LatLong(0.0, 0.0)
-          val expectedResult                     = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
+          val cache          = CaffeineCache[IO](Some(1 days))
+          val stub           = distanceProviderStub[IO, Unit]
+          val distanceApi    = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get)
+          val latLong        = LatLong(0.0, 0.0)
+          val expectedResult = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
+
           distanceApi.distance(latLong, latLong, Driving :: Bicycling :: Nil).unsafeRunSync() shouldBe expectedResult
         }
       }
@@ -47,11 +47,12 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distanceFromPostalCodes" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cachingF: CachingF[IO, Distance]   = CaffeineCache[IO](Some(1 days)).cachingF
-          val stub                               = distanceProviderStub[IO, Unit]
-          val distanceApi: DistanceApi[IO, Unit] = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cachingF)
-          val postalCode                         = PostalCode("59000")
-          val expectedResult                     = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
+          val cache          = CaffeineCache[IO](Some(1 days))
+          val stub           = distanceProviderStub[IO, Unit]
+          val distanceApi    = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get)
+          val postalCode     = PostalCode("59000")
+          val expectedResult = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
+
           distanceApi
             .distanceFromPostalCodes(geocoderStub)(postalCode, postalCode, Driving :: Bicycling :: Nil)
             .unsafeRunSync() shouldBe expectedResult
@@ -61,9 +62,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
-        def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any, cachingF: CachingF[F, Distance]): Unit = {
+        def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any, cache: Cache[F]): Unit = {
           val distanceApi: DistanceApi[F, Unit] =
-            DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cachingF)
+            DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cache.caching, cache.get)
 
           val paris01 = LatLong(48.8640493, 2.3310526)
           val paris02 = LatLong(48.8675641, 2.34399)
@@ -153,20 +154,17 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
         }
 
         "pass tests with cats-effect and Caffeine" should {
-          passTests[IO](_.unsafeRunSync(), CaffeineCache[IO](Some(1 days)).cachingF)
+          passTests[IO](_.unsafeRunSync(), CaffeineCache[IO](Some(1 days)))
         }
 
         "pass tests with cats-effect and Redis" should {
-          passTests[IO](
-            _.unsafeRunSync(),
-            RedisCache[IO](RedisConfiguration("locahost", 6379), Some(1 days)).cachingF
-          )
+          passTests[IO](_.unsafeRunSync(), RedisCache[IO](RedisConfiguration("localhost", 6379), Some(1 days)))
         }
 
         "pass tests with Monix and Caffeine" should {
           import monix.execution.Scheduler.Implicits.global
 
-          passTests[Task](_.runSyncUnsafe(10 seconds), CaffeineCache[Task](Some(1 days)).cachingF)
+          passTests[Task](_.runSyncUnsafe(10 seconds), CaffeineCache[Task](Some(1 days)))
         }
 
         "pass tests with Monix and Redis" should {
@@ -174,7 +172,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
           passTests[Task](
             _.runSyncUnsafe(10 seconds),
-            RedisCache[Task](RedisConfiguration("locahost", 6379), Some(1 days)).cachingF
+            RedisCache[Task](RedisConfiguration("localhost", 6379), Some(1 days))
           )
         }
       }

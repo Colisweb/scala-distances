@@ -3,16 +3,18 @@ package com.colisweb.distances
 import cats.effect.Async
 import cats.kernel.Semigroup
 import cats.temp.par.Par
-import com.colisweb.distances.Cache.CachingF
+import com.colisweb.distances.Cache.{Caching, GetCached}
 import com.colisweb.distances.DistanceProvider.{BatchDistanceF, DistanceF}
 import com.colisweb.distances.Types._
+import io.circe.{Decoder, Encoder}
 
 import scala.collection.breakOut
 
 class DistanceApi[F[_]: Async: Par, E](
     distanceF: DistanceF[F, E],
     batchDistanceF: BatchDistanceF[F, E],
-    cachingF: CachingF[F, Distance]
+    caching: Caching[F, Distance],
+    getCached: GetCached[F, Distance]
 ) {
 
   import DistanceApi._
@@ -34,37 +36,92 @@ class DistanceApi[F[_]: Async: Par, E](
           distancesOrErrors.map { case (path, distanceOrError) => path.travelMode -> distanceOrError }.toMap
         }
 
-  // TODO: Check if there are already cached distances, and avoid these calls
   final def batchDistances(
       origins: List[LatLong],
       destinations: List[LatLong],
       travelMode: TravelMode,
       maybeTrafficHandling: Option[TrafficHandling] = None
   ): F[Map[(LatLong, LatLong), Either[E, Distance]]] = {
-    batchDistanceF(travelMode, origins, destinations, maybeTrafficHandling)
-      .flatMap { distancesMap =>
-        distancesMap.toList
-          .parTraverse {
-            case ((origin, destination), errorOrDistance) =>
-              val eitherF: F[Either[E, Distance]] = errorOrDistance match {
-                case Right(distance) =>
-                  cachingF(
-                    distance.pure[F],
-                    Distance.decoder,
-                    Distance.encoder,
-                    travelMode,
-                    origin,
-                    destination,
-                    maybeTrafficHandling
-                  ).map(Right[E, Distance])
+    val maybeCachedValues =
+      origins
+        .flatMap(origin => destinations.map(origin -> _))
+        .parTraverse {
+          case (origin, destination) =>
+            val maybeCachedValue = getCached(decoder, travelMode, origin, destination, maybeTrafficHandling)
+            ((origin, destination).pure[F] -> maybeCachedValue).bisequence
+        }
 
-                case Left(error) => error.pure[F].map(Left[E, Distance])
-              }
+    maybeCachedValues.flatMap { cachedList =>
+      val (uncachedValues, cachedValues) = cachedList.partition { case (_, maybeCached) => maybeCached.isEmpty }
 
-              ((origin, destination).pure[F] -> eitherF).bisequence
-          }
-          .map(_.toMap)
+      val cachedMap        = handleCachedValues(cachedValues)
+      val distanceBatchesF = handleUncachedValues(uncachedValues, travelMode, maybeTrafficHandling)
+
+      distanceBatchesF.map { distanceBatches =>
+        distanceBatches.foldLeft(cachedMap) {
+          case (accMap, batches) =>
+            accMap ++ batches
+        }
       }
+    }
+  }
+
+  private def handleCachedValues(
+      cachedValues: List[((LatLong, LatLong), Option[Distance])]
+  ): Map[(LatLong, LatLong), Either[E, Distance]] =
+    cachedValues
+      .map {
+        case ((origin, destination), cachedDistance) =>
+          (origin, destination) -> Right[E, Distance](cachedDistance.get)
+      }
+      .toMap[(LatLong, LatLong), Either[E, Distance]]
+
+  private def handleUncachedValues(
+      uncachedValues: List[((LatLong, LatLong), Option[Distance])],
+      travelMode: TravelMode,
+      maybeTrafficHandling: Option[TrafficHandling]
+  ): F[List[Map[(LatLong, LatLong), Either[E, Distance]]]] = {
+
+    def cacheIfSuccessful(
+        origin: LatLong,
+        destination: LatLong,
+        errorOrDistance: Either[E, Distance]
+    ): F[((LatLong, LatLong), Either[E, Distance])] = {
+      val eitherF: F[Either[E, Distance]] = errorOrDistance match {
+        case Right(distance) =>
+          caching(distance, decoder, encoder, travelMode, origin, destination, maybeTrafficHandling)
+            .map(Right[E, Distance])
+
+        case Left(error) => error.pure[F].map(Left[E, Distance])
+      }
+
+      ((origin, destination).pure[F] -> eitherF).bisequence
+    }
+
+    val pairs         = uncachedValues.map { case (pair, _) => pair }
+    val pairsByOrigin = pairs.groupBy { case (origin, _)    => origin }
+
+    val groups =
+      pairsByOrigin
+        .groupBy {
+          case (_, pairs) =>
+            pairs.map(_._2).sortBy(destCoords => (destCoords.latitude, destCoords.longitude))
+        }
+        .mapValues(_.keys.toList)
+        .toList
+
+    groups.parTraverse {
+      case (destinations, origins) =>
+        batchDistanceF(travelMode, origins, destinations, maybeTrafficHandling)
+          .flatMap { distancesMap =>
+            distancesMap.toList
+              .parTraverse {
+                case ((origin, destination), errorOrDistance) =>
+                  cacheIfSuccessful(origin, destination, errorOrDistance)
+              }
+              .map(_.toMap)
+          }
+    }
   }
 
   final def distanceFromPostalCodes(geocoder: Geocoder[F])(
@@ -114,24 +171,15 @@ class DistanceApi[F[_]: Async: Par, E](
     modes
       .parTraverse { mode =>
         distanceF(mode, origin, destination, maybeTrafficHandling).flatMap { errorOrDistance =>
-          val directedPath = DirectedPath(origin, destination, mode, maybeTrafficHandling)
-
           val eitherF: F[Either[E, Distance]] = errorOrDistance match {
             case Right(distance) =>
-              cachingF(
-                distance.pure[F],
-                Distance.decoder,
-                Distance.encoder,
-                mode,
-                origin,
-                destination,
-                maybeTrafficHandling
-              ).map(Right[E, Distance])
+              caching(distance, decoder, encoder, mode, origin, destination, maybeTrafficHandling)
+                .map(Right[E, Distance])
 
             case Left(error) => error.pure[F].map(Left[E, Distance])
           }
 
-          (directedPath.pure[F] -> eitherF).bisequence
+          (DirectedPath(origin, destination, mode, maybeTrafficHandling).pure[F] -> eitherF).bisequence
         }
       }
   }
@@ -139,12 +187,16 @@ class DistanceApi[F[_]: Async: Par, E](
 }
 
 object DistanceApi {
+  val decoder: Decoder[Distance] = Distance.decoder
+  val encoder: Encoder[Distance] = Distance.encoder
+
   final def apply[F[_]: Async: Par, E](
       distanceF: DistanceF[F, E],
       batchDistanceF: BatchDistanceF[F, E],
-      cachingF: CachingF[F, Distance]
+      caching: Caching[F, Distance],
+      getCached: GetCached[F, Distance]
   ): DistanceApi[F, E] =
-    new DistanceApi(distanceF, batchDistanceF, cachingF)
+    new DistanceApi(distanceF, batchDistanceF, caching, getCached)
 
   private[DistanceApi] final val directedPathSemiGroup: Semigroup[DirectedPathMultipleModes] =
     new Semigroup[DirectedPathMultipleModes] {
