@@ -26,7 +26,7 @@ abstract class Cache[F[_]: Async](ttl: Option[Duration]) {
 
   def get[V](decoder: Decoder[V], keys: Any*): F[Option[V]] =
     innerCache
-      .get(keys)
+      .get(keys: _*)
       .flatMap(_.traverse(json => Async[F].fromEither(decoder.decodeJson(json))))
 }
 

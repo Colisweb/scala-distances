@@ -139,26 +139,56 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             results(paris01 -> paris02).right.get.duration should be < results(paris01 -> paris18).right.get.duration
           }
 
-          val origins      = List(LatLong(48.86, 2.33), LatLong(48.87, 2.34), LatLong(48.88, 2.35))
-          val destinations = List(LatLong(48.85, 2.32), LatLong(48.84, 2.31), LatLong(48.83, 2.3))
-          val pairs        = origins.flatMap(origin => destinations.map(origin -> _))
-
           "return all the uncached distances in a batch distances computation" in {
+            val origins      = List(LatLong(48.86, 2.33), LatLong(48.87, 2.34), LatLong(48.88, 2.35))
+            val destinations = List(LatLong(48.85, 2.32), LatLong(48.84, 2.31), LatLong(48.83, 2.3))
+            val pairs        = origins.flatMap(origin => destinations.map(origin -> _))
+
             val results =
               runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
                 .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
 
+            val caches = pairs.map {
+              case (origin, destination) =>
+                runSync(cache.get(Distance.decoder, Driving, origin, destination, None))
+                  .asInstanceOf[Option[Distance]]
+            }
+
             results.keys should contain theSameElementsAs pairs
             results.values.forall(_.isRight) shouldBe true
+            caches.forall(_.isDefined) shouldBe true
+
+            val moreOrigins      = List(LatLong(48.85, 2.33), LatLong(48.85, 2.34))
+            val moreDestinations = List(LatLong(48.84, 2.36), LatLong(48.83, 2.37))
+            val allOrigins       = origins ++ moreOrigins
+            val allDestinations  = destinations ++ moreDestinations
+            val allPairs         = allOrigins.flatMap(origin => allDestinations.map(origin -> _))
+
+            val allResults =
+              runSync(distanceApi.batchDistances(allOrigins, allDestinations, Driving, None))
+                .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
+
+            val allCaches = allPairs.map {
+              case (origin, destination) =>
+                runSync(cache.get(Distance.decoder, Driving, origin, destination, None))
+                  .asInstanceOf[Option[Distance]]
+            }
+
+            allResults.keys should contain theSameElementsAs allPairs
+            allResults.values.forall(_.isRight) shouldBe true
+            allCaches.forall(_.isDefined) shouldBe true
           }
         }
 
         "pass tests with cats-effect and Caffeine" should {
-          passTests[IO](_.unsafeRunSync(), CaffeineCache[IO](Some(1 days)))
+          passTests[IO](_.unsafeRunTimed(10 seconds).get, CaffeineCache[IO](Some(1 days)))
         }
 
         "pass tests with cats-effect and Redis" should {
-          passTests[IO](_.unsafeRunSync(), RedisCache[IO](RedisConfiguration("localhost", 6379), Some(1 days)))
+          passTests[IO](
+            _.unsafeRunTimed(10 seconds).get,
+            RedisCache[IO](RedisConfiguration("localhost", 6379), Some(1 days))
+          )
         }
 
         "pass tests with Monix and Caffeine" should {
