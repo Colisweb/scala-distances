@@ -28,6 +28,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
   val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
+  lazy val redisConfiguration: RedisConfiguration =
+    RedisConfiguration(sys.env.getOrElse("REDIS_HOST", "127.0.0.1"), 6379)
 
   "DistanceApi" should {
     "#distance" should {
@@ -185,10 +187,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
         }
 
         "pass tests with cats-effect and Redis" should {
-          passTests[IO](
-            _.unsafeRunTimed(10 seconds).get,
-            RedisCache[IO](RedisConfiguration("localhost", 6379), Some(1 days))
-          )
+          passTests[IO](_.unsafeRunTimed(10 seconds).get, RedisCache[IO](redisConfiguration, Some(1 days)))
         }
 
         "pass tests with Monix and Caffeine" should {
@@ -200,14 +199,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
         "pass tests with Monix and Redis" should {
           import monix.execution.Scheduler.Implicits.global
 
-          passTests[Task](
-            _.runSyncUnsafe(10 seconds),
-            RedisCache[Task](RedisConfiguration("localhost", 6379), Some(1 days))
-          )
+          passTests[Task](_.runSyncUnsafe(10 seconds), RedisCache[Task](redisConfiguration, Some(1 days)))
         }
       }
     }
-
   }
-
 }

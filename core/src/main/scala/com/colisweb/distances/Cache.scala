@@ -28,6 +28,12 @@ abstract class Cache[F[_]: Async](ttl: Option[Duration]) {
     innerCache
       .get(keys: _*)
       .flatMap(_.traverse(json => Async[F].fromEither(decoder.decodeJson(json))))
+
+  def remove(keys: Any*): F[Unit] =
+    innerCache.remove(keys: _*).map(_ => ())
+
+  def removeAll(): F[Unit] =
+    innerCache.removeAll().map(_ => ())
 }
 
 object Cache {
