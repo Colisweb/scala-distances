@@ -4,6 +4,28 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
+## [unreleased] - 2019.08.26
+
+* Add `Cache` methods:
+    * `caching`: like `cachingF` but with an input value `V` instead of a wrapped value `F[V]`.
+    * `get`: retrieve the value wrapped as a `F[Option[V]]`.
+    * `remove`: remove a key from the cache, returns `F[Unit]`. Used in the tests only.
+    * `removeAll`: remove all keys from the cache, returns `F[Unit]`. Was used before in the tests, but is replaced 
+    now with `removed`.
+* `DistanceApi` now returns `Map`s of values `Either[E, Distance]` (previously `Distance`) to embed errors related to 
+the distance computation (e.g. no route available). The error type has to be specified and is related to the 
+distance provider. It also supports batched calls for distances (taking as input multiple origins and destinations), 
+and tries to make as few calls as possible, depending on the already cached values. This involves the following changes:
+    * Add arguments to `DistanceApi`
+        * `Caching[F, Distance]` which is an alias for 
+        `(Distance, Decoder[Distance], Encoder[Distance], Any*) => F[Distance]`.
+        * `GetCached[F, Distance]` which is an alias for `(Decoder[Distance], Any*) => F[Option[Distance]]`.
+    * Remove `CachingF[F, Distance]` argument from `DistanceApi`.
+    * Add type parameter to `DistanceApi`: it is now `DistanceApi[F[_]: Async: Par, E]`.
+    * Add `batchDistances` method to `DistanceApi` and `GoogleDistanceProvider`.
+    * Add Google error type `GoogleDistanceProviderError` (plus implementations). `GoogleDistanceProvider` now extends as 
+    `DistanceProvider[F, GoogleDistanceProviderError]`.
+
 ## [v1.1.0] - 2019.08.26
 
 * Add a function to `GoogleGeoApiContext` to handle logging of HTTP calls from Google Maps with 
