@@ -82,13 +82,8 @@ class DistanceApi[F[_]: Async: Par, E](
         destination: LatLong,
         errorOrDistance: Either[E, Distance]
     ): F[(Segment, Either[E, Distance])] = {
-      val eitherF: F[Either[E, Distance]] = errorOrDistance match {
-        case Right(distance) =>
-          caching(distance, decoder, encoder, travelMode, origin, destination, maybeTrafficHandling)
-            .map(Right[E, Distance])
-
-        case Left(error) => error.pure[F].map(Left[E, Distance])
-      }
+      val eitherF: F[Either[E, Distance]] =
+        handleErrorOrDistance(errorOrDistance, travelMode, origin, destination, maybeTrafficHandling)
 
       (Segment(origin, destination).pure[F] -> eitherF).bisequence
     }
@@ -162,23 +157,30 @@ class DistanceApi[F[_]: Async: Par, E](
       origin: LatLong,
       destination: LatLong,
       maybeTrafficHandling: Option[TrafficHandling]
-  ): F[List[(DirectedPath, Either[E, Distance])]] = {
-    modes
-      .parTraverse { mode =>
-        distanceF(mode, origin, destination, maybeTrafficHandling).flatMap { errorOrDistance =>
-          val eitherF: F[Either[E, Distance]] = errorOrDistance match {
-            case Right(distance) =>
-              caching(distance, decoder, encoder, mode, origin, destination, maybeTrafficHandling)
-                .map(Right[E, Distance])
+  ): F[List[(DirectedPath, Either[E, Distance])]] =
+    modes.parTraverse { mode =>
+      distanceF(mode, origin, destination, maybeTrafficHandling).flatMap { errorOrDistance =>
+        val eitherF: F[Either[E, Distance]] =
+          handleErrorOrDistance(errorOrDistance, mode, origin, destination, maybeTrafficHandling)
 
-            case Left(error) => error.pure[F].map(Left[E, Distance])
-          }
-
-          (DirectedPath(origin, destination, mode, maybeTrafficHandling).pure[F] -> eitherF).bisequence
-        }
+        (DirectedPath(origin, destination, mode, maybeTrafficHandling).pure[F] -> eitherF).bisequence
       }
-  }
+    }
 
+  private def handleErrorOrDistance(
+      errorOrDistance: Either[E, Distance],
+      mode: TravelMode,
+      origin: LatLong,
+      destination: LatLong,
+      maybeTrafficHandling: Option[TrafficHandling]
+  ): F[Either[E, Distance]] = {
+    errorOrDistance match {
+      case Right(distance) =>
+        caching(distance, decoder, encoder, mode, origin, destination, maybeTrafficHandling).map(Right[E, Distance])
+
+      case Left(error) => error.pure[F].map(Left[E, Distance])
+    }
+  }
 }
 
 object DistanceApi {
