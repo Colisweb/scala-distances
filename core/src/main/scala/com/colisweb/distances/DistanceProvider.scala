@@ -3,6 +3,8 @@ package com.colisweb.distances
 import cats.effect.Async
 import com.colisweb.distances.Types._
 
+// The errors embedded by E are related to the distance computation (e.g. no routes available)
+// The errors embedded by F are on the technical side (e.g. timeout)
 abstract class DistanceProvider[F[_]: Async, E] {
   def distance(
       mode: TravelMode,
