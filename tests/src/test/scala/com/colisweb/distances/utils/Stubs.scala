@@ -2,7 +2,7 @@ package com.colisweb.distances.utils
 
 import cats.Monad
 import cats.effect.Async
-import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
+import com.colisweb.distances.Types.{Distance, LatLong, Segment, TrafficHandling}
 import com.colisweb.distances.caches.NoCache
 import com.colisweb.distances.{DistanceProvider, _}
 import squants.motion.KilometersPerHour
@@ -26,7 +26,7 @@ object Stubs {
           origins: List[LatLong],
           destinations: List[LatLong],
           maybeTrafficHandling: Option[TrafficHandling] = None
-      ): F[Map[(LatLong, LatLong), Either[E, Distance]]] = ???
+      ): F[Map[Segment, Either[E, Distance]]] = ???
     }
 
   def geoProviderStub[F[_]: Async]: GeoProvider[F] = new GeoProvider[F] {
@@ -55,16 +55,15 @@ object Stubs {
       origins: List[LatLong],
       destinations: List[LatLong],
       maybeTrafficHandling: Option[TrafficHandling]
-  ): F[Map[(LatLong, LatLong), Either[Unit, Distance]]] =
+  ): F[Map[Segment, Either[Unit, Distance]]] =
     Monad[F].pure {
       origins
-        .flatMap(origin => destinations.map(origin -> _))
-        .map {
-          case (origin, destination) =>
-            val either: Either[Unit, Distance] =
-              Right[Unit, Distance](mockDistance(mode, origin, destination, maybeTrafficHandling))
+        .flatMap(origin => destinations.map(Segment(origin, _)))
+        .map { segment =>
+          val either: Either[Unit, Distance] =
+            Right[Unit, Distance](mockDistance(mode, segment.origin, segment.destination, maybeTrafficHandling))
 
-            (origin, destination) -> either
+          segment -> either
         }
         .toMap
     }

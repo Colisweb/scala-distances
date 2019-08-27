@@ -5,7 +5,7 @@ import java.time.{Instant, LocalDateTime, ZoneOffset}
 import cats.effect.Concurrent
 import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types.LatLong._
-import com.colisweb.distances.Types.{Distance, LatLong, TrafficHandling}
+import com.colisweb.distances.Types.{Distance, LatLong, Segment, TrafficHandling}
 import com.colisweb.distances.{DistanceProvider, TravelMode}
 import com.google.maps.model.DistanceMatrixElementStatus._
 import com.google.maps.model.{DistanceMatrix, DistanceMatrixElementStatus, Unit => GoogleDistanceUnit}
@@ -47,14 +47,14 @@ object GoogleDistanceProvider {
       def handleGoogleResponse(
           response: F[DistanceMatrix],
           mode: TravelMode,
-          orderedPairs: List[(LatLong, LatLong)]
-      ): F[Map[(LatLong, LatLong), Either[GoogleDistanceProviderError, Distance]]] =
+          orderedPairs: List[Segment]
+      ): F[Map[Segment, Either[GoogleDistanceProviderError, Distance]]] =
         response.map { distanceMatrix =>
           getDistances(distanceMatrix)
             .zip(orderedPairs)
             .map {
-              case ((status, maybeDistance), (origin, destination)) =>
-                (origin, destination) -> handleMatrixElementStatus(mode, status, maybeDistance, origin, destination)
+              case ((status, maybeDistance), segment) =>
+                segment -> handleMatrixElementStatus(mode, status, maybeDistance, segment.origin, segment.destination)
             }
             .toMap
         }
@@ -83,24 +83,23 @@ object GoogleDistanceProvider {
           origins: List[LatLong],
           destinations: List[LatLong],
           maybeTrafficHandling: Option[TrafficHandling] = None
-      ): F[Map[(LatLong, LatLong), Either[GoogleDistanceProviderError, Distance]]] = {
-        val orderedPairs = origins.flatMap(origin => destinations.map(origin -> _))
+      ): F[Map[Segment, Either[GoogleDistanceProviderError, Distance]]] = {
+        val orderedSegments = origins.flatMap(origin => destinations.map(Segment(origin, _)))
 
         maybeTrafficHandling match {
           case Some(TrafficHandling(departureTime, trafficModel)) if departureTime.isBefore(Instant.now()) =>
-            val map: Map[(LatLong, LatLong), Either[GoogleDistanceProviderError, Distance]] =
-              orderedPairs.map {
-                case (origin, destination) =>
-                  (origin, destination) ->
-                    Left[GoogleDistanceProviderError, Distance](
-                      PastTraffic(
-                        s"""
-                           | Google Distance API does not handle past traffic requests.
-                           | At ${LocalDateTime
-                             .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${origin.show} to ${destination.show}.
-                        """.stripMargin
-                      )
+            val map: Map[Segment, Either[GoogleDistanceProviderError, Distance]] =
+              orderedSegments.map { segment =>
+                segment ->
+                  Left[GoogleDistanceProviderError, Distance](
+                    PastTraffic(
+                      s"""
+                       | Google Distance API does not handle past traffic requests.
+                       | At ${LocalDateTime
+                           .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${segment.origin.show} to ${segment.destination.show}.
+                      """.stripMargin
                     )
+                  )
               }.toMap
 
             map.pure[F]
@@ -109,7 +108,7 @@ object GoogleDistanceProvider {
             val baseRequest        = buildGoogleRequest(mode, origins, destinations)
             val googleFinalRequest = maybeTrafficHandling.fold(baseRequest)(requestWithTraffic(baseRequest)).asEffect[F]
 
-            handleGoogleResponse(googleFinalRequest, mode, orderedPairs)
+            handleGoogleResponse(googleFinalRequest, mode, orderedSegments)
         }
       }
     }
@@ -130,7 +129,7 @@ object GoogleDistanceProvider {
                | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
                |
                | Indication from Google API code doc: "Indicates that the origin and/or destination of this pairing could not be geocoded."
-                      """.stripMargin
+              """.stripMargin
           )
         )
 
@@ -141,7 +140,7 @@ object GoogleDistanceProvider {
                | Google Distance API have zero results for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
                |
                | Indication from Google API code doc: "Indicates that no route could be found between the origin and destination."
-                      """.stripMargin
+              """.stripMargin
           )
         )
 
@@ -150,7 +149,7 @@ object GoogleDistanceProvider {
           UnknownGoogleError(
             s"""
                | Google Distance API didn't find the distance for ${origin.show} to ${destination.show} with "${mode.show}" travel mode.
-                      """.stripMargin
+              """.stripMargin
           )
         )
     }

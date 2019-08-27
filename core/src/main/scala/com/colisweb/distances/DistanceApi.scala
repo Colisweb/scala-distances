@@ -119,7 +119,7 @@ class DistanceApi[F[_]: Async: Par, E](
           .flatMap { distancesMap =>
             distancesMap.toList
               .parTraverse {
-                case ((origin, destination), errorOrDistance) =>
+                case (Segment(origin, destination), errorOrDistance) =>
                   cacheIfSuccessful(origin, destination, errorOrDistance)
               }
               .map(_.toMap)

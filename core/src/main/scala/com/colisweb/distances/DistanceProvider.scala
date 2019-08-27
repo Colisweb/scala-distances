@@ -18,17 +18,12 @@ abstract class DistanceProvider[F[_]: Async, E] {
       origins: List[LatLong],
       destinations: List[LatLong],
       maybeTrafficHandling: Option[TrafficHandling] = None
-  ): F[Map[(LatLong, LatLong), Either[E, Distance]]]
+  ): F[Map[Segment, Either[E, Distance]]]
 }
 
 object DistanceProvider {
   type DistanceF[F[_], E] = (TravelMode, LatLong, LatLong, Option[TrafficHandling]) => F[Either[E, Distance]]
 
   type BatchDistanceF[F[_], E] =
-    (
-        TravelMode,
-        List[LatLong],
-        List[LatLong],
-        Option[TrafficHandling]
-    ) => F[Map[(LatLong, LatLong), Either[E, Distance]]]
+    (TravelMode, List[LatLong], List[LatLong], Option[TrafficHandling]) => F[Map[Segment, Either[E, Distance]]]
 }
