@@ -41,14 +41,14 @@ class DistanceApi[F[_]: Async: Par, E](
       destinations: List[LatLong],
       travelMode: TravelMode,
       maybeTrafficHandling: Option[TrafficHandling] = None
-  ): F[Map[(LatLong, LatLong), Either[E, Distance]]] = {
+  ): F[Map[Segment, Either[E, Distance]]] = {
     val maybeCachedValues =
       origins
         .flatMap(origin => destinations.map(origin -> _))
         .parTraverse {
           case (origin, destination) =>
             val maybeCachedValue = getCached(decoder, travelMode, origin, destination, maybeTrafficHandling)
-            ((origin, destination).pure[F] -> maybeCachedValue).bisequence
+            (Segment(origin, destination).pure[F] -> maybeCachedValue).bisequence
         }
 
     maybeCachedValues.flatMap { cachedList =>
@@ -66,27 +66,22 @@ class DistanceApi[F[_]: Async: Par, E](
     }
   }
 
-  private def handleCachedValues(
-      cachedValues: List[((LatLong, LatLong), Option[Distance])]
-  ): Map[(LatLong, LatLong), Either[E, Distance]] =
+  private def handleCachedValues(cachedValues: List[(Segment, Option[Distance])]): Map[Segment, Either[E, Distance]] =
     cachedValues
-      .map {
-        case ((origin, destination), cachedDistance) =>
-          (origin, destination) -> Right[E, Distance](cachedDistance.get)
-      }
-      .toMap[(LatLong, LatLong), Either[E, Distance]]
+      .map { case (segment, cachedDistance) => segment -> Right[E, Distance](cachedDistance.get) }
+      .toMap[Segment, Either[E, Distance]]
 
   private def handleUncachedValues(
-      uncachedValues: List[((LatLong, LatLong), Option[Distance])],
+      uncachedValues: List[(Segment, Option[Distance])],
       travelMode: TravelMode,
       maybeTrafficHandling: Option[TrafficHandling]
-  ): F[List[Map[(LatLong, LatLong), Either[E, Distance]]]] = {
+  ): F[List[Map[Segment, Either[E, Distance]]]] = {
 
     def cacheIfSuccessful(
         origin: LatLong,
         destination: LatLong,
         errorOrDistance: Either[E, Distance]
-    ): F[((LatLong, LatLong), Either[E, Distance])] = {
+    ): F[(Segment, Either[E, Distance])] = {
       val eitherF: F[Either[E, Distance]] = errorOrDistance match {
         case Right(distance) =>
           caching(distance, decoder, encoder, travelMode, origin, destination, maybeTrafficHandling)
@@ -95,17 +90,17 @@ class DistanceApi[F[_]: Async: Par, E](
         case Left(error) => error.pure[F].map(Left[E, Distance])
       }
 
-      ((origin, destination).pure[F] -> eitherF).bisequence
+      (Segment(origin, destination).pure[F] -> eitherF).bisequence
     }
 
-    val pairs         = uncachedValues.map { case (pair, _) => pair }
-    val pairsByOrigin = pairs.groupBy { case (origin, _)    => origin }
+    val segments         = uncachedValues.map { case (segment, _) => segment }
+    val segmentsByOrigin = segments.groupBy(_.origin)
 
     val groups =
-      pairsByOrigin
+      segmentsByOrigin
         .groupBy {
-          case (_, pairs) =>
-            pairs.map(_._2).sortBy(destCoords => (destCoords.latitude, destCoords.longitude))
+          case (_, segments) =>
+            segments.map(_.destination).sortBy(destCoords => (destCoords.latitude, destCoords.longitude))
         }
         .mapValues(_.keys.toList)
         .toList

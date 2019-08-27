@@ -82,4 +82,6 @@ object Types {
   )
 
   final case class TrafficHandling(departureTime: Instant, trafficModel: TrafficModel)
+
+  final case class Segment(origin: LatLong, destination: LatLong)
 }

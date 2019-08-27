@@ -134,29 +134,30 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           "say that Paris 02 is closer to Paris 01 than Paris 18 in a batch distances computation" in {
             val results =
               runSync(distanceApi.batchDistances(List(paris01), List(paris02, paris18), Driving, None))
-                .asInstanceOf[Map[(LatLong, LatLong), Either[Unit, Distance]]]
+                .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
 
-            results(paris01 -> paris02).right.get.length should be < results(paris01 -> paris18).right.get.length
+            results(Segment(paris01, paris02)).right.get.length should be <
+              results(Segment(paris01, paris18)).right.get.length
 
-            results(paris01 -> paris02).right.get.duration should be < results(paris01 -> paris18).right.get.duration
+            results(Segment(paris01, paris02)).right.get.duration should be <
+              results(Segment(paris01, paris18)).right.get.duration
           }
 
           "return all the uncached distances in a batch distances computation" in {
             val origins      = List(LatLong(48.86, 2.33), LatLong(48.87, 2.34), LatLong(48.88, 2.35))
             val destinations = List(LatLong(48.85, 2.32), LatLong(48.84, 2.31), LatLong(48.83, 2.3))
-            val pairs        = origins.flatMap(origin => destinations.map(origin -> _))
+            val segments     = origins.flatMap(origin => destinations.map(Segment(origin, _)))
 
             val results =
               runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
                 .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
 
-            val caches = pairs.map {
-              case (origin, destination) =>
-                runSync(cache.get(Distance.decoder, Driving, origin, destination, None))
-                  .asInstanceOf[Option[Distance]]
+            val caches = segments.map { segment =>
+              runSync(cache.get(Distance.decoder, Driving, segment.origin, segment.destination, None))
+                .asInstanceOf[Option[Distance]]
             }
 
-            results.keys should contain theSameElementsAs pairs
+            results.keys should contain theSameElementsAs segments
             results.values.forall(_.isRight) shouldBe true
             caches.forall(_.isDefined) shouldBe true
 
@@ -164,19 +165,18 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             val moreDestinations = List(LatLong(48.84, 2.36), LatLong(48.83, 2.37))
             val allOrigins       = origins ++ moreOrigins
             val allDestinations  = destinations ++ moreDestinations
-            val allPairs         = allOrigins.flatMap(origin => allDestinations.map(origin -> _))
+            val allSegments      = allOrigins.flatMap(origin => allDestinations.map(Segment(origin, _)))
 
             val allResults =
               runSync(distanceApi.batchDistances(allOrigins, allDestinations, Driving, None))
                 .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
 
-            val allCaches = allPairs.map {
-              case (origin, destination) =>
-                runSync(cache.get(Distance.decoder, Driving, origin, destination, None))
-                  .asInstanceOf[Option[Distance]]
+            val allCaches = allSegments.map { segment =>
+              runSync(cache.get(Distance.decoder, Driving, segment.origin, segment.destination, None))
+                .asInstanceOf[Option[Distance]]
             }
 
-            allResults.keys should contain theSameElementsAs allPairs
+            allResults.keys should contain theSameElementsAs allSegments
             allResults.values.forall(_.isRight) shouldBe true
             allCaches.forall(_.isDefined) shouldBe true
           }
