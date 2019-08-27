@@ -36,6 +36,18 @@ class DistanceApi[F[_]: Async: Par, E](
           distancesOrErrors.map { case (path, distanceOrError) => path.travelMode -> distanceOrError }.toMap
         }
 
+  /**
+    * Make distances computation by batch of points.
+    * The computed distances are the combinations of origins and destinations arguments.
+    * Only the uncached distances are computed. This can result in more than one distance computation, depending on the
+    * already cached distances. This tries to make as few as possible.
+    *
+    * @param origins From which points to compute the distances.
+    * @param destinations To which points to compute the distances.
+    * @param travelMode The travel mode.
+    * @param maybeTrafficHandling The traffic parameters, which are the departure time and the traffic estimation model.
+    * @return An Async instance of a map containing results by segment (either an error or the resulting value).
+    */
   final def batchDistances(
       origins: List[LatLong],
       destinations: List[LatLong],
