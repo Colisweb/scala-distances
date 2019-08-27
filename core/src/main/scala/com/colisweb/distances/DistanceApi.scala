@@ -44,11 +44,12 @@ class DistanceApi[F[_]: Async: Par, E](
   ): F[Map[Segment, Either[E, Distance]]] = {
     val maybeCachedValues =
       origins
-        .flatMap(origin => destinations.map(origin -> _))
-        .parTraverse {
-          case (origin, destination) =>
-            val maybeCachedValue = getCached(decoder, travelMode, origin, destination, maybeTrafficHandling)
-            (Segment(origin, destination).pure[F] -> maybeCachedValue).bisequence
+        .flatMap(origin => destinations.map(Segment(origin, _)))
+        .parTraverse { segment =>
+          val maybeCachedValue =
+            getCached(decoder, travelMode, segment.origin, segment.destination, maybeTrafficHandling)
+
+          (segment.pure[F] -> maybeCachedValue).bisequence
         }
 
     maybeCachedValues.flatMap { cachedList =>
