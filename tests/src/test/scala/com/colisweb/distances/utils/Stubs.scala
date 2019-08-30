@@ -68,6 +68,20 @@ object Stubs {
         .toMap
     }
 
+  def mockedBatchDistanceErrorF[F[_]: Async](
+      mode: TravelMode,
+      origins: List[LatLong],
+      destinations: List[LatLong],
+      maybeTrafficHandling: Option[TrafficHandling]
+  ): F[Map[Segment, Either[Unit, Distance]]] =
+    Monad[F].pure {
+      // FIXME: does not compile if arguments are not used
+      origins
+        .flatMap(origin => destinations.map(destination => (Segment(origin, destination), mode, maybeTrafficHandling)))
+        .map { case (segment, _, _) => segment -> Left[Unit, Distance](()) }
+        .toMap
+    }
+
   def mockedDistanceF[F[_]: Monad](
       mode: TravelMode,
       origin: LatLong,
@@ -75,6 +89,15 @@ object Stubs {
       maybeTrafficHandling: Option[TrafficHandling]
   ): F[Either[Unit, Distance]] =
     Monad[F].pure(Right(mockDistance(mode, origin, destination, maybeTrafficHandling)))
+
+  def mockedDistanceErrorF[F[_]: Monad](
+      mode: TravelMode,
+      origin: LatLong,
+      destination: LatLong,
+      maybeTrafficHandling: Option[TrafficHandling]
+  ): F[Either[Unit, Distance]] =
+    // FIXME: does not compile if arguments are not used
+    Monad[F].pure(((mode, origin, destination, maybeTrafficHandling) -> Left(()))._2)
 
   private def mockDistance[F[_]: Monad](
       mode: TravelMode,
