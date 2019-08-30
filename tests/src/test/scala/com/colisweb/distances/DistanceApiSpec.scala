@@ -65,6 +65,27 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
         def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any, cache: Cache[F]): Unit = {
+          def removeFromCache(
+              travelMode: TravelMode,
+              origin: LatLong,
+              destination: LatLong,
+              maybeTrafficHandling: Option[TrafficHandling]
+          ): Unit = {
+            runSync(cache.remove(travelMode, origin, destination, maybeTrafficHandling))
+            ()
+          }
+
+          def removeBatchFromCache(
+              travelMode: TravelMode,
+              origins: List[LatLong],
+              destinations: List[LatLong],
+              maybeTrafficHandling: Option[TrafficHandling]
+          ): Unit =
+            origins.flatMap(origin => destinations.map(origin -> _)).foreach {
+              case (origin, destination) =>
+                removeFromCache(travelMode, origin, destination, maybeTrafficHandling)
+            }
+
           val distanceApi: DistanceApi[F, Unit] =
             DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cache.caching, cache.get)
 
@@ -79,8 +100,9 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             val driveFrom01to02 = DirectedPathMultipleModes(origin = paris01, destination = paris02, Driving :: Nil)
             val driveFrom01to18 = DirectedPathMultipleModes(origin = paris01, destination = paris18, Driving :: Nil)
 
-            val results = runSync(distanceApi.distances(Array(driveFrom01to02, driveFrom01to18)))
-              .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
+            val paths = Array(driveFrom01to02, driveFrom01to18)
+
+            val results = runSync(distanceApi.distances(paths)).asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
 
             // We only check the length as travel duration varies over time & traffic
             results.mapValues(_.right.get.length) shouldBe Map(
@@ -93,6 +115,10 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
             results(DirectedPath(paris01, paris02, Driving, None)).right.get.duration should be <
               results(DirectedPath(paris01, paris18, Driving, None)).right.get.duration
+
+            paths.foreach(
+              path => removeFromCache(path.travelModes.head, path.origin, path.destination, path.maybeTrafficHandling)
+            )
           }
 
           val origin         = LatLong(48.8640493, 2.3310526)
@@ -101,42 +127,60 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
           val travelDuration = 73728.millis
 
           "not take into account traffic when not asked to with a driving travel mode" in {
-            val result = Map(Driving -> Right(Distance(length, travelDuration)))
+            val expected = Map(Driving -> Right(Distance(length, travelDuration)))
+            val result   = runSync(distanceApi.distance(origin, destination, Driving :: Nil, None))
 
-            runSync(distanceApi.distance(origin, destination, Driving :: Nil, None)) shouldBe result
+            result shouldBe expected
+
+            removeFromCache(Driving, origin, destination, None)
           }
 
           "take into account traffic when asked to with a driving travel mode and a best guess estimation" in {
-            val result          = Map(Driving -> Right(Distance(length, travelDuration + 5.minutes)))
+            val expected        = Map(Driving -> Right(Distance(length, travelDuration + 5.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
 
-            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+            val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
+
+            result shouldBe expected
+            removeFromCache(Driving, origin, destination, Some(trafficHandling))
           }
 
           "take into account traffic when asked to with a driving travel mode and an optimistic estimation" in {
-            val result          = Map(Driving -> Right(Distance(length, travelDuration + 2.minutes)))
+            val expected        = Map(Driving -> Right(Distance(length, travelDuration + 2.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Optimistic)
 
-            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+            val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
+
+            result shouldBe expected
+            removeFromCache(Driving, origin, destination, Some(trafficHandling))
           }
 
           "take into account traffic when asked to with a driving travel mode and a pessimistic estimation" in {
-            val result          = Map(Driving -> Right(Distance(length, travelDuration + 10.minutes)))
+            val expected        = Map(Driving -> Right(Distance(length, travelDuration + 10.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Pessimistic)
 
-            runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling))) shouldBe result
+            val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
+
+            result shouldBe expected
+            removeFromCache(Driving, origin, destination, Some(trafficHandling))
           }
 
           "not take into account traffic when asked to with a bicycling travel mode" in {
-            val result          = Map(Bicycling -> Right(Distance(length, travelDuration)))
+            val expected        = Map(Bicycling -> Right(Distance(length, travelDuration)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
 
-            runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(trafficHandling))) shouldBe result
+            val result = runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(trafficHandling)))
+
+            result shouldBe expected
+            removeFromCache(Bicycling, origin, destination, Some(trafficHandling))
           }
 
           "say that Paris 02 is closer to Paris 01 than Paris 18 in a batch distances computation" in {
+            val origins      = List(paris01)
+            val destinations = List(paris02, paris18)
+
             val results =
-              runSync(distanceApi.batchDistances(List(paris01), List(paris02, paris18), Driving, None))
+              runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
                 .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
 
             results(Segment(paris01, paris02)).right.get.length should be <
@@ -144,6 +188,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
             results(Segment(paris01, paris02)).right.get.duration should be <
               results(Segment(paris01, paris18)).right.get.duration
+
+            removeBatchFromCache(Driving, origins, destinations, None)
           }
 
           "not call for new computations when already cached" in {
@@ -169,6 +215,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
 
             knownEntries.values.forall(_.isRight) shouldBe true
             unknownEntries.values.forall(_.isLeft) shouldBe true
+
+            removeBatchFromCache(Driving, origins, destinations, None)
           }
 
           "return all the uncached distances in a batch distances computation" in {
@@ -207,6 +255,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
             allResults.keys should contain theSameElementsAs allSegments
             allResults.values.forall(_.isRight) shouldBe true
             allCaches.forall(_.isDefined) shouldBe true
+
+            removeBatchFromCache(Driving, allOrigins, allDestinations, None)
           }
         }
 
