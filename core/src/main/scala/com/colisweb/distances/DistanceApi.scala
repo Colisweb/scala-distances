@@ -80,8 +80,8 @@ class DistanceApi[F[_]: Async: Par, E](
     maybeCachedValues.flatMap { cachedList =>
       val (uncachedValues, cachedValues) = cachedList.partition { case (_, maybeCached) => maybeCached.isEmpty }
 
-      val cachedMap        = handleCachedValues(cachedValues)
-      val distanceBatchesF = handleUncachedValues(uncachedValues, travelMode, maybeTrafficHandling)
+      val cachedMap        = retrieveCachedValues(cachedValues)
+      val distanceBatchesF = computeUnknownDistancesAndUpdateCache(uncachedValues, travelMode, maybeTrafficHandling)
 
       distanceBatchesF.map { distanceBatches =>
         distanceBatches.foldLeft(cachedMap) {
@@ -92,12 +92,12 @@ class DistanceApi[F[_]: Async: Par, E](
     }
   }
 
-  private def handleCachedValues(cachedValues: List[(Segment, Option[Distance])]): Map[Segment, Either[E, Distance]] =
+  private def retrieveCachedValues(cachedValues: List[(Segment, Option[Distance])]): Map[Segment, Either[E, Distance]] =
     cachedValues
       .map { case (segment, cachedDistance) => segment -> Right[E, Distance](cachedDistance.get) }
       .toMap[Segment, Either[E, Distance]]
 
-  private def handleUncachedValues(
+  private def computeUnknownDistancesAndUpdateCache(
       uncachedValues: List[(Segment, Option[Distance])],
       travelMode: TravelMode,
       maybeTrafficHandling: Option[TrafficHandling]
@@ -109,7 +109,7 @@ class DistanceApi[F[_]: Async: Par, E](
         errorOrDistance: Either[E, Distance]
     ): F[(Segment, Either[E, Distance])] = {
       val eitherF: F[Either[E, Distance]] =
-        handleErrorOrDistance(errorOrDistance, travelMode, origin, destination, maybeTrafficHandling)
+        maybeUpdateCache(errorOrDistance, travelMode, origin, destination, maybeTrafficHandling)
 
       (Segment(origin, destination).pure[F] -> eitherF).bisequence
     }
@@ -187,13 +187,13 @@ class DistanceApi[F[_]: Async: Par, E](
     modes.parTraverse { mode =>
       distanceF(mode, origin, destination, maybeTrafficHandling).flatMap { errorOrDistance =>
         val eitherF: F[Either[E, Distance]] =
-          handleErrorOrDistance(errorOrDistance, mode, origin, destination, maybeTrafficHandling)
+          maybeUpdateCache(errorOrDistance, mode, origin, destination, maybeTrafficHandling)
 
         (DirectedPath(origin, destination, mode, maybeTrafficHandling).pure[F] -> eitherF).bisequence
       }
     }
 
-  private def handleErrorOrDistance(
+  private def maybeUpdateCache(
       errorOrDistance: Either[E, Distance],
       mode: TravelMode,
       origin: LatLong,
