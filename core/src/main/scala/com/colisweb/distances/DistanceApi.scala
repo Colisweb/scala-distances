@@ -10,6 +10,19 @@ import io.circe.{Decoder, Encoder}
 
 import scala.collection.breakOut
 
+/**
+  * Main distance calls entry point.
+  * @param distanceF A distance function which returns either the distance or an error wrapped in a F typeclass instance.
+  *                  It won't get called if the distance is already cached.
+  * @param batchDistanceF A distance function which make distances calls by batch of (origins, destinations) pairs.
+  *                       It won't compute distances for already cached distances.
+  *                       This can result in multiple calls in case there are cached distances.
+  * @param caching A function which, given a value, caches it and returns it wrapped in a F typeclass instance.
+  * @param getCached A function which try to retrieve a value from the cache. The value is wrapped in a Option,
+  *                  which is also wrapped in a F typeclass instance.
+  * @tparam F A typeclass which is constructed from Async and Par.
+  * @tparam E An error type, specific to the distance provider.
+  */
 class DistanceApi[F[_]: Async: Par, E](
     distanceF: DistanceF[F, E],
     batchDistanceF: BatchDistanceF[F, E],
