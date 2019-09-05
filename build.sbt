@@ -14,16 +14,16 @@ ThisBuild / scalafmtSbtCheck := true
 
 val scalaCacheVersion = "0.26.0"
 
-lazy val googleMaps      = "com.google.maps"   % "google-maps-services" % "0.9.4"
-lazy val squants         = "org.typelevel"     %% "squants"             % "1.4.0"
-lazy val cats            = "org.typelevel"     %% "cats-core"           % "1.6.1"
-lazy val `cats-effect`   = "org.typelevel"     %% "cats-effect"         % "1.4.0"
-lazy val `cats-par`      = "io.chrisdavenport" %% "cats-par"            % "0.2.1"
-lazy val enumeratum      = "com.beachape"      %% "enumeratum"          % "1.5.13"
-lazy val monix           = "io.monix"          %% "monix"               % "3.0.0-RC2"
-lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor" % "4.1.0"
+lazy val googleMaps               = "com.google.maps"      % "google-maps-services" % "0.9.4"
+lazy val squants                  = "org.typelevel"        %% "squants"             % "1.4.0"
+lazy val cats                     = "org.typelevel"        %% "cats-core"           % "1.6.1"
+lazy val `cats-effect`            = "org.typelevel"        %% "cats-effect"         % "1.4.0"
+lazy val `cats-par`               = "io.chrisdavenport"    %% "cats-par"            % "0.2.1"
+lazy val enumeratum               = "com.beachape"         %% "enumeratum"          % "1.5.13"
+lazy val monix                    = "io.monix"             %% "monix"               % "3.0.0-RC2"
+lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor"  % "4.1.0"
 
-lazy val circeVersion      = "0.11.1"
+lazy val circeVersion       = "0.11.1"
 lazy val circeOpticsVersion = "0.11.0"
 
 lazy val circeCore          = "io.circe" %% "circe-core"           % circeVersion
@@ -39,16 +39,18 @@ lazy val scalacacheCore =
   Seq(
     "com.github.cb372" %% "scalacache-core"        % scalaCacheVersion,
     "com.github.cb372" %% "scalacache-cats-effect" % scalaCacheVersion,
-    "com.github.cb372" %% "scalacache-circe"       % scalaCacheVersion,
+    "com.github.cb372" %% "scalacache-circe"       % scalaCacheVersion
   )
 
 lazy val testKit = {
-  val kantancsv = ((version: String) =>
-    Seq(
-      "com.nrinaudo" %% "kantan.csv"         % version,
-      "com.nrinaudo" %% "kantan.csv-cats"    % version,
-      "com.nrinaudo" %% "kantan.csv-generic" % version
-    ))("0.5.0")
+  val kantancsv = (
+      (version: String) =>
+        Seq(
+          "com.nrinaudo" %% "kantan.csv"         % version,
+          "com.nrinaudo" %% "kantan.csv-cats"    % version,
+          "com.nrinaudo" %% "kantan.csv-generic" % version
+        )
+    )("0.5.0")
 
   Seq(
     "org.scalacheck" %% "scalacheck"            % "1.14.0",
@@ -78,7 +80,8 @@ lazy val core = project
       `cats-par`,
       enumeratum,
       okHttpLoggingInterceptor
-    ) ++ scalacacheCore ++ circeAll ++ testKit)
+    ) ++ scalacacheCore ++ circeAll ++ testKit
+  )
 
 //// Providers
 

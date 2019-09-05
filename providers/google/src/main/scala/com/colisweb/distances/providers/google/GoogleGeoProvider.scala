@@ -44,7 +44,7 @@ object GoogleGeoProvider {
             .language("fr")
         }
 
-      override private[distances] final def geocode(point: Point): F[LatLong] = point match {
+      override final def geocode(point: Point): F[LatLong] = point match {
 
         case postalCode: PostalCode =>
           rawRequest
@@ -70,13 +70,13 @@ object GoogleGeoProvider {
          *
          * The actual implementation tries to be robust: it will try to always give you an answer:
          *
-         *   1. If it doesn't find an answer with the address informations, it will try to geocode the address without the `line2` information.
-         *   2. If it still doesn't find an anwser, it will try to geocode the address without the `line2` and wihout the `town` information.
+         *   1. If it doesn't find an answer with the address information, it will try to geocode the address without the `line2` information.
+         *   2. If it still doesn't find an answer, it will try to geocode the address without the `line2` and wihout the `town` information.
          *   3. Last, if it still doesn't find an answer, it will geocode the postal code.
          *
-         * This situation is not ideal because, in the situtation 2., the geocoder can potentially gives you a wrong answer.
+         * This situation is not ideal because, in the situation 2., the geocoder can potentially gives you a wrong answer.
          *
-         * As the name of this method indicates, this geocoder method should normally be stric: it finds the exact location or it doesn't find any.
+         * As the name of this method indicates, this geocoder method should normally be strict: it finds the exact location or it doesn't find any.
          *
          * For a more clever geocoder, Google proposes a better solution that what we're doing here.
          * See: https://developers.google.com/maps/documentation/geocoding/best-practices#automated-system

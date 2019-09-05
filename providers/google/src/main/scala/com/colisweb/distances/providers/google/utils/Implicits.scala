@@ -9,7 +9,11 @@ import com.colisweb.distances.Types.LatLong
 import com.google.maps.PendingResult
 import com.google.maps.model.TrafficModel.{BEST_GUESS, OPTIMISTIC, PESSIMISTIC}
 import com.google.maps.model.TravelMode.{BICYCLING, DRIVING, TRANSIT, UNKNOWN, WALKING}
-import com.google.maps.model.{TrafficModel => GoogleTrafficModel, TravelMode => GoogleTravelMode, LatLng => GoogleLatLong}
+import com.google.maps.model.{
+  TrafficModel => GoogleTrafficModel,
+  TravelMode => GoogleTravelMode,
+  LatLng => GoogleLatLong
+}
 
 private[google] object Implicits {
 

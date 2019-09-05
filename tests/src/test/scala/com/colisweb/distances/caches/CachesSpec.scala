@@ -55,16 +55,15 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
   def tests[F[+ _]](cacheImpl: () => Cache[F])(runSync: F[Any] => Any)(implicit F: Async[F]): Unit = {
     val cache = cacheImpl()
 
-    implicit final class RichCacheProvider(val cache: Cache[F]) {
-      import scalacache.CatsEffect.modes.async
-
-      def removeAll(): F[Any] = cache.innerCache.removeAll[F]()(async[F])
-    }
-
     "cache" should {
-      "save things" in {
+      "save things, access them and remove them" in {
         forAll(travelModeGen, latLongGen, latLongGen, distanceGen) { (mode, origin, destination, distance) =>
-          runSync(cache.cachingF(F.pure(distance), Distance.decoder, Distance.encoder, mode, origin, destination)) shouldBe distance
+          // Cache with cachingF
+          runSync(
+            cache.cachingF(F.pure(distance), Distance.decoder, Distance.encoder, mode, origin, destination)
+          ).asInstanceOf[Distance] shouldBe distance
+
+          // Cache with cachingF and an error
           runSync(
             cache.cachingF(
               F.raiseError(new RuntimeException).asInstanceOf[F[Distance]],
@@ -74,8 +73,30 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
               origin,
               destination
             )
-          ) shouldBe distance
-          runSync(cache.removeAll())
+          ).asInstanceOf[Distance] shouldBe distance
+
+          // Retrieve value
+          runSync(
+            cache.get(Distance.decoder, mode, origin, destination)
+          ).asInstanceOf[Option[Distance]] shouldBe Some(distance)
+
+          // Cache with caching
+          runSync(
+            cache.caching(distance, Distance.decoder, Distance.encoder, origin, destination, mode)
+          ).asInstanceOf[Distance] shouldBe distance
+
+          // Retrieve value
+          runSync(
+            cache.get(Distance.decoder, origin, destination, mode)
+          ).asInstanceOf[Option[Distance]] shouldBe Some(distance)
+
+          // Remove values
+          runSync(cache.remove(mode, origin, destination))
+          runSync(cache.remove(origin, destination, mode))
+
+          // Verify they are removed
+          runSync(cache.get(Distance.decoder, mode, origin, destination)).asInstanceOf[Option[Distance]] shouldBe None
+          runSync(cache.get(Distance.decoder, origin, destination, mode)).asInstanceOf[Option[Distance]] shouldBe None
         }
       }
     }
@@ -85,16 +106,19 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
     "with CaffeineCache" should {
       tests[IO](() => CaffeineCache(Some(1 day)))(_.unsafeRunSync())
     }
+
     "pass RedisCache" should {
       tests[IO](() => RedisCache(redisConfiguration, Some(1 day)))(_.unsafeRunSync())
     }
   }
+
   "with Monix Task" should {
     import monix.execution.Scheduler.Implicits.global
 
     "with CaffeineCache" should {
       tests[Task](() => CaffeineCache(Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
+
     "pass RedisCache" should {
       tests[Task](() => RedisCache(redisConfiguration, Some(1 day)))(_.runSyncUnsafe(10 seconds))
     }
