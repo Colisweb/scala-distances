@@ -20,10 +20,13 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
-  val lille                = LatLong(latitude = 50.6138111, longitude = 3.0423599)
-  val lambersart           = LatLong(latitude = 50.65583909999999, longitude = 3.0226977)
-  val harnes               = LatLong(latitude = 50.4515282, longitude = 2.9047234)
-  val artiguesPresBordeaux = LatLong(latitude = 44.84034490000001, longitude = -0.4408037)
+  val lille                = LatLong(50.6138111, 3.0423599)
+  val lambersart           = LatLong(50.65583909999999, 3.0226977)
+  val harnes               = LatLong(50.4515282, 2.9047234)
+  val artiguesPresBordeaux = LatLong(44.84034490000001, -0.4408037)
+  val paris01              = LatLong(48.8640493, 2.3310526)
+  val paris02              = LatLong(48.8675641, 2.34399)
+  val paris18              = LatLong(48.891305, 2.3529867)
 
   def passTests[F[+ _]: Concurrent: Par](runSync: F[Any] => Any): Unit = {
 
@@ -42,17 +45,21 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
         runSync(geocoder.geocode(postalCode)) shouldBe place
 
       "cache and return" should {
-        "Lille" in {
-          testGeocoder(PostalCode("59000"), lille)
-        }
-        "Lambersart" in {
-          testGeocoder(PostalCode("59130"), lambersart)
-        }
-        "Harnes" in {
-          testGeocoder(PostalCode("62440"), harnes)
-        }
-        "Artigues-près-Bordeaux" in {
-          testGeocoder(PostalCode("33370"), artiguesPresBordeaux)
+        val places = List(
+          ("Lille", "59000", lille),
+          ("Lambersart", "59130", lambersart),
+          ("Harnes", "62440", harnes),
+          ("Artigues-près-Bordeaux", "33370", artiguesPresBordeaux),
+          ("Paris 01", "75001", paris01),
+          ("Paris 02", "75002", paris02),
+          ("Paris 18", "75018", paris18)
+        )
+
+        places.foreach {
+          case (testName, postalCode, result) =>
+            testName in {
+              testGeocoder(PostalCode(postalCode), result)
+            }
         }
       }
     }
@@ -101,10 +108,11 @@ class GoogleGeoProviderSpec extends WordSpec with Matchers with ScalaFutures wit
       val data: Seq[(NonAmbiguousAddress, LatLong)] =
         rawData.unsafeReadCsv[List, TestAddress](rfc.withHeader.withCellSeparator(';')).map(_.toAddressAndLatLong)
 
-      def testNonAmbigueAddressGeocoder: ((NonAmbiguousAddress, LatLong)) => Unit = { (address: NonAmbiguousAddress, latLong: LatLong) =>
-        s"$address should be located at $latLong}" in {
-          runSync(geocoder.geocode(address)) shouldBe latLong
-        }
+      def testNonAmbigueAddressGeocoder: ((NonAmbiguousAddress, LatLong)) => Unit = {
+        (address: NonAmbiguousAddress, latLong: LatLong) =>
+          s"$address should be located at $latLong}" in {
+            runSync(geocoder.geocode(address)) shouldBe latLong
+          }
       }.tupled
 
       data.foreach(testNonAmbigueAddressGeocoder.apply)
