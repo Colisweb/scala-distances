@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
-## [unreleased] - 2019.08.26
+## [v2.0.0] - 2019.09.05
 
 * Add `Cache` methods:
     * `caching`: like `cachingF` but with an input value `V` instead of a wrapped value `F[V]`.
