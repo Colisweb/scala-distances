@@ -13,6 +13,10 @@ abstract class DistanceProvider[F[_]: Async, E] {
       maybeTrafficHandling: Option[TrafficHandling] = None
   ): F[Either[E, Distance]]
 
+  /**
+    * A provider implementing this method will try to compute the distance matrix between each origin and
+    * each destination in a single call.
+    */
   def batchDistances(
       mode: TravelMode,
       origins: List[LatLong],
