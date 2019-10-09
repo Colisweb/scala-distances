@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
+## [v3.0.1] - 2019.10.09
+* Fix : cache was not read any more on single distance calls
+
 ## [v3.0.0] - 2019.09.16
 * Update dependencies 
     * cats 2.0.0 : Bring breaking changes. Please refer to the cats' documentation
