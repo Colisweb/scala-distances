@@ -4,6 +4,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
+## [v3.0.4] - 2019.11.12
+* Fix for `GoogleDistanceProvider`: stop adding the traffic duration to the default duration: consider it as a full 
+travel duration value and not only the in-traffic offset. 
+* Update dependencies:
+    * Monix 3.1.0
+    * Squants 1.5.0
+    * scalafmt-core 2.2.2
+    * scalacheck 1.14.2
+
 ## [v3.0.3] - 2019.11.06
 * Fix for `Google Geoprovider`: using `address` parameter instead of `components` for 
 postal code geocoding to succeed in some not working cases.
