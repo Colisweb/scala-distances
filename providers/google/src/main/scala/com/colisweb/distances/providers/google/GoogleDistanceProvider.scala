@@ -6,6 +6,7 @@ import cats.effect.Concurrent
 import com.colisweb.distances.Types.LatLong._
 import com.colisweb.distances.Types.{Distance, LatLong, Segment, TrafficHandling}
 import com.colisweb.distances.{DistanceProvider, TravelMode}
+import com.colisweb.google.GoogleGeoApiContext
 import com.google.maps.model.DistanceMatrixElementStatus._
 import com.google.maps.model.{DistanceMatrix, DistanceMatrixElementStatus, Unit => GoogleDistanceUnit}
 import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
