@@ -52,7 +52,7 @@ lazy val testKit = {
     )("0.5.0")
 
   Seq(
-    "org.scalacheck" %% "scalacheck"            % "1.14.2",
+    "org.scalacheck" %% "scalacheck"            % "1.14.3",
     "org.scalatest"  %% "scalatest"             % "3.0.8",
     "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2",
     "com.beachape"   %% "enumeratum-scalacheck" % "1.5.16",
