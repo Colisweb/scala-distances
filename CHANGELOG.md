@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 More infos about this file : http://keepachangelog.com/
 
+## [v4.0.0] - 2020.01.22
+* Update dependencies.
+* The cache key is now generated from a given function, as input of `DistanceApi`.
+
 ## [v3.0.4] - 2019.11.12
 * Fix for `GoogleDistanceProvider`: stop adding the traffic duration to the default duration: consider it as a full 
 travel duration value and not only the in-traffic offset. 
