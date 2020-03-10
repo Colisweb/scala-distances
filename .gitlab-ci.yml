@@ -1,6 +1,6 @@
 include:
-  - 'https://gitlab.com/colisweb-open-source/ci-common/raw/v7.8.2/templates/scala.yml'
-  - 'https://gitlab.com/colisweb-open-source/ci-common/raw/v7.8.2/services/redis.yml'
+  - 'https://gitlab.com/colisweb-open-source/ci-common/raw/v7.8.3/templates/scala.yml'
+  - 'https://gitlab.com/colisweb-open-source/ci-common/raw/v7.8.3/services/redis.yml'
 
 test scala-distances:
   extends:
