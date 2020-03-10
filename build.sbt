@@ -49,14 +49,14 @@ lazy val testKit = {
           "com.nrinaudo" %% "kantan.csv-cats"    % version,
           "com.nrinaudo" %% "kantan.csv-generic" % version
         )
-    )("0.5.0")
+  )("0.5.0")
 
   Seq(
-    "org.scalacheck" %% "scalacheck"            % "1.14.3",
-    "org.scalatest"  %% "scalatest"             % "3.1.1",
+    "org.scalacheck"    %% "scalacheck"               % "1.14.3",
+    "org.scalatest"     %% "scalatest"                % "3.1.1",
     "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2",
-    "com.beachape"   %% "enumeratum-scalacheck" % "1.5.16",
-    "io.circe"       %% "circe-literal"         % circeVersion,
+    "com.beachape"      %% "enumeratum-scalacheck"    % "1.5.16",
+    "io.circe"          %% "circe-literal"            % circeVersion,
     monix
   ) ++ kantancsv
 }.map(_ % Test)
