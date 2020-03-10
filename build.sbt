@@ -1,6 +1,6 @@
 import sbt.Keys.crossScalaVersions
 
-lazy val scala212 = "2.12.8"
+lazy val scala212 = "2.12.10"
 lazy val scala211 = "2.11.12"
 
 ThisBuild / organization := "com.colisweb"
@@ -134,21 +134,19 @@ lazy val noPublishSettings = Seq(
 )
 
 ThisBuild / releaseCrossBuild := true
-ThisBuild / credentials += Credentials(Path.userHome / ".bintray" / ".credentials")
 ThisBuild / licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT"))
 ThisBuild / scmInfo := Some(
   ScmInfo(
-    url("https://gitlab.com/colisweb-open-source/scala-distances"),
-    "scm:git:git@gitlab.com:colisweb-open-source/scala-distances.git"
+    url("https://gitlab.com/colisweb-open-source/scala/scala-distances"),
+    "scm:git:git@gitlab.com:colisweb-open-source/scala/scala-distances.git"
   )
 )
-ThisBuild / homepage := Some(url("https://gitlab.com/colisweb-open-source/scala-distances"))
+ThisBuild / homepage := Some(url("https://gitlab.com/colisweb-open-source/scala/scala-distances"))
 ThisBuild / developers := List(
   Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/")),
   Developer("simooonbar", "Simon Bar", "simon.bar@colisweb.com", url("https://gitlab.com/snatz"))
 )
 ThisBuild / bintrayOrganization := Some("colisweb")
-ThisBuild / bintrayReleaseOnPublish := true
 ThisBuild / publishMavenStyle := true
 
 //// Aliases
