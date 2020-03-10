@@ -32,7 +32,7 @@ class GoogleGeoProviderSpec extends AnyWordSpec with Matchers with ScalaFutures 
   val paris116             = LatLong(48.8582383, 2.2749434)
   val merignac             = LatLong(44.8391346, -0.6867939)
 
-  def passTests[F[+ _]: Concurrent: Parallel](runSync: F[Any] => Any): Unit = {
+  def passTests[F[+_]: Concurrent: Parallel](runSync: F[Any] => Any): Unit = {
 
     val geocoder: GeoProvider[F] = GoogleGeoProvider[F](geoContext)
 

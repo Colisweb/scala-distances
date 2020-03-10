@@ -27,7 +27,7 @@ class GoogleDistanceProviderSpec extends AnyWordSpec with Matchers {
 
   lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
 
-  def passTests[F[+ _]: Concurrent: Parallel](runSync: F[Any] => Any): Unit = {
+  def passTests[F[+_]: Concurrent: Parallel](runSync: F[Any] => Any): Unit = {
     val distanceApi: DistanceProvider[F, GoogleDistanceProviderError] = GoogleDistanceProvider[F](geoContext)
 
     val paris01 = LatLong(48.8640493, 2.3310526)

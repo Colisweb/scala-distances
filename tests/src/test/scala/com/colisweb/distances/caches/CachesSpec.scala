@@ -53,7 +53,7 @@ class CacheSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks 
       }
     """
 
-  def tests[F[+ _]](cacheImpl: () => Cache[F])(runSync: F[Any] => Any)(implicit F: Async[F]): Unit = {
+  def tests[F[+_]](cacheImpl: () => Cache[F])(runSync: F[Any] => Any)(implicit F: Async[F]): Unit = {
     val cache = cacheImpl()
 
     "cache" should {
@@ -103,7 +103,7 @@ class CacheSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks 
     }
   }
 
-  def noCacheTests[F[+ _]](runSync: F[Any] => Any)(implicit F: Async[F]): Unit = {
+  def noCacheTests[F[+_]](runSync: F[Any] => Any)(implicit F: Async[F]): Unit = {
     val noCache = NoCache[F]()
 
     "no cache" should {

@@ -67,7 +67,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
     "#distances" should {
       "pass the same test suite than GoogleDistanceProvider" should {
-        def passTests[F[+ _]: Concurrent: Parallel](runSync: F[Any] => Any, cache: Cache[F]): Unit = {
+        def passTests[F[+_]: Concurrent: Parallel](runSync: F[Any] => Any, cache: Cache[F]): Unit = {
           def removeFromCache(
               travelMode: TravelMode,
               origin: LatLong,
@@ -125,8 +125,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
             results(DirectedPath(paris01, paris02, Driving, None)).right.get.duration should be <
               results(DirectedPath(paris01, paris18, Driving, None)).right.get.duration
 
-            paths.foreach(
-              path => removeFromCache(path.travelModes.head, path.origin, path.destination, path.maybeTrafficHandling)
+            paths.foreach(path =>
+              removeFromCache(path.travelModes.head, path.origin, path.destination, path.maybeTrafficHandling)
             )
           }
 

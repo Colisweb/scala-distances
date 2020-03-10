@@ -36,12 +36,11 @@ object Gens {
     origin      <- latLongGen
     destination <- latLongGen
     travelModes <- Gen.nonEmptyListOf(travelModeGen)
-  } yield
-    DirectedPathMultipleModes(
-      origin = origin,
-      destination = destination,
-      travelModes = travelModes
-    )
+  } yield DirectedPathMultipleModes(
+    origin = origin,
+    destination = destination,
+    travelModes = travelModes
+  )
 
   final val postalCodeGen: Gen[PostalCode] = Gen.listOfN(5, Gen.alphaNumChar).map(cs => PostalCode(cs.mkString))
 
@@ -51,25 +50,23 @@ object Gens {
     postalCode <- Gen.listOfN(5, Gen.alphaNumChar).map(_.mkString)
     town       <- Gen.alphaNumStr
     country    <- Gen.alphaNumStr
-  } yield
-    NonAmbiguousAddress(
-      line1 = line1,
-      line2 = line2,
-      postalCode = postalCode,
-      town = town,
-      country = country
-    )
+  } yield NonAmbiguousAddress(
+    line1 = line1,
+    line2 = line2,
+    postalCode = postalCode,
+    town = town,
+    country = country
+  )
 
   final val totoGen: Gen[Toto] = for {
     name     <- nameGen
     age      <- ageGen
     latLong  <- latLongGen
     distance <- distanceGen
-  } yield
-    Toto(
-      name = name,
-      age = age,
-      latLong = latLong,
-      distance = distance
-    )
+  } yield Toto(
+    name = name,
+    age = age,
+    latLong = latLong,
+    distance = distance
+  )
 }
