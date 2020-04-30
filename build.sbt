@@ -19,7 +19,7 @@ lazy val squants                  = "org.typelevel"        %% "squants"         
 lazy val cats                     = "org.typelevel"        %% "cats-core"           % "2.0.0"
 lazy val catsEffect               = "org.typelevel"        %% "cats-effect"         % "2.0.0"
 lazy val enumeratum               = "com.beachape"         %% "enumeratum"          % "1.5.15"
-lazy val monix                    = "io.monix"             %% "monix"               % "3.2.0"
+lazy val monix                    = "io.monix"             %% "monix"               % "3.2.1"
 lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor"  % "4.6.0"
 
 lazy val circeVersion       = "0.12.1"
