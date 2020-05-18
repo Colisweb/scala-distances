@@ -18,7 +18,7 @@ lazy val googleMaps               = "com.google.maps"      % "google-maps-servic
 lazy val squants                  = "org.typelevel"        %% "squants"             % "1.6.0"
 lazy val cats                     = "org.typelevel"        %% "cats-core"           % "2.0.0"
 lazy val catsEffect               = "org.typelevel"        %% "cats-effect"         % "2.0.0"
-lazy val enumeratum               = "com.beachape"         %% "enumeratum"          % "1.6.0"
+lazy val enumeratum               = "com.beachape"         %% "enumeratum"          % "1.6.1"
 lazy val monix                    = "io.monix"             %% "monix"               % "3.2.1"
 lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor"  % "4.6.0"
 
@@ -55,7 +55,7 @@ lazy val testKit = {
     "org.scalacheck"    %% "scalacheck"               % "1.14.3",
     "org.scalatest"     %% "scalatest"                % "3.1.2",
     "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2",
-    "com.beachape"      %% "enumeratum-scalacheck"    % "1.6.0",
+    "com.beachape"      %% "enumeratum-scalacheck"    % "1.6.1",
     "io.circe"          %% "circe-literal"            % circeVersion,
     monix
   ) ++ kantancsv
