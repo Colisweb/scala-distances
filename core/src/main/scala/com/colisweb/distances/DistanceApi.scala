@@ -7,8 +7,8 @@ import com.colisweb.distances.Cache.{CacheKey, Caching, GetCached}
 import com.colisweb.distances.DistanceProvider.{BatchDistanceF, DistanceF}
 import com.colisweb.distances.Types._
 import io.circe.{Decoder, Encoder}
-
-import scala.collection.breakOut
+import com.colisweb.distances.utils.Implicits._
+import scala.collection.compat._
 
 /**
   * Main distance calls entry point.
@@ -33,7 +33,9 @@ class DistanceApi[F[_]: Async: Parallel, E](
 ) {
   import DistanceApi._
   import cats.implicits._
-  import com.colisweb.distances.utils.Implicits._
+
+  //import to use library scala.collection.compat even in scala 2.13
+  implicit val collectionCompat = BuildFrom
 
   final def distance(
       origin: LatLong,
@@ -42,7 +44,7 @@ class DistanceApi[F[_]: Async: Parallel, E](
       maybeTrafficHandling: Option[TrafficHandling] = None
   ): F[Map[TravelMode, Either[E, Distance]]] =
     if (origin == destination)
-      Async[F].pure(travelModes.map(_ -> Right(Distance.zero))(breakOut))
+      Async[F].pure(travelModes.view.map(_ -> Right(Distance.zero)).toMap)
     else
       parDistances(travelModes, origin, destination, maybeTrafficHandling)
         .map { distancesOrErrors =>
@@ -72,7 +74,7 @@ class DistanceApi[F[_]: Async: Parallel, E](
         .flatMap(origin => destinations.map(Segment(origin, _)))
         .parTraverse { segment =>
           val path             = DirectedPath(segment.origin, segment.destination, travelMode, maybeTrafficHandling)
-          val maybeCachedValue = getCached(decoder, cacheKey(path): _*)
+          val maybeCachedValue = getCached(decoder, cacheKey(path))
 
           (segment.pure[F] -> maybeCachedValue).bisequence
         }
@@ -123,6 +125,7 @@ class DistanceApi[F[_]: Async: Parallel, E](
           case (_, segments) =>
             segments.map(_.destination).sortBy(destCoords => (destCoords.latitude, destCoords.longitude))
         }
+        .view
         .mapValues(_.keys.toList)
         .toList
 
@@ -146,7 +149,7 @@ class DistanceApi[F[_]: Async: Parallel, E](
       travelModes: List[TravelMode],
       maybeTrafficHandling: Option[TrafficHandling] = None
   ): F[Map[TravelMode, Either[E, Distance]]] =
-    if (origin == destination) Async[F].pure(travelModes.map(_ -> Right(Distance.zero))(breakOut))
+    if (origin == destination) Async[F].pure(travelModes.view.map(_ -> Right(Distance.zero)).toMap)
     else
       (
         geocoder.geocodePostalCode(origin),
@@ -154,12 +157,15 @@ class DistanceApi[F[_]: Async: Parallel, E](
       ).parTupled.flatMap { case (orig, dest) => distance(orig, dest, travelModes, maybeTrafficHandling) }
 
   final def distances(paths: Seq[DirectedPathMultipleModes]): F[Map[DirectedPath, Either[E, Distance]]] = {
+    val filteredPaths: List[DirectedPathMultipleModes] = paths.filter(_.travelModes.nonEmpty).toList
     val combinedDirectedPaths: List[DirectedPathMultipleModes] =
-      paths
-        .filter(_.travelModes.nonEmpty)
-        .combineDuplicatesOn { case DirectedPathMultipleModes(origin, destination, _, _) => (origin, destination) }(
-          directedPathSemiGroup,
-          breakOut
+      filteredPaths
+        .combineDuplicatesOn {
+          case DirectedPathMultipleModes(origin, destination, _, _) =>
+            val x: (LatLong, LatLong) = (origin, destination)
+            x
+        }(
+          directedPathSemiGroup
         )
 
     combinedDirectedPaths
@@ -186,7 +192,7 @@ class DistanceApi[F[_]: Async: Parallel, E](
   ): F[List[(DirectedPath, Either[E, Distance])]] = {
     modes.parTraverse { mode =>
       for {
-        cached <- getCached(decoder, cacheKey(DirectedPath(origin, destination, mode, maybeTrafficHandling)): _*)
+        cached <- getCached(decoder, cacheKey(DirectedPath(origin, destination, mode, maybeTrafficHandling)))
         errorOrDistance <- cached match {
           case Some(value) => Either.right[E, Distance](value).pure[F]
           case None        => distanceF(mode, origin, destination, maybeTrafficHandling)
@@ -205,7 +211,7 @@ class DistanceApi[F[_]: Async: Parallel, E](
   ): F[Either[E, Distance]] = {
     errorOrDistance match {
       case Right(distance) =>
-        caching(distance, decoder, encoder, cacheKey(DirectedPath(origin, destination, mode, maybeTrafficHandling)): _*)
+        caching(distance, decoder, encoder, cacheKey(DirectedPath(origin, destination, mode, maybeTrafficHandling)))
           .map(Right[E, Distance])
 
       case Left(error) => error.pure[F].map(Left[E, Distance])

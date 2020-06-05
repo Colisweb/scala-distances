@@ -2,12 +2,11 @@ package com.colisweb.distances.utils
 
 import cats.kernel.Semigroup
 
-import scala.collection.generic.CanBuildFrom
-import scala.collection.{TraversableLike, mutable}
+import scala.collection.mutable
 
 private[distances] object Implicits {
 
-  implicit final class TraversableLikeOps[A, Repr](val coll: TraversableLike[A, Repr]) extends AnyVal {
+  implicit final class TraversableLikeOps[A](val coll: List[A]) extends AnyVal {
 
     /**
       * Inspired by: https://github.com/cvogt/scala-extensions/blob/master/src/main/scala/collection.scala#L14-L28
@@ -15,12 +14,12 @@ private[distances] object Implicits {
       * For more information, see: https://scala-lang.org/blog/2017/05/30/tribulations-canbuildfrom.html
       *
       * @param key
-      * @param bf
       * @tparam B
-      * @tparam That
       * @return
       */
-    def combineDuplicatesOn[B, That](key: A => B)(implicit A: Semigroup[A], bf: CanBuildFrom[Repr, A, That]): That = {
+    def combineDuplicatesOn[B](
+        key: A => B
+    )(implicit A: Semigroup[A]): List[A] = {
       import cats.syntax.semigroup._
 
       val acc: mutable.Map[B, A] = mutable.Map()
@@ -30,9 +29,7 @@ private[distances] object Implicits {
         acc += k -> acc.get(k).fold(a)(_ |+| a)
       }
 
-      val builder = bf(coll.repr)
-      for (elem <- acc) { builder += elem._2 }
-      builder.result()
+      acc.values.toList
     }
   }
 

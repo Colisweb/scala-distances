@@ -12,7 +12,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import squants.space.Length
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 final case class Toto(
     name: String,
@@ -61,7 +60,7 @@ class CacheSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks 
         forAll(travelModeGen, latLongGen, latLongGen, distanceGen) { (mode, origin, destination, distance) =>
           // Cache with cachingF
           runSync(
-            cache.cachingF(F.pure(distance), Distance.decoder, Distance.encoder, mode, origin, destination)
+            cache.cachingF(F.pure(distance), Distance.decoder, Distance.encoder, Seq(mode, origin, destination))
           ).asInstanceOf[Distance] shouldBe distance
 
           // Cache with cachingF and an error
@@ -70,34 +69,34 @@ class CacheSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks 
               F.raiseError(new RuntimeException).asInstanceOf[F[Distance]],
               Distance.decoder,
               Distance.encoder,
-              mode,
-              origin,
-              destination
+              Seq(mode, origin, destination)
             )
           ).asInstanceOf[Distance] shouldBe distance
 
           // Retrieve value
           runSync(
-            cache.get(Distance.decoder, mode, origin, destination)
+            cache.get(Distance.decoder, Seq(mode, origin, destination))
           ).asInstanceOf[Option[Distance]] shouldBe Some(distance)
 
           // Cache with caching
           runSync(
-            cache.caching(distance, Distance.decoder, Distance.encoder, origin, destination, mode)
+            cache.caching(distance, Distance.decoder, Distance.encoder, Seq(origin, destination, mode))
           ).asInstanceOf[Distance] shouldBe distance
 
           // Retrieve value
           runSync(
-            cache.get(Distance.decoder, origin, destination, mode)
+            cache.get(Distance.decoder, Seq(origin, destination, mode))
           ).asInstanceOf[Option[Distance]] shouldBe Some(distance)
 
           // Remove values
-          runSync(cache.remove(mode, origin, destination))
-          runSync(cache.remove(origin, destination, mode))
+          runSync(cache.remove(Seq(mode, origin, destination)))
+          runSync(cache.remove(Seq(origin, destination, mode)))
 
           // Verify they are removed
-          runSync(cache.get(Distance.decoder, mode, origin, destination)).asInstanceOf[Option[Distance]] shouldBe None
-          runSync(cache.get(Distance.decoder, origin, destination, mode)).asInstanceOf[Option[Distance]] shouldBe None
+          runSync(cache.get(Distance.decoder, Seq(mode, origin, destination)))
+            .asInstanceOf[Option[Distance]] shouldBe None
+          runSync(cache.get(Distance.decoder, Seq(origin, destination, mode)))
+            .asInstanceOf[Option[Distance]] shouldBe None
         }
       }
     }
@@ -111,22 +110,22 @@ class CacheSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks 
         forAll(travelModeGen, latLongGen, latLongGen, distanceGen) { (mode, origin, destination, distance) =>
           // Cache with cachingF
           runSync(
-            noCache.cachingF(F.pure(distance), Distance.decoder, Distance.encoder, mode, origin, destination)
+            noCache.cachingF(F.pure(distance), Distance.decoder, Distance.encoder, Seq(mode, origin, destination))
           ).asInstanceOf[Distance] shouldBe distance
 
           // Retrieve value
           runSync(
-            noCache.get(Distance.decoder, mode, origin, destination)
+            noCache.get(Distance.decoder, Seq(mode, origin, destination))
           ).asInstanceOf[Option[Distance]] shouldBe None
 
           // Cache with caching
           runSync(
-            noCache.caching(distance, Distance.decoder, Distance.encoder, origin, destination, mode)
+            noCache.caching(distance, Distance.decoder, Distance.encoder, Seq(origin, destination, mode))
           ).asInstanceOf[Distance] shouldBe distance
 
           // Retrieve value
           runSync(
-            noCache.get(Distance.decoder, origin, destination, mode)
+            noCache.get(Distance.decoder, Seq(origin, destination, mode))
           ).asInstanceOf[Option[Distance]] shouldBe None
         }
       }

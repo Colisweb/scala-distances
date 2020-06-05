@@ -13,16 +13,16 @@ object NoCache {
       override private[distances] final val innerCache: InnerCache[Json] = null
 
       @inline
-      override def cachingF[V](f: F[V], decoder: Decoder[V], encoder: Encoder[V], keys: Any*): F[V] = f
+      override def cachingF[V](f: F[V], decoder: Decoder[V], encoder: Encoder[V], keys: Seq[Any]): F[V] = f
 
       @inline
-      override def caching[V](v: V, decoder: Decoder[V], encoder: Encoder[V], keys: Any*): F[V] = v.pure[F]
+      override def caching[V](v: V, decoder: Decoder[V], encoder: Encoder[V], keys: Seq[Any]): F[V] = v.pure[F]
 
       @inline
-      override def get[V](decoder: Decoder[V], keys: Any*): F[Option[V]] = Option.empty[V].pure[F]
+      override def get[V](decoder: Decoder[V], keys: Seq[Any]): F[Option[V]] = Option.empty[V].pure[F]
 
       @inline
-      override def remove(keys: Any*): F[Unit] = ().pure[F]
+      override def remove(keys: Seq[Any]): F[Unit] = ().pure[F]
 
       @inline
       override def removeAll(): F[Unit] = ().pure[F]

@@ -19,7 +19,6 @@ import squants.space.LengthConversions._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 class GoogleDistanceProviderSpec extends AnyWordSpec with Matchers {
 

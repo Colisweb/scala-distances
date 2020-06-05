@@ -54,21 +54,23 @@ private[google] object Implicits {
   }
 
   implicit final class GoogleTrafficModelOps(model: TrafficModel) {
-    def asGoogle: GoogleTrafficModel = model match {
-      case BestGuess   => BEST_GUESS
-      case Optimistic  => OPTIMISTIC
-      case Pessimistic => PESSIMISTIC
-    }
+    def asGoogle: GoogleTrafficModel =
+      model match {
+        case BestGuess   => BEST_GUESS
+        case Optimistic  => OPTIMISTIC
+        case Pessimistic => PESSIMISTIC
+      }
   }
 
   implicit final class GoogleTravelModeOps(mode: TravelMode) {
-    def asGoogle: GoogleTravelMode = mode match {
-      case Driving   => DRIVING
-      case Bicycling => BICYCLING
-      case Walking   => WALKING
-      case Transit   => TRANSIT
-      case Unknown   => UNKNOWN
-    }
+    def asGoogle: GoogleTravelMode =
+      mode match {
+        case Driving   => DRIVING
+        case Bicycling => BICYCLING
+        case Walking   => WALKING
+        case Transit   => TRANSIT
+        case Unknown   => UNKNOWN
+      }
   }
 
   implicit final class GoogleLatLongOps(latLong: LatLong) {

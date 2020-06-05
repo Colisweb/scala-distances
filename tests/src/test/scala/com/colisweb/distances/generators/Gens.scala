@@ -8,7 +8,6 @@ import squants.Length
 import squants.space.LengthConversions._
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 object Gens {
 

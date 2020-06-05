@@ -1,65 +1,17 @@
+import CompileFlags._
 import sbt.Keys.crossScalaVersions
 
-lazy val scala212 = "2.12.10"
-lazy val scala211 = "2.11.12"
+lazy val scala212               = "2.12.11"
+lazy val scala213               = "2.13.2"
+lazy val supportedScalaVersions = List(scala213, scala212)
 
 ThisBuild / organization := "com.colisweb"
-ThisBuild / scalaVersion := scala212
-ThisBuild / crossScalaVersions := Seq(scala211, scala212)
+ThisBuild / scalaVersion := scala213
+ThisBuild / crossScalaVersions := supportedScalaVersions
 ThisBuild / scalafmtOnCompile := true
 ThisBuild / scalafmtCheck := true
 ThisBuild / scalafmtSbtCheck := true
-
-//// Dependencies
-
-val scalaCacheVersion = "0.28.0"
-
-lazy val googleMaps               = "com.google.maps"      % "google-maps-services" % "0.14.0"
-lazy val squants                  = "org.typelevel"        %% "squants"             % "1.6.0"
-lazy val cats                     = "org.typelevel"        %% "cats-core"           % "2.0.0"
-lazy val catsEffect               = "org.typelevel"        %% "cats-effect"         % "2.0.0"
-lazy val enumeratum               = "com.beachape"         %% "enumeratum"          % "1.6.1"
-lazy val monix                    = "io.monix"             %% "monix"               % "3.2.2"
-lazy val okHttpLoggingInterceptor = "com.squareup.okhttp3" % "logging-interceptor"  % "4.7.2"
-
-lazy val circeVersion       = "0.12.1"
-lazy val circeOpticsVersion = "0.12.0"
-
-lazy val circeCore          = "io.circe" %% "circe-core"           % circeVersion
-lazy val circeGeneric       = "io.circe" %% "circe-generic"        % circeVersion
-lazy val circeGenericExtras = "io.circe" %% "circe-generic-extras" % circeVersion
-lazy val circeParser        = "io.circe" %% "circe-parser"         % circeVersion
-lazy val circeRefined       = "io.circe" %% "circe-refined"        % circeVersion
-lazy val circeOptics        = "io.circe" %% "circe-optics"         % circeOpticsVersion
-
-lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericExtras, circeParser, circeRefined, circeOptics)
-
-lazy val scalacacheCore =
-  Seq(
-    "com.github.cb372" %% "scalacache-core"        % scalaCacheVersion,
-    "com.github.cb372" %% "scalacache-cats-effect" % scalaCacheVersion,
-    "com.github.cb372" %% "scalacache-circe"       % scalaCacheVersion
-  )
-
-lazy val testKit = {
-  val kantancsv = (
-      (version: String) =>
-        Seq(
-          "com.nrinaudo" %% "kantan.csv"         % version,
-          "com.nrinaudo" %% "kantan.csv-cats"    % version,
-          "com.nrinaudo" %% "kantan.csv-generic" % version
-        )
-  )("0.5.0")
-
-  Seq(
-    "org.scalacheck"    %% "scalacheck"               % "1.14.3",
-    "org.scalatest"     %% "scalatest"                % "3.1.2",
-    "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2",
-    "com.beachape"      %% "enumeratum-scalacheck"    % "1.6.1",
-    "io.circe"          %% "circe-literal"            % circeVersion,
-    monix
-  ) ++ kantancsv
-}.map(_ % Test)
+ThisBuild / scalacOptions ++= crossScalacOptions(scalaVersion.value)
 
 //// Main projects
 
@@ -71,15 +23,34 @@ lazy val root = Project(id = "scala-distances", base = file("."))
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
-  .settings(addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
   .settings(
     libraryDependencies ++= Seq(
-      squants,
-      cats,
-      catsEffect,
-      enumeratum,
-      okHttpLoggingInterceptor
-    ) ++ scalacacheCore ++ circeAll ++ testKit
+      CompileTimeDependencies.cats,
+      CompileTimeDependencies.catsEffect,
+      CompileTimeDependencies.circe,
+      CompileTimeDependencies.circeGeneric,
+      CompileTimeDependencies.circeGenericExtras,
+      CompileTimeDependencies.circeOptics,
+      CompileTimeDependencies.circeParser,
+      CompileTimeDependencies.circeRefined,
+      CompileTimeDependencies.enumeratum,
+      CompileTimeDependencies.loggingInterceptor,
+      CompileTimeDependencies.scalaCache,
+      CompileTimeDependencies.scalaCacheCatsEffect,
+      CompileTimeDependencies.scalaCacheCirce,
+      CompileTimeDependencies.scalaCompat,
+      CompileTimeDependencies.squants
+    ) ++ Seq(
+      CompileTimeDependencies.monix % Test,
+      TestDependencies.kantan,
+      TestDependencies.kantanCats,
+      TestDependencies.kantanGeneric,
+      TestDependencies.circeLiteral,
+      TestDependencies.scalacheck,
+      TestDependencies.scalatestPlus,
+      TestDependencies.scalatest,
+      TestDependencies.enumeratumScalacheck
+    )
   )
 
 //// Providers
@@ -87,7 +58,7 @@ lazy val core = project
 lazy val `google-provider` = project
   .in(file("providers/google"))
   .settings(moduleName := "scala-distances-provider-google")
-  .settings(libraryDependencies += googleMaps)
+  .settings(libraryDependencies += CompileTimeDependencies.googleMaps)
   .dependsOn(core)
 
 //// Caches
@@ -95,13 +66,13 @@ lazy val `google-provider` = project
 lazy val `redis-cache` = project
   .in(file("caches/redis"))
   .settings(moduleName := "scala-distances-cache-redis")
-  .settings(libraryDependencies += "com.github.cb372" %% "scalacache-redis" % scalaCacheVersion)
+  .settings(libraryDependencies += CompileTimeDependencies.scalaCacheRedis)
   .dependsOn(core)
 
 lazy val `caffeine-cache` = project
   .in(file("caches/caffeine"))
   .settings(moduleName := "scala-distances-cache-caffeine")
-  .settings(libraryDependencies += "com.github.cb372" %% "scalacache-caffeine" % scalaCacheVersion)
+  .settings(libraryDependencies += CompileTimeDependencies.scalaCacheCaffeine)
   .dependsOn(core)
 
 lazy val `no-cache` = project
@@ -113,13 +84,12 @@ lazy val `no-cache` = project
 
 lazy val tests = project
   .settings(noPublishSettings)
-  .settings(libraryDependencies ++= testKit)
-  .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`)
+  .dependsOn(core % "test->test;compile->compile", `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`)
 
 lazy val benchmarks = project
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
-  .settings(libraryDependencies += monix)
+  .settings(libraryDependencies += CompileTimeDependencies.monix)
   .dependsOn(core)
 
 //// Publishing settings
@@ -155,3 +125,23 @@ ThisBuild / publishMavenStyle := true
   * Copied from kantan.csv
   */
 addCommandAlias("runBench", "benchmark/jmh:run -i 10 -wi 10 -f 2 -t 1")
+
+def compileWithMacroParadise: Command =
+  Command.command("compileWithMacroParadise") { state =>
+    import Project._
+    val extractedState = extract(state)
+    val stateWithMacroParadise = CrossVersion.partialVersion(extractedState.get(scalaVersion)) match {
+      case Some((2, n)) if n >= 13 => state
+      case _ =>
+        extractedState.appendWithSession(
+          addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+          state
+        )
+    }
+    val (stateAfterCompileWithMacroParadise, _) =
+      extract(stateWithMacroParadise).runTask(Compile / compile, stateWithMacroParadise)
+    stateAfterCompileWithMacroParadise
+  }
+
+ThisBuild / commands ++= Seq(compileWithMacroParadise)
+addCommandAlias("compile", "compileWithMacroParadise")

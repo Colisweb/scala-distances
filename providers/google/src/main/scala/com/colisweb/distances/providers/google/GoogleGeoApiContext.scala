@@ -7,7 +7,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 final case class GoogleGeoApiContext(
     apiKey: String,

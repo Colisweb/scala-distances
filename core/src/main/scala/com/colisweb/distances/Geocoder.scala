@@ -6,10 +6,10 @@ import com.colisweb.distances.Types.{LatLong, NonAmbiguousAddress, PostalCode}
 class Geocoder[F[_]: Async](provider: GeoProvider[F], cache: Cache[F]) {
 
   final def geocodePostalCode(postalCode: PostalCode): F[LatLong] =
-    cache.cachingF(provider.geocode(postalCode), LatLong.decoder, LatLong.encoder, postalCode)
+    cache.cachingF(provider.geocode(postalCode), LatLong.decoder, LatLong.encoder, Seq(postalCode))
 
   final def geocodeNonAmbiguousAddress(address: NonAmbiguousAddress): F[LatLong] =
-    cache.cachingF(provider.geocode(address), LatLong.decoder, LatLong.encoder, address)
+    cache.cachingF(provider.geocode(address), LatLong.decoder, LatLong.encoder, Seq(address))
 
 }
 

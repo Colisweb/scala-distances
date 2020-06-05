@@ -14,7 +14,6 @@ import shapeless.CNil
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 class GoogleGeoProviderSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
 

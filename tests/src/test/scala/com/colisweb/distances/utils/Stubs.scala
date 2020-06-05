@@ -29,9 +29,10 @@ object Stubs {
       ): F[Map[Segment, Either[E, Distance]]] = ???
     }
 
-  def geoProviderStub[F[_]: Async]: GeoProvider[F] = new GeoProvider[F] {
-    override def geocode(point: Types.Point): F[LatLong] = ???
-  }
+  def geoProviderStub[F[_]: Async]: GeoProvider[F] =
+    new GeoProvider[F] {
+      override def geocode(point: Types.Point): F[LatLong] = ???
+    }
 
   def geocoderStub[F[_]: Async] = new Geocoder[F](geoProviderStub, NoCache())
 

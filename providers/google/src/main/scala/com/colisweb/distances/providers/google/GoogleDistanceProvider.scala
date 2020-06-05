@@ -3,7 +3,6 @@ package com.colisweb.distances.providers.google
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import cats.effect.Concurrent
-import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types.LatLong._
 import com.colisweb.distances.Types.{Distance, LatLong, Segment, TrafficHandling}
 import com.colisweb.distances.{DistanceProvider, TravelMode}
@@ -12,7 +11,6 @@ import com.google.maps.model.{DistanceMatrix, DistanceMatrixElementStatus, Unit 
 import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
 
 import scala.concurrent.duration._
-import scala.language.postfixOps
 
 object GoogleDistanceProvider {
 
@@ -96,7 +94,7 @@ object GoogleDistanceProvider {
                       s"""
                        | Google Distance API does not handle past traffic requests.
                        | At ${LocalDateTime
-                           .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${segment.origin.show} to ${segment.destination.show}.
+                        .ofInstant(departureTime, ZoneOffset.UTC)} with model $trafficModel from ${segment.origin.show} to ${segment.destination.show}.
                       """.stripMargin
                     )
                   )

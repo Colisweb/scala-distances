@@ -44,76 +44,77 @@ object GoogleGeoProvider {
             .language("fr")
         }
 
-      override final def geocode(point: Point): F[LatLong] = point match {
+      override final def geocode(point: Point): F[LatLong] =
+        point match {
 
-        case postalCode: PostalCode =>
-          rawRequest
-            .flatMap { request =>
-              request
-                .address(postalCode.value)
-                .components(ComponentFilter.country("fr")) // TODO: Avoid hardcoded country
-                .asEffect[F]
-                .flatMap { response =>
-                  Sync[F]
-                    .fromOption(
-                      response.headOption.map(_.geometry.location).map(asLatLong),
-                      PostalCodeNotFound(s"${postalCode.show} is not found by Google API")
-                    )
-                }
-            }
-
-        /*
-         * Doc about "non ambigue addresses": https://developers.google.com/maps/documentation/geocoding/best-practices#complete-address
-         *
-         *
-         * WARNING:
-         * --------
-         *
-         * The actual implementation tries to be robust: it will try to always give you an answer:
-         *
-         *   1. If it doesn't find an answer with the address information, it will try to geocode the address without the `line2` information.
-         *   2. If it still doesn't find an answer, it will try to geocode the address without the `line2` and wihout the `town` information.
-         *   3. Last, if it still doesn't find an answer, it will geocode the postal code.
-         *
-         * This situation is not ideal because, in the situation 2., the geocoder can potentially gives you a wrong answer.
-         *
-         * As the name of this method indicates, this geocoder method should normally be strict: it finds the exact location or it doesn't find any.
-         *
-         * For a more clever geocoder, Google proposes a better solution that what we're doing here.
-         * See: https://developers.google.com/maps/documentation/geocoding/best-practices#automated-system
-         *
-         * TODO: The next step for this lib is to implement this more clever solution, but for now, use this method preferably with good quality data and/or with caution.
-         */
-        case address: NonAmbiguousAddress =>
-          def fetch(addr: NonAmbiguousAddress): F[LatLong] =
+          case postalCode: PostalCode =>
             rawRequest
               .flatMap { request =>
                 request
-                  .components(ComponentFilter.country(addr.country))
-                  .components(ComponentFilter.postalCode(addr.postalCode))
-                  .address(s"${addr.line1} ${addr.line2} ${addr.town}")
+                  .address(postalCode.value)
+                  .components(ComponentFilter.country("fr")) // TODO: Avoid hardcoded country
                   .asEffect[F]
                   .flatMap { response =>
                     Sync[F]
                       .fromOption(
                         response.headOption.map(_.geometry.location).map(asLatLong),
-                        NonAmbiguousAddressNotFound(s""""${addr.show}" is not found by Google API""")
+                        PostalCodeNotFound(s"${postalCode.show} is not found by Google API")
                       )
                   }
               }
 
-          fetch(address)
-            .handleErrorWith { initialError =>
-              (
-                fetch(address.copy(line2 = "")),
-                fetch(address.copy(line2 = "", town = "")),
-                geocode(PostalCode(address.postalCode))
-              ).raceInOrder3
-                .handleErrorWith { _ =>
-                  Sync[F].raiseError(initialError) // get back the original error
+          /*
+           * Doc about "non ambigue addresses": https://developers.google.com/maps/documentation/geocoding/best-practices#complete-address
+           *
+         *
+           * WARNING:
+           * --------
+           *
+         * The actual implementation tries to be robust: it will try to always give you an answer:
+           *
+         *   1. If it doesn't find an answer with the address information, it will try to geocode the address without the `line2` information.
+           *   2. If it still doesn't find an answer, it will try to geocode the address without the `line2` and wihout the `town` information.
+           *   3. Last, if it still doesn't find an answer, it will geocode the postal code.
+           *
+         * This situation is not ideal because, in the situation 2., the geocoder can potentially gives you a wrong answer.
+           *
+         * As the name of this method indicates, this geocoder method should normally be strict: it finds the exact location or it doesn't find any.
+           *
+         * For a more clever geocoder, Google proposes a better solution that what we're doing here.
+           * See: https://developers.google.com/maps/documentation/geocoding/best-practices#automated-system
+           *
+         * TODO: The next step for this lib is to implement this more clever solution, but for now, use this method preferably with good quality data and/or with caution.
+           */
+          case address: NonAmbiguousAddress =>
+            def fetch(addr: NonAmbiguousAddress): F[LatLong] =
+              rawRequest
+                .flatMap { request =>
+                  request
+                    .components(ComponentFilter.country(addr.country))
+                    .components(ComponentFilter.postalCode(addr.postalCode))
+                    .address(s"${addr.line1} ${addr.line2} ${addr.town}")
+                    .asEffect[F]
+                    .flatMap { response =>
+                      Sync[F]
+                        .fromOption(
+                          response.headOption.map(_.geometry.location).map(asLatLong),
+                          NonAmbiguousAddressNotFound(s""""${addr.show}" is not found by Google API""")
+                        )
+                    }
                 }
-            }
-      }
+
+            fetch(address)
+              .handleErrorWith { initialError =>
+                (
+                  fetch(address.copy(line2 = "")),
+                  fetch(address.copy(line2 = "", town = "")),
+                  geocode(PostalCode(address.postalCode))
+                ).raceInOrder3
+                  .handleErrorWith { _ =>
+                    Sync[F].raiseError(initialError) // get back the original error
+                  }
+              }
+        }
     }
 
   @inline
