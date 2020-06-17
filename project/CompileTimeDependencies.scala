@@ -2,6 +2,7 @@ import sbt._
 
 object Versions {
   lazy val cats               = "2.1.1"
+  lazy val catsEffect         = "2.1.3"
   lazy val circe              = "0.13.0"
   lazy val circeOptics        = "0.13.0"
   lazy val enumeratum         = "1.6.1"
@@ -15,7 +16,7 @@ object Versions {
 
 object CompileTimeDependencies {
   lazy val cats                 = "org.typelevel"          %% "cats-core"               % Versions.cats
-  lazy val catsEffect           = "org.typelevel"          %% "cats-effect"             % Versions.cats
+  lazy val catsEffect           = "org.typelevel"          %% "cats-effect"             % Versions.catsEffect
   lazy val circe                = "io.circe"               %% "circe-core"              % Versions.circe
   lazy val circeGeneric         = "io.circe"               %% "circe-generic"           % Versions.circe
   lazy val circeGenericExtras   = "io.circe"               %% "circe-generic-extras"    % Versions.circe
@@ -23,8 +24,8 @@ object CompileTimeDependencies {
   lazy val circeParser          = "io.circe"               %% "circe-parser"            % Versions.circe
   lazy val circeRefined         = "io.circe"               %% "circe-refined"           % Versions.circe
   lazy val enumeratum           = "com.beachape"           %% "enumeratum"              % Versions.enumeratum
-  lazy val googleMaps           = "com.google.maps"         % "google-maps-services"    % Versions.google
-  lazy val loggingInterceptor   = "com.squareup.okhttp3"    % "logging-interceptor"     % Versions.loggingInterceptor
+  lazy val googleMaps           = "com.google.maps"        % "google-maps-services"     % Versions.google
+  lazy val loggingInterceptor   = "com.squareup.okhttp3"   % "logging-interceptor"      % Versions.loggingInterceptor
   lazy val monix                = "io.monix"               %% "monix"                   % Versions.monix
   lazy val scalaCache           = "com.github.cb372"       %% "scalacache-core"         % Versions.scalaCache
   lazy val scalaCacheCaffeine   = "com.github.cb372"       %% "scalacache-caffeine"     % Versions.scalaCache
