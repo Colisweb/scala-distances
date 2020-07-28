@@ -7,25 +7,21 @@ import cats.effect.{Concurrent, ContextShift, IO}
 import com.colisweb.distances.TravelMode._
 import com.colisweb.distances.Types._
 import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
+import com.colisweb.distances.providers.google.GoogleGeoApiContext
 import com.colisweb.distances.re.model.TravelMode
-import com.colisweb.google.GoogleGeoApiContext
 import monix.eval.Task
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
 import squants.space.LengthConversions._
 import squants.space.Meters
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.collection.compat._
+import scala.language.postfixOps
 
-class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
+class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
+
   import com.colisweb.distances.utils.Stubs._
-
-  //import to use library scala.collection.compat even in scala 2.13
-  implicit val collectionCompat = BuildFrom
 
   val globalExecutionContext: ExecutionContext = ExecutionContext.global
   implicit val contextShift: ContextShift[IO]  = IO.contextShift(globalExecutionContext)
@@ -40,10 +36,9 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "#distance" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cache = CaffeineCache[IO](Some(1 days))
-          val stub  = distanceProviderStub[IO, Unit]
-          val distanceApi =
-            DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get, defaultCacheKey)
+          val cache          = CaffeineCache[IO](Some(1 days))
+          val stub           = distanceProviderStub[IO, Unit]
+          val distanceApi    = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get)
           val latLong        = LatLong(0.0, 0.0)
           val expectedResult = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
 
@@ -55,10 +50,9 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "#distanceFromPostalCodes" should {
       "if origin == destination" should {
         "not call the provider and return immmediatly Distance.zero" in {
-          val cache = CaffeineCache[IO](Some(1 days))
-          val stub  = distanceProviderStub[IO, Unit]
-          val distanceApi =
-            DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get, defaultCacheKey)
+          val cache          = CaffeineCache[IO](Some(1 days))
+          val stub           = distanceProviderStub[IO, Unit]
+          val distanceApi    = DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get)
           val postalCode     = PostalCode("59000")
           val expectedResult = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
 
@@ -70,15 +64,15 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
 
     "#distances" should {
-      "pass the same test suite than GoogleDistanceProvider" should {
-        def passTests[F[+_]: Concurrent: Parallel](runSync: F[Any] => Any, cache: Cache[F]): Unit = {
+      "pass the same test suite than GoogleOld" should {
+        def passTests[F[+ _]: Concurrent: Parallel](runSync: F[Any] => Any, cache: Cache[F]): Unit = {
           def removeFromCache(
               travelMode: TravelMode,
               origin: LatLong,
               destination: LatLong,
               maybeTrafficHandling: Option[TrafficHandling]
           ): Unit = {
-            runSync(cache.remove(Seq(travelMode, origin, destination, maybeTrafficHandling)))
+            runSync(cache.remove(travelMode, origin, destination, maybeTrafficHandling))
             ()
           }
 
@@ -94,16 +88,10 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
             }
 
           val distanceApi: DistanceApi[F, Unit] =
-            DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cache.caching, cache.get, defaultCacheKey)
+            DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cache.caching, cache.get)
 
           val errorDistanceApi: DistanceApi[F, Unit] =
-            DistanceApi[F, Unit](
-              mockedDistanceErrorF[F],
-              mockedBatchDistanceErrorF[F],
-              cache.caching,
-              cache.get,
-              defaultCacheKey
-            )
+            DistanceApi[F, Unit](mockedDistanceErrorF[F], mockedBatchDistanceErrorF[F], cache.caching, cache.get)
 
           val paris01 = LatLong(48.8640493, 2.3310526)
           val paris02 = LatLong(48.8675641, 2.34399)
@@ -113,25 +101,24 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
             val driveFrom01to02 = DirectedPathMultipleModes(origin = paris01, destination = paris02, Driving :: Nil)
             val driveFrom01to18 = DirectedPathMultipleModes(origin = paris01, destination = paris18, Driving :: Nil)
 
-            val paths = List(driveFrom01to02, driveFrom01to18)
+            val paths = Array(driveFrom01to02, driveFrom01to18)
 
-            val results = runSync(distanceApi.distances(paths))
-              .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
+            val results = runSync(distanceApi.distances(paths)).asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
 
             // We only check the length as travel duration varies over time & traffic
-            results.view.mapValues(x => x.getOrElse(Distance.zero).length).toMap shouldBe Map(
+            results.mapValues(_.right.get.length) shouldBe Map(
               DirectedPath(paris01, paris02, Driving, None) -> 1024.meters,
               DirectedPath(paris01, paris18, Driving, None) -> 3429.meters
             )
 
-            results(DirectedPath(paris01, paris02, Driving, None)).getOrElse(Distance.zero).length should be <
-              results(DirectedPath(paris01, paris18, Driving, None)).getOrElse(Distance.zero).length
+            results(DirectedPath(paris01, paris02, Driving, None)).right.get.length should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).right.get.length
 
-            results(DirectedPath(paris01, paris02, Driving, None)).getOrElse(Distance.zero).duration should be <
-              results(DirectedPath(paris01, paris18, Driving, None)).getOrElse(Distance.zero).duration
+            results(DirectedPath(paris01, paris02, Driving, None)).right.get.duration should be <
+              results(DirectedPath(paris01, paris18, Driving, None)).right.get.duration
 
-            paths.foreach(path =>
-              removeFromCache(path.travelModes.head, path.origin, path.destination, path.maybeTrafficHandling)
+            paths.foreach(
+              path => removeFromCache(path.travelModes.head, path.origin, path.destination, path.maybeTrafficHandling)
             )
           }
 
@@ -150,7 +137,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           }
 
           "take into account traffic when asked to with a driving travel mode and a best guess estimation" in {
-            val expected        = Map(Driving -> Right(Distance(length, 5.minutes)))
+            val expected        = Map(Driving -> Right(Distance(length, travelDuration + 5.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
 
             val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
@@ -160,7 +147,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           }
 
           "take into account traffic when asked to with a driving travel mode and an optimistic estimation" in {
-            val expected        = Map(Driving -> Right(Distance(length, 2.minutes)))
+            val expected        = Map(Driving -> Right(Distance(length, travelDuration + 2.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Optimistic)
 
             val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
@@ -170,7 +157,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           }
 
           "take into account traffic when asked to with a driving travel mode and a pessimistic estimation" in {
-            val expected        = Map(Driving -> Right(Distance(length, 10.minutes)))
+            val expected        = Map(Driving -> Right(Distance(length, travelDuration + 10.minutes)))
             val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Pessimistic)
 
             val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
@@ -197,16 +184,16 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
               runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
                 .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
 
-            results(Segment(paris01, paris02)).getOrElse(Distance.zero).length should be <
-              results(Segment(paris01, paris18)).getOrElse(Distance.zero).length
+            results(Segment(paris01, paris02)).right.get.length should be <
+              results(Segment(paris01, paris18)).right.get.length
 
-            results(Segment(paris01, paris02)).getOrElse(Distance.zero).duration should be <
-              results(Segment(paris01, paris18)).getOrElse(Distance.zero).duration
+            results(Segment(paris01, paris02)).right.get.duration should be <
+              results(Segment(paris01, paris18)).right.get.duration
 
             removeBatchFromCache(Driving, origins, destinations, None)
           }
 
-          "not call for new computations when already cached with batch" in {
+          "not call for new computations when already cached" in {
             val origins      = List(LatLong(48.86, 2.3))
             val destinations = List(LatLong(48.85, 2.3), LatLong(48.84, 2.3))
 
@@ -223,55 +210,12 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
               .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
 
             val knownEntries =
-              moreResults.view
-                .filterKeys(path => origins.contains(path.origin) && destinations.contains(path.destination))
-                .toMap
+              moreResults.filterKeys(path => origins.contains(path.origin) && destinations.contains(path.destination))
 
-            val unknownEntries = moreResults.view.filterKeys(!knownEntries.contains(_)).toMap
+            val unknownEntries = moreResults.filterKeys(!knownEntries.contains(_))
 
             knownEntries.values.forall(_.isRight) shouldBe true
             unknownEntries.values.forall(_.isLeft) shouldBe true
-
-            removeBatchFromCache(Driving, origins, destinations, None)
-          }
-
-          "not call for new computations when already cached with single calls" in {
-            val origins      = List(LatLong(48.86, 2.3))
-            val destinations = List(LatLong(48.85, 2.3), LatLong(48.84, 2.3))
-            val paths        = origins.flatMap(origin => destinations.map(origin -> _))
-
-            val results = paths
-              .map { case (o, d) => distanceApi.distance(o, d, List(Driving), None) }
-              .map(runSync(_).asInstanceOf[Map[TravelMode, Either[Unit, Distance]]])
-
-            results.map(_.view.mapValues(ignoreDistanceValue).toMap) should contain only Map(Driving -> right)
-            results.forall(_.apply(Driving).isRight) shouldBe true
-
-            val moreOrigins      = origins :+ LatLong(48.86, 2.4)
-            val moreDestinations = destinations :+ LatLong(48.83, 2.3)
-            val morePaths        = moreOrigins.flatMap(origin => moreDestinations.map(origin -> _))
-
-            val moreResults = morePaths.map {
-              case (o, d) =>
-                Segment(o, d) -> runSync(errorDistanceApi.distance(o, d, List(Driving), None))
-                  .asInstanceOf[Map[TravelMode, Either[Unit, Distance]]]
-            }.toMap
-
-            val knownEntries =
-              moreResults.view
-                .filterKeys(path => origins.contains(path.origin) && destinations.contains(path.destination))
-                .toMap
-
-            val unknownEntries = moreResults.view.filterKeys(!knownEntries.contains(_)).toMap
-
-            knownEntries.values.map(_.view.mapValues(ignoreDistanceValue).toMap) should contain only Map(
-              Driving -> right
-            )
-            knownEntries.values.map(_.apply(Driving)).forall(_.isRight) shouldBe true
-            unknownEntries.values.map(_.view.mapValues(ignoreDistanceValue).toMap) should contain only Map(
-              Driving -> left
-            )
-            unknownEntries.values.map(_.apply(Driving)).forall(_.isLeft) shouldBe true
 
             removeBatchFromCache(Driving, origins, destinations, None)
           }
@@ -286,9 +230,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
                 .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
 
             val caches = segments.map { segment =>
-              val path = DirectedPath(segment.origin, segment.destination, Driving, None)
-
-              runSync(cache.get(Distance.decoder, defaultCacheKey(path))).asInstanceOf[Option[Distance]]
+              runSync(cache.get(Distance.decoder, Driving, segment.origin, segment.destination, None))
+                .asInstanceOf[Option[Distance]]
             }
 
             results.keys should contain theSameElementsAs segments
@@ -306,9 +249,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
                 .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
 
             val allCaches = allSegments.map { segment =>
-              val path = DirectedPath(segment.origin, segment.destination, Driving, None)
-
-              runSync(cache.get(Distance.decoder, defaultCacheKey(path))).asInstanceOf[Option[Distance]]
+              runSync(cache.get(Distance.decoder, Driving, segment.origin, segment.destination, None))
+                .asInstanceOf[Option[Distance]]
             }
 
             allResults.keys should contain theSameElementsAs allSegments
@@ -341,8 +283,4 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       }
     }
   }
-
-  private def ignoreDistanceValue(e: Either[Unit, Distance]): Either[Unit, Unit] = e.map(_ => ())
-  private val right: Either[Unit, Unit]                                          = Right[Unit, Unit](())
-  private val left: Either[Unit, Unit]                                           = Left[Unit, Unit](())
 }
