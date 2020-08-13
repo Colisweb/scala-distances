@@ -11,7 +11,7 @@ object Versions {
   lazy val monix              = "3.2.2"
   lazy val scalaCache         = "0.28.0"
   lazy val scalaCompat        = "2.1.6"
-  lazy val squants            = "1.6.0"
+  lazy val squants            = "1.7.0"
 }
 
 object CompileTimeDependencies {
