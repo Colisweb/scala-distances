@@ -100,12 +100,12 @@ class GoogleGeoProviderSpec extends AnyWordSpec with Matchers with ScalaFutures 
            |7 rue Victorien Sardou;75016;Paris;48.842884;2.2676531
            |62 avenue des champs elysee;75008;Paris;48.8708509;2.3056707
            |233 Boulevard Voltaire 75011 Paris;75011;Paris 75011;48.8512903;2.3914116
-           |13 rue Henri Barbusse;92230;GENNEVILLIERS;48.918883;2.297148
+           |13 rue Henri Barbusse;92230;GENNEVILLIERS;48.9186292;2.2969465
            |35 boulevard d'Exelmans;75016;PARIS;48.84135999999999;2.2633114
            |95 avenue du General Leclerc;75014;Paris;48.8260975;2.3273668
            |12 rue de l'Assomption;75016;Paris;48.85349;2.2744602
            |108 rue de Richelieu;75002;PARIS;48.8714406;2.3398815
-           |24 AVENUE MARIE ALEXIS;76370;Saint-Martin-en-Campagne;49.96568550000001;1.196322
+           |24 AVENUE MARIE ALEXIS;76370;Saint-Martin-en-Campagne;49.9656399;1.1963572
            |8 RUE FLEURS DE LYS;33370;Artigues-près-Bordeaux;44.8496786;-0.4831272
            |""".stripMargin.drop(1).dropRight(1)
 
