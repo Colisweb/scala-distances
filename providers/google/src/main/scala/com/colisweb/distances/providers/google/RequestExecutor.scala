@@ -13,12 +13,13 @@ class SyncRequestExecutor[F[_]](implicit F: MonadError[F, Throwable]) extends Re
 }
 
 class AsyncRequestExecutor[F[_]](implicit F: Concurrent[F]) extends RequestExecutor[F] {
-  override def run[T](request: PendingResult[T]): F[T] = F.cancelable { cb =>
-    request.setCallback(new PendingResult.Callback[T] {
-      override def onResult(result: T): Unit     = cb(Right(result))
-      override def onFailure(e: Throwable): Unit = cb(Left(e))
-    })
+  override def run[T](request: PendingResult[T]): F[T] =
+    F.cancelable { cb =>
+      request.setCallback(new PendingResult.Callback[T] {
+        override def onResult(result: T): Unit     = cb(Right(result))
+        override def onFailure(e: Throwable): Unit = cb(Left(e))
+      })
 
-    F.delay(request.cancel())
-  }
+      F.delay(request.cancel())
+    }
 }

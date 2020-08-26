@@ -23,14 +23,15 @@ class FromMapDistances[F[_]](implicit F: MonadError[F, Throwable]) {
 
 }
 
-class FromMapDistanceApi[F[_]](data: Map[DirectedPath, DistanceAndDuration], error: => DistanceError)(
-    implicit F: MonadError[F, Throwable]
+class FromMapDistanceApi[F[_]](data: Map[DirectedPath, DistanceAndDuration], error: => DistanceError)(implicit
+    F: MonadError[F, Throwable]
 ) extends DistanceApi[F, DirectedPath] {
 
-  override def distance(path: DirectedPath): F[DistanceAndDuration] = data.get(path) match {
-    case Some(distanceAndDuration) => F.pure(distanceAndDuration)
-    case None                      => F.raiseError(error)
-  }
+  override def distance(path: DirectedPath): F[DistanceAndDuration] =
+    data.get(path) match {
+      case Some(distanceAndDuration) => F.pure(distanceAndDuration)
+      case None                      => F.raiseError(error)
+    }
 }
 
 object FromMapDistances {

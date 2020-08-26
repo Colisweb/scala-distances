@@ -11,16 +11,17 @@ import com.colisweb.distances.providers.google.{GoogleDistanceApi, GoogleGeoApiC
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterEach, Matchers, WordSpec}
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import scalacache.caffeine.{CaffeineCache => CaffeineScalaCache}
 import scalacache.{Flags, Mode}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.language.postfixOps
 import scala.util.Try
 
-class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
+class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
   private val caffeineInstance = CaffeineScalaCache.apply[Nothing]
 
   val globalExecutionContext: ExecutionContext = ExecutionContext.global
@@ -55,7 +56,7 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
         origin = paris01,
         destination = paris01,
         travelMode = TravelMode.Driving,
-        speed = 50,
+        speed = 50.0,
         departureTime = Some(currentTime)
       )
 
@@ -69,14 +70,14 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
         origin = paris01,
         destination = paris02,
         travelMode = TravelMode.Driving,
-        speed = 50,
+        speed = 50.0,
         departureTime = Some(currentTime)
       )
       val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
         origin = paris01,
         destination = paris18,
         travelMode = TravelMode.Driving,
-        speed = 50,
+        speed = 50.0,
         departureTime = Some(currentTime)
       )
 
@@ -93,14 +94,14 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
         origin = paris01,
         destination = paris18,
         travelMode = TravelMode.Driving,
-        speed = 50,
+        speed = 50.0,
         departureTime = None
       )
       val pathWithTraffic = DirectedPathWithModeAndSpeedAt(
         origin = paris01,
         destination = paris18,
         travelMode = TravelMode.Driving,
-        speed = 50,
+        speed = 50.0,
         departureTime = Some(currentTime)
       )
 
@@ -114,8 +115,8 @@ class DistanceApiSpec extends WordSpec with Matchers with ScalaFutures with Befo
   def fTests[F[_]: Applicative](
       run: RunSync[F],
       googleDistanceApi: GoogleDistanceApi[F, DirectedPathWithModeAndSpeedAt]
-  )(
-      implicit mode: Mode[F]
+  )(implicit
+      mode: Mode[F]
   ): Unit = {
 
     "Bird only" should {

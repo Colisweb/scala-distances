@@ -18,8 +18,8 @@ class GoogleDistanceProvider[F[_]](
     googleContext: GoogleGeoApiContext,
     trafficModel: TrafficModel,
     requestExecutor: RequestExecutor[F]
-)(
-    implicit F: MonadError[F, Throwable]
+)(implicit
+    F: MonadError[F, Throwable]
 ) {
   import RequestBuilder._
 
@@ -29,8 +29,11 @@ class GoogleDistanceProvider[F[_]](
       destination: Point,
       departureTime: Option[Instant]
   ): F[DistanceAndDuration] = {
-    val request                 = RequestBuilder(googleContext, travelMode).withOriginDestination(origin, destination)
-    val requestMaybeWithTraffic = departureTime.fold(request)(request.withTraffic(trafficModel, _)) // FIXME: not checking Past DepartureTime, needed ?
+    val request = RequestBuilder(googleContext, travelMode).withOriginDestination(origin, destination)
+    val requestMaybeWithTraffic =
+      departureTime.fold(request)(
+        request.withTraffic(trafficModel, _)
+      ) // FIXME: not checking Past DepartureTime, needed ?
 
     requestExecutor
       .run(requestMaybeWithTraffic)

@@ -12,8 +12,9 @@ trait OriginDestinationData {
 
 object OriginDestination {
 
-  implicit def forData[P <: OriginDestinationData]: OriginDestination[P] = new OriginDestination[P] {
-    override def origin(path: P): Point      = path.origin
-    override def destination(path: P): Point = path.destination
-  }
+  implicit def forData[P <: OriginDestinationData]: OriginDestination[P] =
+    new OriginDestination[P] {
+      override def origin(path: P): Point      = path.origin
+      override def destination(path: P): Point = path.destination
+    }
 }
