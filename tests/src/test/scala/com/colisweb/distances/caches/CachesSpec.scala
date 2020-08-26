@@ -2,8 +2,9 @@ package com.colisweb.distances.caches
 //import com.colisweb.distances.Cache
 //import com.colisweb.distances.Types._
 import com.colisweb.distances.model.{DistanceAndDuration, Point}
-import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 //import scala.language.postfixOps
 
@@ -21,7 +22,7 @@ object Toto {
 
 
  */
-class CacheSpec extends WordSpec with Matchers with PropertyChecks {
+class CacheSpec extends AnyWordSpec with Matchers with ScalaCheckPropertyChecks {
   /*
   import com.colisweb.distances.generators.Gens._
   import com.colisweb.distances.utils.circe.LengthSerializer._
@@ -123,5 +124,5 @@ class CacheSpec extends WordSpec with Matchers with PropertyChecks {
   def redisConfiguration =
     RedisConfiguration(sys.env.getOrElse("REDIS_HOST", "127.0.0.1"), 6379)
 
- */
+   */
 }

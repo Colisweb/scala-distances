@@ -1,10 +1,11 @@
 package com.colisweb.distances.bird
 
 import com.colisweb.distances.model.Point
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class HaversineSpec extends WordSpec with GeneratorDrivenPropertyChecks with Matchers {
+class HaversineSpec extends AnyWordSpec with ScalaCheckPropertyChecks with Matchers {
   import com.colisweb.distances.generator.Boundaries._
   import com.colisweb.distances.generator.Generators._
   import com.colisweb.distances.generator.PointBoundaries._

@@ -80,6 +80,7 @@ lazy val `caffeine-cache` = project
 lazy val tests = project
   .settings(noPublishSettings)
   .dependsOn(core % "test->test;compile->compile", `google-provider`, `redis-cache`, `caffeine-cache`)
+  .settings(libraryDependencies += CompileTimeDependencies.pureconfig)
 
 
 //// Publishing settings

@@ -5,12 +5,13 @@ import com.colisweb.distances.model.{DirectedPath, DistanceAndDuration}
 import com.colisweb.distances.util.FromMapDistances
 import com.colisweb.distances.util.TestTypes.{FirstError, SecondError}
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{Matchers, WordSpec}
 
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scala.util.{Failure, Success, Try}
 
-class FallbackSpec extends WordSpec with GeneratorDrivenPropertyChecks with Matchers {
+class FallbackSpec extends AnyWordSpec with ScalaCheckPropertyChecks with Matchers {
   import com.colisweb.distances.generator.Generators._
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =

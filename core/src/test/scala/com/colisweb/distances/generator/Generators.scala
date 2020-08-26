@@ -22,20 +22,19 @@ object Generators {
   def genThreeSuccessiveValuesInDirection(min: Double, max: Double): Gen[(Double, Double, Double)] =
     Gen
       .chooseNum(min, max)
-      .flatMap(
-        pointValue =>
-          Gen.oneOf(min, max).flatMap {
-            case `max` =>
-              for {
-                closerShift  <- Gen.chooseNum(0, max / 2)
-                fartherShift <- Gen.chooseNum(closerShift, max / 2)
-              } yield (pointValue, pointValue + closerShift, pointValue + fartherShift)
-            case `min` =>
-              for {
-                closerShift  <- Gen.chooseNum(min / 2, 0)
-                fartherShift <- Gen.chooseNum(min / 2, closerShift)
-              } yield (pointValue, pointValue + closerShift, pointValue + fartherShift)
-          }
+      .flatMap(pointValue =>
+        Gen.oneOf(min, max).flatMap {
+          case `max` =>
+            for {
+              closerShift  <- Gen.chooseNum(0, max / 2)
+              fartherShift <- Gen.chooseNum(closerShift, max / 2)
+            } yield (pointValue, pointValue + closerShift, pointValue + fartherShift)
+          case `min` =>
+            for {
+              closerShift  <- Gen.chooseNum(min / 2, 0)
+              fartherShift <- Gen.chooseNum(min / 2, closerShift)
+            } yield (pointValue, pointValue + closerShift, pointValue + fartherShift)
+        }
       )
 
   def genSpeed: Gen[SpeedInKmH] =

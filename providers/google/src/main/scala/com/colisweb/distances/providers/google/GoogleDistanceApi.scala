@@ -18,8 +18,8 @@ object GoogleDistanceApi {
   def sync[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
       googleContext: GoogleGeoApiContext,
       trafficModel: TrafficModel
-  )(
-      implicit F: MonadError[F, Throwable]
+  )(implicit
+      F: MonadError[F, Throwable]
   ): GoogleDistanceApi[F, P] = {
     val executor = new SyncRequestExecutor[F]
     val provider = new GoogleDistanceProvider(googleContext, trafficModel, executor)
@@ -29,8 +29,8 @@ object GoogleDistanceApi {
   def async[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
       googleContext: GoogleGeoApiContext,
       trafficModel: TrafficModel
-  )(
-      implicit F: Concurrent[F]
+  )(implicit
+      F: Concurrent[F]
   ): GoogleDistanceApi[F, P] = {
     val executor = new AsyncRequestExecutor[F]
     val provider = new GoogleDistanceProvider(googleContext, trafficModel, executor)
