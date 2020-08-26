@@ -18,8 +18,8 @@ ThisBuild / scalacOptions ++= crossScalacOptions(scalaVersion.value)
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core, `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`, tests, benchmarks)
-  .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`, tests, benchmarks)
+  .aggregate(core, `google-provider`, `redis-cache`, `caffeine-cache`, tests)
+  .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, tests)
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
@@ -75,22 +75,12 @@ lazy val `caffeine-cache` = project
   .settings(libraryDependencies += CompileTimeDependencies.scalaCacheCaffeine)
   .dependsOn(core)
 
-lazy val `no-cache` = project
-  .in(file("caches/no-cache"))
-  .settings(moduleName := "scala-distances-cache-noCache")
-  .dependsOn(core)
-
 //// Meta projects
 
 lazy val tests = project
   .settings(noPublishSettings)
-  .dependsOn(core % "test->test;compile->compile", `google-provider`, `redis-cache`, `caffeine-cache`, `no-cache`)
+  .dependsOn(core % "test->test;compile->compile", `google-provider`, `redis-cache`, `caffeine-cache`)
 
-lazy val benchmarks = project
-  .enablePlugins(JmhPlugin)
-  .settings(noPublishSettings)
-  .settings(libraryDependencies += CompileTimeDependencies.monix)
-  .dependsOn(core)
 
 //// Publishing settings
 
