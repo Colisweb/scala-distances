@@ -2,7 +2,6 @@ package com.colisweb.distances.model
 
 import java.time.Instant
 
-import com.colisweb.distances.cache.CacheKey
 import squants.motion.Velocity
 
 final case class DirectedPath(origin: Point, destination: Point) extends OriginDestinationData
@@ -65,40 +64,30 @@ object DirectedPath {
   ): DirectedPathWithModeAndSpeedAt =
     DirectedPathWithModeAndSpeedAt(origin, destination, travelMode, speed.toKilometersPerHour, departureTime)
 
-  implicit val cacheKey: CacheKey[DirectedPath]                   = CacheKey.forProduct
-  implicit val originDestination: OriginDestination[DirectedPath] = OriginDestination.forData
 }
 
 object DirectedPathWithSpeed {
-  implicit val cacheKey: CacheKey[DirectedPathWithSpeed]                   = CacheKey.forProduct
-  implicit val originDestination: OriginDestination[DirectedPathWithSpeed] = OriginDestination.forData
   implicit val fixedSpeedTransportation: FixedSpeedTransportation[DirectedPathWithSpeed] =
     (path: DirectedPathWithSpeed) => path.speed
 }
 
 object DirectedPathWithMode {
-  implicit val cacheKey: CacheKey[DirectedPathWithMode]                   = CacheKey.forProduct
-  implicit val originDestination: OriginDestination[DirectedPathWithMode] = OriginDestination.forData
   implicit val travelModeTransportation: TravelModeTransportation[DirectedPathWithMode] =
-    (path: DirectedPathWithMode) => path.travelMode
+    _.travelMode
 }
 
 object DirectedPathWithModeAt {
-  implicit val cacheKey: CacheKey[DirectedPathWithModeAt]                   = CacheKey.forProduct
-  implicit val originDestination: OriginDestination[DirectedPathWithModeAt] = OriginDestination.forData
   implicit val travelModeTransportation: TravelModeTransportation[DirectedPathWithModeAt] =
-    (path: DirectedPathWithModeAt) => path.travelMode
+    _.travelMode
   implicit val departureTime: DepartureTime[DirectedPathWithModeAt] =
-    (path: DirectedPathWithModeAt) => path.departureTime
+    _.departureTime
 }
 
 object DirectedPathWithModeAndSpeedAt {
-  implicit val cacheKey: CacheKey[DirectedPathWithModeAndSpeedAt]                   = CacheKey.forProduct
-  implicit val originDestination: OriginDestination[DirectedPathWithModeAndSpeedAt] = OriginDestination.forData
   implicit val fixedSpeedTransportation: FixedSpeedTransportation[DirectedPathWithModeAndSpeedAt] =
-    (path: DirectedPathWithModeAndSpeedAt) => path.speed
+    _.speed
   implicit val travelModeTransportation: TravelModeTransportation[DirectedPathWithModeAndSpeedAt] =
-    (path: DirectedPathWithModeAndSpeedAt) => path.travelMode
+    _.travelMode
   implicit val departureTime: DepartureTime[DirectedPathWithModeAndSpeedAt] =
-    (path: DirectedPathWithModeAndSpeedAt) => path.departureTime
+    _.departureTime
 }
