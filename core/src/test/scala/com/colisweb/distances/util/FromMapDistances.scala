@@ -1,7 +1,8 @@
 package com.colisweb.distances.util
 
 import cats.MonadError
-import com.colisweb.distances.model.{DirectedPath, DistanceAndDuration, DistanceError}
+import com.colisweb.distances.model.path.DirectedPath
+import com.colisweb.distances.model.{DistanceAndDuration, DistanceError}
 import com.colisweb.distances.{DistanceApi, Distances}
 
 class FromMapDistances[F[_]](implicit F: MonadError[F, Throwable]) {

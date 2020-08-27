@@ -1,14 +1,15 @@
 package com.colisweb.distances
 
 import cats.implicits._
-import com.colisweb.distances.model.{DirectedPath, DistanceAndDuration}
+import com.colisweb.distances.model.DistanceAndDuration
+import com.colisweb.distances.model.path.DirectedPath
 import com.colisweb.distances.util.FromMapDistances
 import com.colisweb.distances.util.TestTypes.{FirstError, SecondError}
 import org.scalacheck.Gen
-
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+
 import scala.util.{Failure, Success, Try}
 
 class FallbackSpec extends AnyWordSpec with ScalaCheckPropertyChecks with Matchers {

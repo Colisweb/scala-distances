@@ -3,6 +3,7 @@ package com.colisweb.distances.generator
 import com.colisweb.distances.generator.Boundaries._
 import com.colisweb.distances.generator.PointBoundaries._
 import com.colisweb.distances.model._
+import com.colisweb.distances.model.path.DirectedPath
 import org.scalacheck.Gen
 
 object Generators {

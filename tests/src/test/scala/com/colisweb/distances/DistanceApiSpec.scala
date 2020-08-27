@@ -6,14 +6,15 @@ import cats.Applicative
 import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
-import com.colisweb.distances.model.{DirectedPathWithModeAndSpeedAt, DistanceAndDuration, Point, TravelMode}
+import com.colisweb.distances.model.path.DirectedPathWithModeAndSpeedAt
+import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
 import com.colisweb.distances.providers.google.{GoogleDistanceApi, GoogleGeoApiContext, TrafficModel}
 import monix.eval.Task
 import monix.execution.Scheduler
-import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import scalacache.caffeine.{CaffeineCache => CaffeineScalaCache}
 import scalacache.{Flags, Mode}
 
