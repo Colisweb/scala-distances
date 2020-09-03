@@ -30,14 +30,22 @@ class GoogleDistanceProvider[F[_]](
       departureTime: Option[Instant]
   ): F[DistanceAndDuration] = {
     val request = RequestBuilder(googleContext, travelMode).withOriginDestination(origin, destination)
-    val requestMaybeWithTraffic =
-      departureTime.fold(request)(
-        request.withTraffic(trafficModel, _)
-      ) // FIXME: not checking Past DepartureTime, needed ?
+    for {
+      requestMaybeWithTraffic <- requestWithPossibleTraffic(departureTime, request)
+      response                <- requestExecutor.run(requestMaybeWithTraffic)
+      distanceAndDuration     <- extractSingleResponse(response)
+    } yield distanceAndDuration
+  }
 
-    requestExecutor
-      .run(requestMaybeWithTraffic)
-      .flatMap(extractSingleResponse)
+  private def requestWithPossibleTraffic(
+      departureTime: Option[Instant],
+      request: DistanceMatrixApiRequest
+  ): F[DistanceMatrixApiRequest] = {
+    departureTime match {
+      case Some(time) if time.isBefore(Instant.now) => F.raiseError(PastTraffic(time))
+      case Some(time)                               => request.withTraffic(trafficModel, time).pure[F]
+      case None                                     => request.pure[F]
+    }
   }
 
   private def extractSingleResponse(
