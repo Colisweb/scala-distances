@@ -49,7 +49,20 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val paris02     = Point(48.8675641, 2.34399)
   private val paris18     = Point(48.891305, 2.3529867)
 
-  def apiTests[F[_]](api: DistanceApi[F, DirectedPathWithModeAndSpeedAt], run: RunSync[F]): Unit = {
+  private val birdResults = Map(
+    (paris01 -> paris02, DistanceAndDuration(1.0, 73L)),
+    (paris01 -> paris18, DistanceAndDuration(3.4, 246L))
+  )
+  private val googleResults = Map(
+    (paris01 -> paris02, DistanceAndDuration(1.4, 330L)),
+    (paris01 -> paris18, DistanceAndDuration(4.5, 970L))
+  )
+
+  def apiTests[F[_]](
+      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      results: Map[(Point, Point), DistanceAndDuration],
+      run: RunSync[F]
+  ): Unit = {
 
     "return zero between the same points" in {
       val path = DirectedPathWithModeAndSpeedAt(
@@ -63,6 +76,34 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       val distance = run(api.distance(path))
 
       distance shouldBe DistanceAndDuration.zero
+    }
+
+    "return approximate distance and duration from Paris 01 to Paris 02 without traffic" in {
+      val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris02,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = None
+      )
+      val distanceFrom01to02 = run(api.distance(driveFrom01to02))
+
+      distanceFrom01to02.distance shouldBe results(paris01 -> paris02).distance +- 0.1
+      distanceFrom01to02.duration shouldBe results(paris01 -> paris02).duration +- 10L
+    }
+
+    "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
+      val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = None
+      )
+      val distanceFrom01to18 = run(api.distance(driveFrom01to18))
+
+      distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 0.1
+      distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 10L
     }
 
     "return smaller DistanceAndDuration from Paris 01 to Paris 02 than from Paris 01 to Paris 18" in {
@@ -122,6 +163,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "Bird only" should {
       apiTests(
         Distances.haversine[F, DirectedPathWithModeAndSpeedAt].api,
+        birdResults,
         run
       )
     }
@@ -132,6 +174,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           .haversine[F, DirectedPathWithModeAndSpeedAt]
           .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
           .api,
+        birdResults,
         run
       )
     }
@@ -139,6 +182,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "Google only" should {
       apiTests(
         googleDistanceApi,
+        googleResults,
         run
       )
     }
@@ -149,6 +193,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           .from(googleDistanceApi)
           .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
           .api,
+        googleResults,
         run
       )
     }
