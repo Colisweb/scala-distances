@@ -14,12 +14,7 @@ object Haversine {
     val greatCircleDistance = 2 * atan2(sqrt(hav), sqrt(1 - hav))
     val earthRadiusMiles    = 3958.761
     val earthRadiusMeters   = earthRadiusMiles / 0.00062137
-    earthRadiusMeters * greatCircleDistance
+    val distanceInMeters    = earthRadiusMeters * greatCircleDistance
+    distanceInMeters / 1000
   }
-
-// avec ca
-case class Point(latitude: Latitude, longitude: Longitude) {
-  def toRadians: Point = Point(math.toRadians(latitude), math.toRadians(longitude))
-}
-
 }

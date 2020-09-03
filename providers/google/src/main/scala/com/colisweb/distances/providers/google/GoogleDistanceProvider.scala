@@ -55,8 +55,8 @@ class GoogleDistanceProvider[F[_]](
         val durationInSeconds: DurationInSeconds = element.duration.inSeconds
         val durationInTraffic: DurationInSeconds = Option(element.durationInTraffic).fold(0L)(_.inSeconds)
         val totalDuration: DurationInSeconds     = durationInSeconds + durationInTraffic
-        val distanceInMeters: DistanceInKm       = element.distance.inMeters.toDouble
-        F.pure(DistanceAndDuration(distanceInMeters, totalDuration))
+        val distanceInKilometers: DistanceInKm   = element.distance.inMeters.toDouble / 1000
+        F.pure(DistanceAndDuration(distanceInKilometers, totalDuration))
 
       case DistanceMatrixElementStatus.NOT_FOUND =>
         F.raiseError(DistanceNotFound("origin and/or destination of this pairing could not be geocoded"))
