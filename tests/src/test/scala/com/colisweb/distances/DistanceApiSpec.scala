@@ -1,8 +1,8 @@
 package com.colisweb.distances
 
-import java.time.ZonedDateTime
+import java.time.{Instant, ZonedDateTime}
 
-import cats.Applicative
+import cats.MonadError
 import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
@@ -45,10 +45,12 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val loggingF: String => Unit           = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
   private val googleContext: GoogleGeoApiContext = GoogleGeoApiContext(configuration.google.apiKey, loggingF)
 
-  private val currentTime = ZonedDateTime.now().plusHours(1).toInstant
-  private val paris01     = Point(48.8640493, 2.3310526)
-  private val paris02     = Point(48.8675641, 2.34399)
-  private val paris18     = Point(48.891305, 2.3529867)
+  private val futureTime = ZonedDateTime.now().plusHours(1).toInstant
+  private val pastTime   = ZonedDateTime.now().minusHours(1).toInstant
+
+  private val paris01 = Point(48.8640493, 2.3310526)
+  private val paris02 = Point(48.8675641, 2.34399)
+  private val paris18 = Point(48.891305, 2.3529867)
 
   private val birdResults = Map(
     (paris01 -> paris02, DistanceAndDuration(1.0, 73L)),
@@ -59,25 +61,12 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     (paris01 -> paris18, DistanceAndDuration(4.5, 970L))
   )
 
-  def apiTests[F[_]](
+  def approximateTests[F[_]](
       api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
       results: Map[(Point, Point), DistanceAndDuration],
+      trafficTime: Option[Instant],
       run: RunSync[F]
   ): Unit = {
-
-    "return zero between the same points" in {
-      val path = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = paris01,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = Some(currentTime)
-      )
-
-      val distance = run(api.distance(path))
-
-      distance shouldBe DistanceAndDuration.zero
-    }
 
     "return approximate distance and duration from Paris 01 to Paris 02 without traffic" in {
       val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
@@ -85,7 +74,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         destination = paris02,
         travelMode = TravelMode.Driving,
         speed = 50.0,
-        departureTime = None
+        departureTime = trafficTime
       )
       val distanceFrom01to02 = run(api.distance(driveFrom01to02))
 
@@ -99,12 +88,33 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         destination = paris18,
         travelMode = TravelMode.Driving,
         speed = 50.0,
-        departureTime = None
+        departureTime = trafficTime
       )
       val distanceFrom01to18 = run(api.distance(driveFrom01to18))
 
       distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 0.1
       distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 10L
+    }
+  }
+
+  def relativeTests[F[_]](
+      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      trafficTime: Option[Instant],
+      run: RunSync[F]
+  ): Unit = {
+
+    "return zero between the same points" in {
+      val path = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris01,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+
+      val distance = run(api.distance(path))
+
+      distance shouldBe DistanceAndDuration.zero
     }
 
     "return smaller DistanceAndDuration from Paris 01 to Paris 02 than from Paris 01 to Paris 18" in {
@@ -113,14 +123,14 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         destination = paris02,
         travelMode = TravelMode.Driving,
         speed = 50.0,
-        departureTime = Some(currentTime)
+        departureTime = trafficTime
       )
       val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
         origin = paris01,
         destination = paris18,
         travelMode = TravelMode.Driving,
         speed = 50.0,
-        departureTime = Some(currentTime)
+        departureTime = trafficTime
       )
 
       val distanceFrom01to02 = run(api.distance(driveFrom01to02))
@@ -144,7 +154,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         destination = paris18,
         travelMode = TravelMode.Driving,
         speed = 50.0,
-        departureTime = Some(currentTime)
+        departureTime = Some(futureTime)
       )
 
       val distanceWithoutTraffic = run(api.distance(pathWithoutTraffic))
@@ -154,47 +164,93 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
   }
 
-  def fTests[F[_]: Applicative](
+  def fTests[F[_]](
       run: RunSync[F],
       googleDistanceApi: GoogleDistanceApi[F, DirectedPathWithModeAndSpeedAt]
   )(implicit
+      F: MonadError[F, Throwable],
       mode: Mode[F]
   ): Unit = {
 
     "Bird only" should {
-      apiTests(
-        Distances.haversine[F, DirectedPathWithModeAndSpeedAt].api,
+      val distanceApi = Distances.haversine[F, DirectedPathWithModeAndSpeedAt].api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
         birdResults,
+        None,
         run
       )
     }
 
     "Bird with Caffeine cache" should {
-      apiTests(
-        Distances
-          .haversine[F, DirectedPathWithModeAndSpeedAt]
-          .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
-          .api,
+      val distanceApi = Distances
+        .haversine[F, DirectedPathWithModeAndSpeedAt]
+        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
         birdResults,
+        trafficTime = None,
         run
       )
     }
 
     "Google only" should {
-      apiTests(
+      relativeTests(
+        googleDistanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
         googleDistanceApi,
         googleResults,
+        trafficTime = None,
         run
       )
     }
 
     "Google with Caffeine cache" should {
-      apiTests(
-        Distances
-          .from(googleDistanceApi)
-          .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
-          .api,
+      val distanceApi = Distances
+        .from(googleDistanceApi)
+        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
         googleResults,
+        trafficTime = None,
+        run
+      )
+    }
+
+    "Google with fallback on Bird, and traffic in the past" should {
+      val distanceApi = Distances
+        .from(googleDistanceApi)
+        .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(pastTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        birdResults,
+        trafficTime = Some(pastTime),
         run
       )
     }
