@@ -79,5 +79,18 @@ class FallbackSpec extends AnyWordSpec with ScalaCheckPropertyChecks with Matche
       val distances = first.fallback(second).api
       verifyDistanceForAllPathsReturnsSecondError(distances, paths)
     }
+
+    "fallback on specific errors with fallbackWhen" in forAll(
+      genPathSimpleAndDistanceUnrelatedSet
+    ) { mapping =>
+      val first  = FromMapDistances[Try].emptyAndError(secondError)
+      val second = FromMapDistances[Try].fromMapOrError(mapping, secondError)
+
+      val distancesNoFallback = first.fallbackWhen(second) { case FirstError => Try(()) }.api
+      verifyDistanceForAllPathsReturnsSecondError(distancesNoFallback, mapping.keys.toList)
+
+      val distancesFallback = first.fallbackWhen(second) { case SecondError => Try(()) }.api
+      verifyDistanceForAllPathsMatchExpected(distancesFallback, mapping)
+    }
   }
 }
