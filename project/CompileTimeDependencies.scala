@@ -10,7 +10,7 @@ object Versions {
   lazy val loggingInterceptor = "4.8.0"
   lazy val monix              = "3.2.2"
   lazy val scalaCache         = "0.28.0"
-  lazy val scalaCompat        = "2.1.6"
+  lazy val scalaCompat        = "2.2.0"
   lazy val squants            = "1.7.0"
 }
 
