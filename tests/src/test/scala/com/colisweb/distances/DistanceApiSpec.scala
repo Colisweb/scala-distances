@@ -1,347 +1,299 @@
 package com.colisweb.distances
 
-import java.time.Instant
+import java.time.{Instant, ZonedDateTime}
 
-import cats.Parallel
-import cats.effect.{Concurrent, ContextShift, IO}
-import com.colisweb.distances.TravelMode._
-import com.colisweb.distances.Types._
-import com.colisweb.distances.caches.{CaffeineCache, RedisCache, RedisConfiguration}
-import com.colisweb.distances.providers.google.GoogleGeoApiContext
+import cats.MonadError
+import cats.effect.{ContextShift, IO}
+import com.colisweb.distances.DistanceApiSpec.RunSync
+import com.colisweb.distances.caches.CaffeineCache
+import com.colisweb.distances.model.path.DirectedPathWithModeAndSpeedAt
+import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
+import com.colisweb.distances.providers.google.{GoogleDistanceApi, GoogleGeoApiContext, TrafficModel}
 import monix.eval.Task
+import monix.execution.Scheduler
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import squants.space.LengthConversions._
-import squants.space.Meters
+import scalacache.caffeine.{CaffeineCache => CaffeineScalaCache}
+import scalacache.{Flags, Mode}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.collection.compat._
+import scala.util.Try
 
 class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
-  import com.colisweb.distances.utils.Stubs._
-
-  //import to use library scala.collection.compat even in scala 2.13
-  implicit val collectionCompat = BuildFrom
+  private val caffeineInstance = CaffeineScalaCache.apply[Nothing]
 
   val globalExecutionContext: ExecutionContext = ExecutionContext.global
   implicit val contextShift: ContextShift[IO]  = IO.contextShift(globalExecutionContext)
 
-  val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
+  val runSyncTry: RunSync[Try] = new RunSync[Try] {
+    override def apply[A](fa: Try[A]): A = fa.get
+  }
 
-  lazy val geoContext: GoogleGeoApiContext = GoogleGeoApiContext(System.getenv().get("GOOGLE_API_KEY"), loggingF)
-  lazy val redisConfiguration: RedisConfiguration =
-    RedisConfiguration(sys.env.getOrElse("REDIS_HOST", "127.0.0.1"), 6379)
+  val runAsyncIO: RunSync[IO] = new RunSync[IO] {
+    override def apply[A](fa: IO[A]): A = fa.unsafeRunSync()
+  }
 
-  "DistanceApi" should {
-    "#distance" should {
-      "if origin == destination" should {
-        "not call the provider and return immmediatly Distance.zero" in {
-          val cache = CaffeineCache[IO](Some(1 days))
-          val stub  = distanceProviderStub[IO, Unit]
-          val distanceApi =
-            DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get, defaultCacheKey)
-          val latLong        = LatLong(0.0, 0.0)
-          val expectedResult = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
+  val runAsyncMonix: RunSync[Task] = new RunSync[Task] {
+    implicit val monixScheduler: Scheduler = Scheduler.global
+    override def apply[A](fa: Task[A]): A  = fa.runSyncUnsafe()
+  }
 
-          distanceApi.distance(latLong, latLong, Driving :: Bicycling :: Nil).unsafeRunSync() shouldBe expectedResult
-        }
-      }
+  private val configuration                      = Configuration.load
+  private val loggingF: String => Unit           = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
+  private val googleContext: GoogleGeoApiContext = GoogleGeoApiContext(configuration.google.apiKey, loggingF)
+
+  private val futureTime = ZonedDateTime.now().plusHours(1).toInstant
+  private val pastTime   = ZonedDateTime.now().minusHours(1).toInstant
+
+  private val paris01 = Point(48.8640493, 2.3310526)
+  private val paris02 = Point(48.8675641, 2.34399)
+  private val paris18 = Point(48.891305, 2.3529867)
+
+  private val birdResults = Map(
+    (paris01 -> paris02, DistanceAndDuration(1.0, 73L)),
+    (paris01 -> paris18, DistanceAndDuration(3.4, 246L))
+  )
+  private val googleResults = Map(
+    (paris01 -> paris02, DistanceAndDuration(1.4, 345L)),
+    (paris01 -> paris18, DistanceAndDuration(4.5, 1050L))
+  )
+
+  def approximateTests[F[_]](
+      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      results: Map[(Point, Point), DistanceAndDuration],
+      trafficTime: Option[Instant],
+      run: RunSync[F]
+  ): Unit = {
+
+    "return approximate distance and duration from Paris 01 to Paris 02 without traffic" in {
+      val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris02,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+      val distanceFrom01to02 = run(api.distance(driveFrom01to02))
+
+      distanceFrom01to02.distance shouldBe results(paris01 -> paris02).distance +- 0.1
+      distanceFrom01to02.duration shouldBe results(paris01 -> paris02).duration +- 10L
     }
 
-    "#distanceFromPostalCodes" should {
-      "if origin == destination" should {
-        "not call the provider and return immmediatly Distance.zero" in {
-          val cache = CaffeineCache[IO](Some(1 days))
-          val stub  = distanceProviderStub[IO, Unit]
-          val distanceApi =
-            DistanceApi[IO, Unit](stub.distance, stub.batchDistances, cache.caching, cache.get, defaultCacheKey)
-          val postalCode     = PostalCode("59000")
-          val expectedResult = Map((Driving, Right(Distance.zero)), (Bicycling, Right(Distance.zero)))
-
-          distanceApi
-            .distanceFromPostalCodes(geocoderStub)(postalCode, postalCode, Driving :: Bicycling :: Nil)
-            .unsafeRunSync() shouldBe expectedResult
-        }
-      }
-    }
-
-    "#distances" should {
-      "pass the same test suite than GoogleDistanceProvider" should {
-        def passTests[F[+_]: Concurrent: Parallel](runSync: F[Any] => Any, cache: Cache[F]): Unit = {
-          def removeFromCache(
-              travelMode: TravelMode,
-              origin: LatLong,
-              destination: LatLong,
-              maybeTrafficHandling: Option[TrafficHandling]
-          ): Unit = {
-            runSync(cache.remove(Seq(travelMode, origin, destination, maybeTrafficHandling)))
-            ()
-          }
-
-          def removeBatchFromCache(
-              travelMode: TravelMode,
-              origins: List[LatLong],
-              destinations: List[LatLong],
-              maybeTrafficHandling: Option[TrafficHandling]
-          ): Unit =
-            origins.flatMap(origin => destinations.map(origin -> _)).foreach {
-              case (origin, destination) =>
-                removeFromCache(travelMode, origin, destination, maybeTrafficHandling)
-            }
-
-          val distanceApi: DistanceApi[F, Unit] =
-            DistanceApi[F, Unit](mockedDistanceF[F], mockedBatchDistanceF[F], cache.caching, cache.get, defaultCacheKey)
-
-          val errorDistanceApi: DistanceApi[F, Unit] =
-            DistanceApi[F, Unit](
-              mockedDistanceErrorF[F],
-              mockedBatchDistanceErrorF[F],
-              cache.caching,
-              cache.get,
-              defaultCacheKey
-            )
-
-          val paris01 = LatLong(48.8640493, 2.3310526)
-          val paris02 = LatLong(48.8675641, 2.34399)
-          val paris18 = LatLong(48.891305, 2.3529867)
-
-          "says that Paris 02 is nearest to Paris 01 than Paris 18" in {
-            val driveFrom01to02 = DirectedPathMultipleModes(origin = paris01, destination = paris02, Driving :: Nil)
-            val driveFrom01to18 = DirectedPathMultipleModes(origin = paris01, destination = paris18, Driving :: Nil)
-
-            val paths = List(driveFrom01to02, driveFrom01to18)
-
-            val results = runSync(distanceApi.distances(paths))
-              .asInstanceOf[Map[DirectedPath, Either[Unit, Distance]]]
-
-            // We only check the length as travel duration varies over time & traffic
-            results.view.mapValues(x => x.getOrElse(Distance.zero).length).toMap shouldBe Map(
-              DirectedPath(paris01, paris02, Driving, None) -> 1024.meters,
-              DirectedPath(paris01, paris18, Driving, None) -> 3429.meters
-            )
-
-            results(DirectedPath(paris01, paris02, Driving, None)).getOrElse(Distance.zero).length should be <
-              results(DirectedPath(paris01, paris18, Driving, None)).getOrElse(Distance.zero).length
-
-            results(DirectedPath(paris01, paris02, Driving, None)).getOrElse(Distance.zero).duration should be <
-              results(DirectedPath(paris01, paris18, Driving, None)).getOrElse(Distance.zero).duration
-
-            paths.foreach(path =>
-              removeFromCache(path.travelModes.head, path.origin, path.destination, path.maybeTrafficHandling)
-            )
-          }
-
-          val origin         = LatLong(48.8640493, 2.3310526)
-          val destination    = LatLong(48.8675641, 2.34399)
-          val length         = Meters(1024)
-          val travelDuration = 73728.millis
-
-          "not take into account traffic when not asked to with a driving travel mode" in {
-            val expected = Map(Driving -> Right(Distance(length, travelDuration)))
-            val result   = runSync(distanceApi.distance(origin, destination, Driving :: Nil, None))
-
-            result shouldBe expected
-
-            removeFromCache(Driving, origin, destination, None)
-          }
-
-          "take into account traffic when asked to with a driving travel mode and a best guess estimation" in {
-            val expected        = Map(Driving -> Right(Distance(length, 5.minutes)))
-            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
-
-            val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
-
-            result shouldBe expected
-            removeFromCache(Driving, origin, destination, Some(trafficHandling))
-          }
-
-          "take into account traffic when asked to with a driving travel mode and an optimistic estimation" in {
-            val expected        = Map(Driving -> Right(Distance(length, 2.minutes)))
-            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Optimistic)
-
-            val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
-
-            result shouldBe expected
-            removeFromCache(Driving, origin, destination, Some(trafficHandling))
-          }
-
-          "take into account traffic when asked to with a driving travel mode and a pessimistic estimation" in {
-            val expected        = Map(Driving -> Right(Distance(length, 10.minutes)))
-            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.Pessimistic)
-
-            val result = runSync(distanceApi.distance(origin, destination, Driving :: Nil, Some(trafficHandling)))
-
-            result shouldBe expected
-            removeFromCache(Driving, origin, destination, Some(trafficHandling))
-          }
-
-          "not take into account traffic when asked to with a bicycling travel mode" in {
-            val expected        = Map(Bicycling -> Right(Distance(length, travelDuration)))
-            val trafficHandling = TrafficHandling(Instant.now, TrafficModel.BestGuess)
-
-            val result = runSync(distanceApi.distance(origin, destination, Bicycling :: Nil, Some(trafficHandling)))
-
-            result shouldBe expected
-            removeFromCache(Bicycling, origin, destination, Some(trafficHandling))
-          }
-
-          "say that Paris 02 is closer to Paris 01 than Paris 18 in a batch distances computation" in {
-            val origins      = List(paris01)
-            val destinations = List(paris02, paris18)
-
-            val results =
-              runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
-                .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
-
-            results(Segment(paris01, paris02)).getOrElse(Distance.zero).length should be <
-              results(Segment(paris01, paris18)).getOrElse(Distance.zero).length
-
-            results(Segment(paris01, paris02)).getOrElse(Distance.zero).duration should be <
-              results(Segment(paris01, paris18)).getOrElse(Distance.zero).duration
-
-            removeBatchFromCache(Driving, origins, destinations, None)
-          }
-
-          "not call for new computations when already cached with batch" in {
-            val origins      = List(LatLong(48.86, 2.3))
-            val destinations = List(LatLong(48.85, 2.3), LatLong(48.84, 2.3))
-
-            val results =
-              runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
-                .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
-
-            results.values.forall(_.isRight) shouldBe true
-
-            val moreOrigins      = origins :+ LatLong(48.86, 2.4)
-            val moreDestinations = destinations :+ LatLong(48.83, 2.3)
-
-            val moreResults = runSync(errorDistanceApi.batchDistances(moreOrigins, moreDestinations, Driving, None))
-              .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
-
-            val knownEntries =
-              moreResults.view
-                .filterKeys(path => origins.contains(path.origin) && destinations.contains(path.destination))
-                .toMap
-
-            val unknownEntries = moreResults.view.filterKeys(!knownEntries.contains(_)).toMap
-
-            knownEntries.values.forall(_.isRight) shouldBe true
-            unknownEntries.values.forall(_.isLeft) shouldBe true
-
-            removeBatchFromCache(Driving, origins, destinations, None)
-          }
-
-          "not call for new computations when already cached with single calls" in {
-            val origins      = List(LatLong(48.86, 2.3))
-            val destinations = List(LatLong(48.85, 2.3), LatLong(48.84, 2.3))
-            val paths        = origins.flatMap(origin => destinations.map(origin -> _))
-
-            val results = paths
-              .map { case (o, d) => distanceApi.distance(o, d, List(Driving), None) }
-              .map(runSync(_).asInstanceOf[Map[TravelMode, Either[Unit, Distance]]])
-
-            results.map(_.view.mapValues(ignoreDistanceValue).toMap) should contain only Map(Driving -> right)
-            results.forall(_.apply(Driving).isRight) shouldBe true
-
-            val moreOrigins      = origins :+ LatLong(48.86, 2.4)
-            val moreDestinations = destinations :+ LatLong(48.83, 2.3)
-            val morePaths        = moreOrigins.flatMap(origin => moreDestinations.map(origin -> _))
-
-            val moreResults = morePaths.map {
-              case (o, d) =>
-                Segment(o, d) -> runSync(errorDistanceApi.distance(o, d, List(Driving), None))
-                  .asInstanceOf[Map[TravelMode, Either[Unit, Distance]]]
-            }.toMap
-
-            val knownEntries =
-              moreResults.view
-                .filterKeys(path => origins.contains(path.origin) && destinations.contains(path.destination))
-                .toMap
-
-            val unknownEntries = moreResults.view.filterKeys(!knownEntries.contains(_)).toMap
-
-            knownEntries.values.map(_.view.mapValues(ignoreDistanceValue).toMap) should contain only Map(
-              Driving -> right
-            )
-            knownEntries.values.map(_.apply(Driving)).forall(_.isRight) shouldBe true
-            unknownEntries.values.map(_.view.mapValues(ignoreDistanceValue).toMap) should contain only Map(
-              Driving -> left
-            )
-            unknownEntries.values.map(_.apply(Driving)).forall(_.isLeft) shouldBe true
-
-            removeBatchFromCache(Driving, origins, destinations, None)
-          }
-
-          "return all the uncached distances in a batch distances computation" in {
-            val origins      = List(LatLong(48.86, 2.33), LatLong(48.87, 2.34), LatLong(48.88, 2.35))
-            val destinations = List(LatLong(48.85, 2.32), LatLong(48.84, 2.31), LatLong(48.83, 2.3))
-            val segments     = origins.flatMap(origin => destinations.map(Segment(origin, _)))
-
-            val results =
-              runSync(distanceApi.batchDistances(origins, destinations, Driving, None))
-                .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
-
-            val caches = segments.map { segment =>
-              val path = DirectedPath(segment.origin, segment.destination, Driving, None)
-
-              runSync(cache.get(Distance.decoder, defaultCacheKey(path))).asInstanceOf[Option[Distance]]
-            }
-
-            results.keys should contain theSameElementsAs segments
-            results.values.forall(_.isRight) shouldBe true
-            caches.forall(_.isDefined) shouldBe true
-
-            val moreOrigins      = List(LatLong(48.85, 2.33), LatLong(48.85, 2.34))
-            val moreDestinations = List(LatLong(48.84, 2.36), LatLong(48.83, 2.37))
-            val allOrigins       = origins ++ moreOrigins
-            val allDestinations  = destinations ++ moreDestinations
-            val allSegments      = allOrigins.flatMap(origin => allDestinations.map(Segment(origin, _)))
-
-            val allResults =
-              runSync(distanceApi.batchDistances(allOrigins, allDestinations, Driving, None))
-                .asInstanceOf[Map[Segment, Either[Unit, Distance]]]
-
-            val allCaches = allSegments.map { segment =>
-              val path = DirectedPath(segment.origin, segment.destination, Driving, None)
-
-              runSync(cache.get(Distance.decoder, defaultCacheKey(path))).asInstanceOf[Option[Distance]]
-            }
-
-            allResults.keys should contain theSameElementsAs allSegments
-            allResults.values.forall(_.isRight) shouldBe true
-            allCaches.forall(_.isDefined) shouldBe true
-
-            removeBatchFromCache(Driving, allOrigins, allDestinations, None)
-          }
-        }
-
-        "pass tests with cats-effect and Caffeine" should {
-          passTests[IO](_.unsafeRunTimed(10 seconds).get, CaffeineCache[IO](Some(1 days)))
-        }
-
-        "pass tests with cats-effect and Redis" should {
-          passTests[IO](_.unsafeRunTimed(10 seconds).get, RedisCache[IO](redisConfiguration, Some(1 days)))
-        }
-
-        "pass tests with Monix and Caffeine" should {
-          import monix.execution.Scheduler.Implicits.global
-
-          passTests[Task](_.runSyncUnsafe(10 seconds), CaffeineCache[Task](Some(1 days)))
-        }
-
-        "pass tests with Monix and Redis" should {
-          import monix.execution.Scheduler.Implicits.global
-
-          passTests[Task](_.runSyncUnsafe(10 seconds), RedisCache[Task](redisConfiguration, Some(1 days)))
-        }
-      }
+    "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
+      val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+      val distanceFrom01to18 = run(api.distance(driveFrom01to18))
+
+      distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 0.1
+      distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 10L
     }
   }
 
-  private def ignoreDistanceValue(e: Either[Unit, Distance]): Either[Unit, Unit] = e.map(_ => ())
-  private val right: Either[Unit, Unit]                                          = Right[Unit, Unit](())
-  private val left: Either[Unit, Unit]                                           = Left[Unit, Unit](())
+  def relativeTests[F[_]](
+      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      trafficTime: Option[Instant],
+      run: RunSync[F]
+  ): Unit = {
+
+    "return zero between the same points" in {
+      val path = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris01,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+
+      val distance = run(api.distance(path))
+
+      distance shouldBe DistanceAndDuration.zero
+    }
+
+    "return smaller DistanceAndDuration from Paris 01 to Paris 02 than from Paris 01 to Paris 18" in {
+      val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris02,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+      val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+
+      val distanceFrom01to02 = run(api.distance(driveFrom01to02))
+      val distanceFrom01to18 = run(api.distance(driveFrom01to18))
+
+      distanceFrom01to02.distance should be < distanceFrom01to18.distance
+      distanceFrom01to02.duration should be < distanceFrom01to18.duration
+    }
+
+    // NB: Distance maybe longer, but Duration should be smaller
+    "return smaller or equal Duration with traffic in Paris" in {
+      val pathWithoutTraffic = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = None
+      )
+      val pathWithTraffic = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Driving,
+        speed = 50.0,
+        departureTime = Some(futureTime)
+      )
+
+      val distanceWithoutTraffic = run(api.distance(pathWithoutTraffic))
+      val distanceWithTraffic    = run(api.distance(pathWithTraffic))
+
+      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration
+    }
+  }
+
+  def fTests[F[_]](
+      run: RunSync[F],
+      googleDistanceApi: GoogleDistanceApi[F, DirectedPathWithModeAndSpeedAt]
+  )(implicit
+      F: MonadError[F, Throwable],
+      mode: Mode[F]
+  ): Unit = {
+
+    "Bird only" should {
+      val distanceApi = Distances.haversine[F, DirectedPathWithModeAndSpeedAt].api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        birdResults,
+        None,
+        run
+      )
+    }
+
+    "Bird with Caffeine cache" should {
+      val distanceApi = Distances
+        .haversine[F, DirectedPathWithModeAndSpeedAt]
+        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        birdResults,
+        trafficTime = None,
+        run
+      )
+    }
+
+    "Google only" should {
+      relativeTests(
+        googleDistanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        googleDistanceApi,
+        googleResults,
+        trafficTime = None,
+        run
+      )
+    }
+
+    "Google with Caffeine cache" should {
+      val distanceApi = Distances
+        .from(googleDistanceApi)
+        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        googleResults,
+        trafficTime = None,
+        run
+      )
+    }
+
+    "Google with fallback on Bird, and traffic in the past" should {
+      val distanceApi = Distances
+        .from(googleDistanceApi)
+        .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(pastTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        birdResults,
+        trafficTime = Some(pastTime),
+        run
+      )
+    }
+  }
+
+  "DistanceApi" should {
+
+    "sync with Try" should {
+      import cats.implicits.catsStdInstancesForTry
+      import scalacache.modes.try_._
+      fTests(runSyncTry, GoogleDistanceApi.sync(googleContext, TrafficModel.BestGuess))
+    }
+
+    "async with IO" should {
+      import scalacache.CatsEffect.modes.async
+      fTests(
+        runAsyncIO,
+        GoogleDistanceApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+      )
+    }
+
+    "async with Monix Task" should {
+      import scalacache.CatsEffect.modes.async
+      fTests(
+        runAsyncMonix,
+        GoogleDistanceApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+      )
+    }
+  }
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    import scalacache.modes.try_._
+
+    // clear caches
+    caffeineInstance.doRemoveAll().get
+    ()
+  }
+}
+
+object DistanceApiSpec {
+
+  trait RunSync[F[_]] {
+    def apply[A](fa: F[A]): A
+  }
 }

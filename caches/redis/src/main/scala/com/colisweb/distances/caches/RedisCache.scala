@@ -1,20 +1,20 @@
 package com.colisweb.distances.caches
 
-import cats.effect.Async
-import com.colisweb.distances.Cache
-import io.circe.Json
-import scalacache.{Cache => InnerCache}
+import com.colisweb.distances.cache.{CacheKey, ScalaCacheCache}
+import scalacache.serialization.Codec
+import scalacache.{Flags, Mode}
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 object RedisCache {
+  import scalacache.redis.{RedisCache => RedisScalaCache}
 
-  import scalacache.redis.{RedisCache => InnerRedisCache}
-
-  final def apply[F[_]: Async](config: RedisConfiguration, ttl: Option[Duration]): Cache[F] =
-    new Cache[F](ttl) {
-      import scalacache.serialization.circe._
-      override private[distances] final val innerCache: InnerCache[Json] = InnerRedisCache[Json](config.jedisPool)
-    }
-
+  def apply[F[_]: Mode, K: CacheKey, V: Codec](
+      config: RedisConfiguration,
+      flags: Flags,
+      ttl: Option[FiniteDuration]
+  ): ScalaCacheCache[F, K, V] = {
+    val redis = RedisScalaCache[V](config.jedisPool)
+    ScalaCacheCache(redis, flags, ttl)
+  }
 }
