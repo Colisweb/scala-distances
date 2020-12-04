@@ -8,7 +8,7 @@ object Versions {
   lazy val enumeratum         = "1.6.1"
   lazy val google             = "0.15.0"
   lazy val loggingInterceptor = "4.8.0"
-  lazy val monix              = "3.2.2"
+  lazy val monix              = "3.3.0"
   lazy val pureconfig         = "0.14.0"
   lazy val scalaCache         = "0.28.0"
   lazy val scalaCompat        = "2.2.0"
