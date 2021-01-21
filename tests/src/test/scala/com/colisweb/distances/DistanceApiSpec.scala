@@ -58,7 +58,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   )
   private val googleResults = Map(
     (paris01 -> paris02, DistanceAndDuration(1.4, 345L)),
-    (paris01 -> paris18, DistanceAndDuration(4.5, 1064L))
+    (paris01 -> paris18, DistanceAndDuration(4.5, 1075L))
   )
 
   def approximateTests[F[_]](
