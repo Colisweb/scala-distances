@@ -1,22 +1,20 @@
 import sbt._
 
 object Versions {
-  lazy val cats               = "2.3.1"
   lazy val catsEffect         = "2.3.1"
   lazy val circe              = "0.13.0"
   lazy val circeOptics        = "0.13.0"
   lazy val enumeratum         = "1.6.1"
-  lazy val google             = "0.15.4"
-  lazy val loggingInterceptor = "4.9.0"
+  lazy val google             = "0.16.1"
+  lazy val loggingInterceptor = "4.9.1"
   lazy val monix              = "3.3.0"
   lazy val pureconfig         = "0.14.0"
   lazy val scalaCache         = "0.28.0"
-  lazy val scalaCompat        = "2.3.2"
+  lazy val scalaCompat        = "2.4.1"
   lazy val squants            = "1.7.0"
 }
 
 object CompileTimeDependencies {
-  lazy val cats               = "org.typelevel"         %% "cats-core"            % Versions.cats
   lazy val catsEffect         = "org.typelevel"         %% "cats-effect"          % Versions.catsEffect
   lazy val circe              = "io.circe"              %% "circe-core"           % Versions.circe
   lazy val circeGeneric       = "io.circe"              %% "circe-generic"        % Versions.circe
