@@ -1,13 +1,12 @@
 package com.colisweb.distances
 
-import java.time.{Instant, ZonedDateTime}
 import cats.MonadError
 import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
 import com.colisweb.distances.model.path.DirectedPathWithModeAndSpeedAt
 import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
-import com.colisweb.distances.providers.google.{GoogleDistanceDirectionsApi, GoogleDistanceDirectionsProvider, GoogleDistanceMatrixApi, GoogleGeoApiContext, TrafficModel}
+import com.colisweb.distances.providers.google._
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalatest.BeforeAndAfterEach
@@ -17,29 +16,25 @@ import org.scalatest.wordspec.AnyWordSpec
 import scalacache.caffeine.{CaffeineCache => CaffeineScalaCache}
 import scalacache.{Flags, Mode}
 
+import java.time.{Instant, ZonedDateTime}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.util.Try
 
 class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
-  private val caffeineInstance = CaffeineScalaCache.apply[Nothing]
-
   val globalExecutionContext: ExecutionContext = ExecutionContext.global
-  implicit val contextShift: ContextShift[IO]  = IO.contextShift(globalExecutionContext)
-
   val runSyncTry: RunSync[Try] = new RunSync[Try] {
     override def apply[A](fa: Try[A]): A = fa.get
   }
-
+  implicit val contextShift: ContextShift[IO] = IO.contextShift(globalExecutionContext)
   val runAsyncIO: RunSync[IO] = new RunSync[IO] {
     override def apply[A](fa: IO[A]): A = fa.unsafeRunSync()
   }
-
   val runAsyncMonix: RunSync[Task] = new RunSync[Task] {
     implicit val monixScheduler: Scheduler = Scheduler.global
     override def apply[A](fa: Task[A]): A  = fa.runSyncUnsafe()
   }
-
+  private val caffeineInstance                   = CaffeineScalaCache.apply[Nothing]
   private val configuration                      = Configuration.load
   private val loggingF: String => Unit           = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
   private val googleContext: GoogleGeoApiContext = GoogleGeoApiContext(configuration.google.apiKey, loggingF)
@@ -60,7 +55,154 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     (paris01 -> paris18, DistanceAndDuration(4.5, 1075L))
   )
 
-  def approximateTests[F[_]](
+  "DistanceApi" should {
+
+    "sync with Try" should {
+      import cats.implicits.catsStdInstancesForTry
+      import scalacache.modes.try_._
+      "for bird distance" should {
+        birdTests(runSyncTry)
+      }
+
+      "for matrix api distance" should {
+        googleTests(runSyncTry, GoogleDistanceMatrixApi.sync(googleContext, TrafficModel.BestGuess))
+      }
+
+      "for direction api distance" should {
+        googleTests(
+          runSyncTry,
+          GoogleDistanceDirectionsApi.sync(googleContext, TrafficModel.BestGuess)(
+            GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute
+          )
+        )
+      }
+
+      "for direction api duration" should {
+        googleTests(
+          runSyncTry,
+          GoogleDistanceDirectionsApi.sync(googleContext, TrafficModel.BestGuess)(
+            GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute
+          )
+        )
+      }
+
+    }
+
+    "async with IO" should {
+      import scalacache.CatsEffect.modes.async
+      "for bird distance" should {
+        birdTests(runAsyncIO)
+      }
+
+      "for matrix api distance" should {
+        googleTests(
+          runAsyncIO,
+          GoogleDistanceMatrixApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+        )
+      }
+
+      "for direction api distance" should {
+        googleTests(
+          runAsyncIO,
+          GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+            GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute
+          )
+        )
+      }
+
+      "for direction api duration" should {
+        googleTests(
+          runAsyncIO,
+          GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+            GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute
+          )
+        )
+      }
+    }
+
+    "async with Monix Task" should {
+      import scalacache.CatsEffect.modes.async
+      "for bird distance" should {
+        birdTests(runAsyncMonix)
+      }
+
+      "for matrix api distance" should {
+        googleTests(
+          runAsyncMonix,
+          GoogleDistanceMatrixApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+        )
+      }
+
+      "for direction api distance" should {
+        googleTests(
+          runAsyncMonix,
+          GoogleDistanceDirectionsApi
+            .async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+              GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute
+            )
+        )
+      }
+
+      "for direction api duration" should {
+        googleTests(
+          runAsyncMonix,
+          GoogleDistanceDirectionsApi
+            .async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+              GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute
+            )
+        )
+      }
+    }
+  }
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    import scalacache.modes.try_._
+
+    // clear caches
+    caffeineInstance.doRemoveAll().get
+    ()
+  }
+
+  private def birdTests[F[_]](run: RunSync[F])(implicit
+      F: MonadError[F, Throwable],
+      mode: Mode[F]
+  ): Unit = {
+    "Bird only" should {
+      val distanceApi = Distances.haversine[F, DirectedPathWithModeAndSpeedAt].api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        birdResults,
+        None,
+        run
+      )
+    }
+
+    "Bird with Caffeine cache" should {
+      val distanceApi = Distances
+        .haversine[F, DirectedPathWithModeAndSpeedAt]
+        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        birdResults,
+        trafficTime = None,
+        run
+      )
+    }
+  }
+
+  private def approximateTests[F[_]](
       api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
       results: Map[(Point, Point), DistanceAndDuration],
       trafficTime: Option[Instant],
@@ -96,7 +238,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
   }
 
-  def relativeTests[F[_]](
+  private def relativeTests[F[_]](
       api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
       trafficTime: Option[Instant],
       run: RunSync[F]
@@ -163,66 +305,30 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
   }
 
-  def fTests[F[_]](
+  private def googleTests[F[_]](
       run: RunSync[F],
-      googleMatrixApi: GoogleDistanceMatrixApi[F, DirectedPathWithModeAndSpeedAt],
-      googleDirectionsApiDuration: GoogleDistanceDirectionsApi[F, DirectedPathWithModeAndSpeedAt],
-        googleDirectionsApiDistance: GoogleDistanceDirectionsApi[F, DirectedPathWithModeAndSpeedAt]
+      googleApi: DistanceApi[F, DirectedPathWithModeAndSpeedAt]
   )(implicit
       F: MonadError[F, Throwable],
       mode: Mode[F]
   ): Unit = {
-
-    "Bird only" should {
-      val distanceApi = Distances.haversine[F, DirectedPathWithModeAndSpeedAt].api
+    "Google api only" should {
       relativeTests(
-        distanceApi,
+        googleApi,
         trafficTime = Some(futureTime),
         run
       )
       approximateTests(
-        distanceApi,
-        birdResults,
-        None,
-        run
-      )
-    }
-
-    "Bird with Caffeine cache" should {
-      val distanceApi = Distances
-        .haversine[F, DirectedPathWithModeAndSpeedAt]
-        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(futureTime),
-        run
-      )
-      approximateTests(
-        distanceApi,
-        birdResults,
-        trafficTime = None,
-        run
-      )
-    }
-
-    "Google matrix api only" should {
-      relativeTests(
-        googleMatrixApi,
-        trafficTime = Some(futureTime),
-        run
-      )
-      approximateTests(
-        googleMatrixApi,
+        googleApi,
         googleResults,
         trafficTime = None,
         run
       )
     }
 
-    "Google matrix api with Caffeine cache" should {
+    "Google api with Caffeine cache" should {
       val distanceApi = Distances
-        .from(googleMatrixApi)
+        .from(googleApi)
         .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
         .api
       relativeTests(
@@ -238,9 +344,9 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       )
     }
 
-    "Google matrix api with fallback on Bird, and traffic in the past" should {
+    "Google api with fallback on Bird, and traffic in the past" should {
       val distanceApi = Distances
-        .from(googleMatrixApi)
+        .from(googleApi)
         .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
         .api
       relativeTests(
@@ -256,150 +362,6 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       )
     }
 
-    "Google directions api only using duration" should {
-      relativeTests(
-        googleDirectionsApiDuration,
-        trafficTime = Some(futureTime),
-        run
-      )
-      approximateTests(
-        googleDirectionsApiDuration,
-        googleResults,
-        trafficTime = None,
-        run
-      )
-    }
-
-    "Google directions api with Caffeine cache using duration" should {
-      val distanceApi = Distances
-        .from(googleDirectionsApiDuration)
-        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(futureTime),
-        run
-      )
-      approximateTests(
-        distanceApi,
-        googleResults,
-        trafficTime = None,
-        run
-      )
-    }
-
-    "Google directions api with fallback on Bird, and traffic in the past using duration" should {
-      val distanceApi = Distances
-        .from(googleDirectionsApiDuration)
-        .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(pastTime),
-        run
-      )
-      approximateTests(
-        distanceApi,
-        birdResults,
-        trafficTime = Some(pastTime),
-        run
-      )
-    }
-
-
-    "Google directions api only using distance" should {
-      relativeTests(
-        googleDirectionsApiDistance,
-        trafficTime = Some(futureTime),
-        run
-      )
-      approximateTests(
-        googleDirectionsApiDistance,
-        googleResults,
-        trafficTime = None,
-        run
-      )
-    }
-
-    "Google directions api with Caffeine cache using distance" should {
-      val distanceApi = Distances
-        .from(googleDirectionsApiDistance)
-        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(futureTime),
-        run
-      )
-      approximateTests(
-        distanceApi,
-        googleResults,
-        trafficTime = None,
-        run
-      )
-    }
-
-    "Google directions api with fallback on Bird, and traffic in the past using distance" should {
-      val distanceApi = Distances
-        .from(googleDirectionsApiDistance)
-        .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(pastTime),
-        run
-      )
-      approximateTests(
-        distanceApi,
-        birdResults,
-        trafficTime = Some(pastTime),
-        run
-      )
-    }
-
-  }
-
-  "DistanceApi" should {
-
-    "sync with Try" should {
-      import cats.implicits.catsStdInstancesForTry
-      import scalacache.modes.try_._
-      fTests(
-        runSyncTry,
-        GoogleDistanceMatrixApi.sync(googleContext, TrafficModel.BestGuess),
-        GoogleDistanceDirectionsApi.sync(googleContext, TrafficModel.BestGuess)(GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute),
-        GoogleDistanceDirectionsApi.sync(googleContext, TrafficModel.BestGuess)(GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute)
-      )
-    }
-
-    "async with IO" should {
-      import scalacache.CatsEffect.modes.async
-      fTests(
-        runAsyncIO,
-        GoogleDistanceMatrixApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess) ,
-        GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute),
-        GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute)
-      )
-    }
-
-    "async with Monix Task" should {
-      import scalacache.CatsEffect.modes.async
-      fTests(
-        runAsyncMonix,
-        GoogleDistanceMatrixApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess),
-        GoogleDistanceDirectionsApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute),
-        GoogleDistanceDirectionsApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute)
-      )
-    }
-  }
-
-  override protected def beforeEach(): Unit = {
-    super.beforeEach()
-    import scalacache.modes.try_._
-
-    // clear caches
-    caffeineInstance.doRemoveAll().get
-    ()
   }
 }
 
