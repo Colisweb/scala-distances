@@ -5,6 +5,7 @@ lazy val scala212               = "2.12.11"
 lazy val scala213               = "2.13.2"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
 ThisBuild / organization := "com.colisweb"
 ThisBuild / scalaVersion := scala213
 ThisBuild / crossScalaVersions := supportedScalaVersions
@@ -12,7 +13,6 @@ ThisBuild / scalafmtOnCompile := true
 ThisBuild / scalafmtCheck := true
 ThisBuild / scalafmtSbtCheck := true
 ThisBuild / scalacOptions ++= crossScalacOptions(scalaVersion.value)
-
 //// Main projects
 
 lazy val root = Project(id = "scala-distances", base = file("."))

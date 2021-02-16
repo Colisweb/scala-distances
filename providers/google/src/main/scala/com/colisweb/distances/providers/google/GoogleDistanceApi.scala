@@ -6,7 +6,7 @@ import com.colisweb.distances.DistanceApi
 import com.colisweb.distances.model.{DepartureTime, DistanceAndDuration, OriginDestination, TravelModeTransportation}
 
 class GoogleDistanceApi[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
-    provider: GoogleDistanceProvider[F]
+    provider: GoogleDistanceMatrixProvider[F]
 ) extends DistanceApi[F, P] {
   import com.colisweb.distances.model.syntax._
 
@@ -22,7 +22,7 @@ object GoogleDistanceApi {
       F: MonadError[F, Throwable]
   ): GoogleDistanceApi[F, P] = {
     val executor = new SyncRequestExecutor[F]
-    val provider = new GoogleDistanceProvider(googleContext, trafficModel, executor)
+    val provider = new GoogleDistanceMatrixProvider(googleContext, trafficModel, executor)
     new GoogleDistanceApi[F, P](provider)
   }
 
@@ -33,7 +33,7 @@ object GoogleDistanceApi {
       F: Concurrent[F]
   ): GoogleDistanceApi[F, P] = {
     val executor = new AsyncRequestExecutor[F]
-    val provider = new GoogleDistanceProvider(googleContext, trafficModel, executor)
+    val provider = new GoogleDistanceMatrixProvider(googleContext, trafficModel, executor)
     new GoogleDistanceApi[F, P](provider)
   }
 

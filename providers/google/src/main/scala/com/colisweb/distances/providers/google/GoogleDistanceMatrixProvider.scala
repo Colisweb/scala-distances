@@ -5,7 +5,7 @@ import java.time.Instant
 import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.model._
-import com.colisweb.distances.providers.google.GoogleDistanceProvider.RequestBuilder
+import com.colisweb.distances.providers.google.GoogleDistanceMatrixProvider.RequestBuilder
 import com.google.maps.model.{
   DistanceMatrix,
   DistanceMatrixElement,
@@ -14,7 +14,7 @@ import com.google.maps.model.{
 }
 import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
 
-class GoogleDistanceProvider[F[_]](
+class GoogleDistanceMatrixProvider[F[_]](
     googleContext: GoogleGeoApiContext,
     trafficModel: TrafficModel,
     requestExecutor: RequestExecutor[F]
@@ -76,7 +76,7 @@ class GoogleDistanceProvider[F[_]](
     }
 }
 
-object GoogleDistanceProvider {
+object GoogleDistanceMatrixProvider {
 
   object RequestBuilder {
     import GoogleModel._
