@@ -8,7 +8,7 @@ import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
 import com.colisweb.distances.model.path.DirectedPathWithModeAndSpeedAt
 import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
-import com.colisweb.distances.providers.google.{GoogleDistanceApi, GoogleGeoApiContext, TrafficModel}
+import com.colisweb.distances.providers.google.{GoogleDistanceMatrixApi, GoogleGeoApiContext, TrafficModel}
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalatest.BeforeAndAfterEach
@@ -166,7 +166,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
   def fTests[F[_]](
       run: RunSync[F],
-      googleDistanceApi: GoogleDistanceApi[F, DirectedPathWithModeAndSpeedAt]
+      googleDistanceApi: GoogleDistanceMatrixApi[F, DirectedPathWithModeAndSpeedAt]
   )(implicit
       F: MonadError[F, Throwable],
       mode: Mode[F]
@@ -261,14 +261,14 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "sync with Try" should {
       import cats.implicits.catsStdInstancesForTry
       import scalacache.modes.try_._
-      fTests(runSyncTry, GoogleDistanceApi.sync(googleContext, TrafficModel.BestGuess))
+      fTests(runSyncTry, GoogleDistanceMatrixApi.sync(googleContext, TrafficModel.BestGuess))
     }
 
     "async with IO" should {
       import scalacache.CatsEffect.modes.async
       fTests(
         runAsyncIO,
-        GoogleDistanceApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+        GoogleDistanceMatrixApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
       )
     }
 
@@ -276,7 +276,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       import scalacache.CatsEffect.modes.async
       fTests(
         runAsyncMonix,
-        GoogleDistanceApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+        GoogleDistanceMatrixApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
       )
     }
   }

@@ -4,9 +4,10 @@ import cats.MonadError
 import cats.effect.Concurrent
 import com.colisweb.distances.DistanceApi
 import com.colisweb.distances.model.{DepartureTime, DistanceAndDuration, OriginDestination, TravelModeTransportation}
+import com.google.maps.model.DirectionsRoute
 
-class GoogleDistanceApi[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
-    provider: GoogleDistanceMatrixProvider[F]
+class GoogleDistanceDirectionsApi[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
+    provider: GoogleDistanceDirectionsProvider[F]
 ) extends DistanceApi[F, P] {
   import com.colisweb.distances.model.syntax._
 
@@ -14,27 +15,27 @@ class GoogleDistanceApi[F[_], P: OriginDestination: TravelModeTransportation: De
     provider.singleRequest(path.travelMode, path.origin, path.destination, path.departureTime)
 }
 
-object GoogleDistanceApi {
+object GoogleDistanceDirectionsApi {
   def sync[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
       googleContext: GoogleGeoApiContext,
       trafficModel: TrafficModel
-  )(implicit
+  )(chooseBestRoute: List[DirectionsRoute] => DirectionsRoute)(implicit
       F: MonadError[F, Throwable]
-  ): GoogleDistanceApi[F, P] = {
+  ): GoogleDistanceDirectionsApi[F, P] = {
     val executor = new SyncRequestExecutor[F]
-    val provider = new GoogleDistanceMatrixProvider(googleContext, trafficModel, executor)
-    new GoogleDistanceApi[F, P](provider)
+    val provider = new GoogleDistanceDirectionsProvider(googleContext, trafficModel, executor)(chooseBestRoute)
+    new GoogleDistanceDirectionsApi[F, P](provider)
   }
 
   def async[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
       googleContext: GoogleGeoApiContext,
       trafficModel: TrafficModel
-  )(implicit
+  )(chooseBestRoute: List[DirectionsRoute] => DirectionsRoute)(implicit
       F: Concurrent[F]
-  ): GoogleDistanceApi[F, P] = {
+  ): GoogleDistanceDirectionsApi[F, P] = {
     val executor = new AsyncRequestExecutor[F]
-    val provider = new GoogleDistanceMatrixProvider(googleContext, trafficModel, executor)
-    new GoogleDistanceApi[F, P](provider)
+    val provider = new GoogleDistanceDirectionsProvider(googleContext, trafficModel, executor)(chooseBestRoute)
+    new GoogleDistanceDirectionsApi[F, P](provider)
   }
 
 }
