@@ -7,7 +7,6 @@ import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
 import com.colisweb.distances.model.path.DirectedPathWithModeAndSpeedAt
 import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
-import com.colisweb.distances.providers.google
 import com.colisweb.distances.providers.google.{GoogleDistanceDirectionsApi, GoogleDistanceDirectionsProvider, GoogleDistanceMatrixApi, GoogleGeoApiContext, TrafficModel}
 import monix.eval.Task
 import monix.execution.Scheduler
