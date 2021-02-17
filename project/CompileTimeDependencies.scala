@@ -10,7 +10,7 @@ object Versions {
   lazy val monix              = "3.3.0"
   lazy val pureconfig         = "0.14.1"
   lazy val scalaCache         = "0.28.0"
-  lazy val scalaCompat        = "2.4.1"
+  lazy val scalaCompat        = "2.4.2"
   lazy val squants            = "1.7.0"
 }
 
