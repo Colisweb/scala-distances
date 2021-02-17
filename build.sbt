@@ -13,6 +13,10 @@ ThisBuild / scalafmtOnCompile := true
 ThisBuild / scalafmtCheck := true
 ThisBuild / scalafmtSbtCheck := true
 ThisBuild / scalacOptions ++= crossScalacOptions(scalaVersion.value)
+ThisBuild / isSnapshot := true
+ThisBuild / pushRemoteCacheTo := Some(
+  MavenCache("local-cache", baseDirectory.value / sys.env.getOrElse("CACHE_PATH", "sbt-cache"))
+)
 //// Main projects
 
 lazy val root = Project(id = "scala-distances", base = file("."))
