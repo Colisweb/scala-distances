@@ -4,12 +4,12 @@ include:
 
 compile scala-distances:
   extends:
-    - .sbt-compile
+    - .sbt-compile-cross
   tags: []
 
 test scala-distances:
   extends:
-  - .sbt-test
+  - .sbt-test-cross
   - .redis
   tags: []
 
