@@ -2,6 +2,11 @@ include:
   - 'https://gitlab.com/colisweb-open-source/ci-common/raw/v12.4.7/templates/scala.yml'
   - 'https://gitlab.com/colisweb-open-source/ci-common/raw/v12.4.7/services/redis.yml'
 
+compile scala-distances:
+  extends:
+    - .sbt-compile
+  tags: []
+
 test scala-distances:
   extends:
   - .sbt-test
