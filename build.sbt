@@ -13,7 +13,7 @@ ThisBuild / scalafmtOnCompile := true
 ThisBuild / scalafmtCheck := true
 ThisBuild / scalafmtSbtCheck := true
 ThisBuild / scalacOptions ++= crossScalacOptions(scalaVersion.value)
-ThisBuild / isSnapshot := true
+
 ThisBuild / pushRemoteCacheTo := Some(
   MavenCache("local-cache", baseDirectory.value / sys.env.getOrElse("CACHE_PATH", "sbt-cache"))
 )
@@ -86,8 +86,6 @@ lazy val tests = project
   .settings(libraryDependencies += CompileTimeDependencies.pureconfig)
 
 
-//// Publishing settings
-
 /**
   * Copied from Cats
   */
@@ -96,22 +94,6 @@ lazy val noPublishSettings = Seq(
   publishLocal := {},
   publishArtifact := false
 )
-
-ThisBuild / releaseCrossBuild := true
-ThisBuild / licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT"))
-ThisBuild / scmInfo := Some(
-  ScmInfo(
-    url("https://gitlab.com/colisweb-open-source/scala/scala-distances"),
-    "scm:git:git@gitlab.com:colisweb-open-source/scala/scala-distances.git"
-  )
-)
-ThisBuild / homepage := Some(url("https://gitlab.com/colisweb-open-source/scala/scala-distances"))
-ThisBuild / developers := List(
-  Developer("guizmaii", "Jules Ivanic", "jules.ivanic@gmail.com", url("https://guizmaii.github.io/")),
-  Developer("simooonbar", "Simon Bar", "simon.bar@colisweb.com", url("https://gitlab.com/snatz"))
-)
-ThisBuild / bintrayOrganization := Some("colisweb")
-ThisBuild / publishMavenStyle := true
 
 //// Aliases
 

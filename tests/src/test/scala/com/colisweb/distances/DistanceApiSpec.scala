@@ -37,22 +37,26 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val caffeineInstance                   = CaffeineScalaCache.apply[Nothing]
   private val configuration                      = Configuration.load
   private val loggingF: String => Unit           = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
-  private val googleContext: GoogleGeoApiContext = GoogleGeoApiContext(configuration.google.apiKey, loggingF)
+  private val googleContext: GoogleGeoApiContext =
+    new GoogleGeoApiContext(configuration.google.apiKey, 3 second, 3 second, 1000, loggingF)
+
 
   private val futureTime = ZonedDateTime.now().plusHours(1).toInstant
   private val pastTime   = ZonedDateTime.now().minusHours(1).toInstant
 
   private val paris01 = Point(48.8640493, 2.3310526)
-  private val paris02 = Point(48.8675641, 2.34399)
   private val paris18 = Point(48.891305, 2.3529867)
+  private val marseille01 = Point(43.2969901, 5.3789783)
 
   private val birdResults = Map(
-    (paris01 -> paris02, DistanceAndDuration(1.0, 73L)),
-    (paris01 -> paris18, DistanceAndDuration(3.4, 246L))
+    (paris01 -> paris18, DistanceAndDuration(3.4, 246L)),
+    (paris01 -> marseille01, DistanceAndDuration(661.91, 47665L)),
+    (paris18 -> marseille01, DistanceAndDuration(662.0, 29280L))
   )
   private val googleResults = Map(
-    (paris01 -> paris02, DistanceAndDuration(1.4, 345L)),
-    (paris01 -> paris18, DistanceAndDuration(4.5, 1075L))
+    (paris01 -> paris18, DistanceAndDuration(4.5, 1075L)),
+    (paris01 -> marseille01, DistanceAndDuration(779.0, 27133L)),
+    (paris18 -> marseille01, DistanceAndDuration(785.0, 29280L))
   )
 
   "DistanceApi" should {
@@ -209,18 +213,18 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       run: RunSync[F]
   ): Unit = {
 
-    "return approximate distance and duration from Paris 01 to Paris 02 without traffic" in {
+    "return approximate distance and duration from Paris 01 to Marseille 01 without traffic" in {
       val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
         origin = paris01,
-        destination = paris02,
+        destination = marseille01,
         travelMode = TravelMode.Driving,
         speed = 50.0,
         departureTime = trafficTime
       )
       val distanceFrom01to02 = run(api.distance(driveFrom01to02))
 
-      distanceFrom01to02.distance shouldBe results(paris01 -> paris02).distance +- 0.1
-      distanceFrom01to02.duration shouldBe results(paris01 -> paris02).duration +- 25L
+      distanceFrom01to02.distance shouldBe results(paris01 -> marseille01).distance +- 5
+      distanceFrom01to02.duration shouldBe results(paris01 -> marseille01).duration +- 600L
     }
 
     "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
@@ -233,8 +237,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       )
       val distanceFrom01to18 = run(api.distance(driveFrom01to18))
 
-      distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 0.1
-      distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 25L
+      distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 5
+      distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 600L
     }
   }
 
@@ -258,27 +262,27 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       distance shouldBe DistanceAndDuration.zero
     }
 
-    "return smaller DistanceAndDuration from Paris 01 to Paris 02 than from Paris 01 to Paris 18" in {
-      val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
+    "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Paris 18 to Marseille" in {
+      val driveFromP01toM01 = DirectedPathWithModeAndSpeedAt(
         origin = paris01,
-        destination = paris02,
+        destination = marseille01,
         travelMode = TravelMode.Driving,
         speed = 50.0,
         departureTime = trafficTime
       )
-      val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = paris18,
+      val driveFromP18toM01 = DirectedPathWithModeAndSpeedAt(
+        origin = paris18,
+        destination = marseille01,
         travelMode = TravelMode.Driving,
         speed = 50.0,
         departureTime = trafficTime
       )
 
-      val distanceFrom01to02 = run(api.distance(driveFrom01to02))
-      val distanceFrom01to18 = run(api.distance(driveFrom01to18))
+      val distanceFromP01toM01 = run(api.distance(driveFromP01toM01))
+      val distanceFromP18toM01 = run(api.distance(driveFromP18toM01))
 
-      distanceFrom01to02.distance should be < distanceFrom01to18.distance
-      distanceFrom01to02.duration should be < distanceFrom01to18.duration
+      distanceFromP01toM01.distance should be < distanceFromP18toM01.distance
+      distanceFromP01toM01.duration should be < distanceFromP18toM01.duration
     }
 
     // NB: Distance maybe longer, but Duration should be smaller
