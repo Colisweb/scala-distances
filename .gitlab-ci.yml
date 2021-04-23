@@ -14,4 +14,6 @@ version:
 
 publish on bintray:
   extends: .bintray-publish
+  script:
+    - sbt ";+publishSigned ;sonatypeBundleRelease"
   tags: []
