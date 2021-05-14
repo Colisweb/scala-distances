@@ -45,8 +45,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val pastTime                        = ZonedDateTime.now().minusHours(1).toInstant
 
   private val paris01     = Point(48.8640493, 2.3310526)
-  private val paris18     = Point(48.891305, 2.3529867)
-  private val rouen       = Point(49.443232, 1.099971)
+  private val paris18         = Point(48.891305, 2.3529867)
+  private val rouen           = Point(49.443232, 1.099971)
   private val marseille01 = Point(43.2969901, 5.3789783)
 
   private val birdResults = Map(
