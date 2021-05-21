@@ -5,7 +5,7 @@ object Versions {
   lazy val circe              = "0.13.0"
   lazy val circeOptics        = "0.13.0"
   lazy val enumeratum         = "1.6.1"
-  lazy val google             = "0.17.0"
+  lazy val google             = "0.18.1"
   final val logbackEncoder    = "6.6"
   lazy val loggingInterceptor = "4.9.1"
   lazy val monix              = "3.3.0"
