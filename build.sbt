@@ -22,8 +22,8 @@ ThisBuild / pushRemoteCacheTo := Some(
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core, `google-provider`, `redis-cache`, `caffeine-cache`, tests)
-  .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, tests)
+  .aggregate(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
+  .dependsOn(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
@@ -62,6 +62,12 @@ lazy val `google-provider` = project
   .in(file("providers/google"))
   .settings(moduleName := "scala-distances-provider-google")
   .settings(libraryDependencies += CompileTimeDependencies.googleMaps)
+  .dependsOn(core)
+
+lazy val `here-provider` = project
+  .in(file("providers/here"))
+  .settings(moduleName := "scala-distances-provider-here")
+  .settings(libraryDependencies += CompileTimeDependencies.requests)
   .dependsOn(core)
 
 //// Caches
