@@ -7,6 +7,7 @@ import com.colisweb.distances.caches.CaffeineCache
 import com.colisweb.distances.model.path.DirectedPathWithModeAndSpeedAt
 import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
 import com.colisweb.distances.providers.google._
+import com.colisweb.distances.providers.here.{HereRoutingApi, HereRoutingContext, RoutingMode}
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalatest.BeforeAndAfterEach
@@ -34,28 +35,33 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     implicit val monixScheduler: Scheduler = Scheduler.global
     override def apply[A](fa: Task[A]): A  = fa.runSyncUnsafe()
   }
-  private val caffeineInstance                   = CaffeineScalaCache.apply[Nothing]
-  private val configuration                      = Configuration.load
-  private val loggingF: String => Unit           = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
+  private val caffeineInstance         = CaffeineScalaCache.apply[Nothing]
+  private val configuration            = Configuration.load
+  private val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
   private val googleContext: GoogleGeoApiContext =
     new GoogleGeoApiContext(configuration.google.apiKey, 3 second, 3 second, 1000, loggingF)
+  private val hereContext: HereRoutingContext = HereRoutingContext(configuration.here.apiKey, 3 second, 3 second)
+  private val futureTime                      = ZonedDateTime.now().plusHours(1).toInstant
+  private val pastTime                        = ZonedDateTime.now().minusHours(1).toInstant
 
-
-  private val futureTime = ZonedDateTime.now().plusHours(1).toInstant
-  private val pastTime   = ZonedDateTime.now().minusHours(1).toInstant
-
-  private val paris01 = Point(48.8640493, 2.3310526)
-  private val paris18 = Point(48.891305, 2.3529867)
+  private val paris01     = Point(48.8640493, 2.3310526)
+  private val paris18     = Point(48.891305, 2.3529867)
   private val marseille01 = Point(43.2969901, 5.3789783)
-
   private val birdResults = Map(
     (paris01 -> paris18, DistanceAndDuration(3.4, 246L)),
     (paris01 -> marseille01, DistanceAndDuration(661.91, 47665L)),
     (paris18 -> marseille01, DistanceAndDuration(662.0, 29280L))
   )
+
   private val googleResults = Map(
     (paris01 -> paris18, DistanceAndDuration(4.5, 1075L)),
     (paris01 -> marseille01, DistanceAndDuration(779.0, 27133L)),
+    (paris18 -> marseille01, DistanceAndDuration(785.0, 29280L))
+  )
+
+  private val hereResults = Map(
+    (paris01 -> paris18, DistanceAndDuration(4.5, 1075L)),
+    (paris01 -> marseille01, DistanceAndDuration(768.0, 38233L)),
     (paris18 -> marseille01, DistanceAndDuration(785.0, 29280L))
   )
 
@@ -89,11 +95,11 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           )
         )
       }
-
     }
 
     "async with IO" should {
       import scalacache.CatsEffect.modes.async
+
       "for bird distance" should {
         birdTests(runAsyncIO)
       }
@@ -122,10 +128,29 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           )
         )
       }
+
+      "for here api duration" should {
+        hereTests(
+          runAsyncIO,
+          HereRoutingApi.async[IO, DirectedPathWithModeAndSpeedAt](hereContext)(
+            RoutingMode.MinimalDurationMode
+          )
+        )
+      }
+
+      "for here api distance" should {
+        hereTests(
+          runAsyncIO,
+          HereRoutingApi.async[IO, DirectedPathWithModeAndSpeedAt](hereContext)(
+            RoutingMode.MinimalDistanceMode
+          )
+        )
+      }
     }
 
     "async with Monix Task" should {
       import scalacache.CatsEffect.modes.async
+
       "for bird distance" should {
         birdTests(runAsyncMonix)
       }
@@ -153,6 +178,26 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           GoogleDistanceDirectionsApi
             .async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
               GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute
+            )
+        )
+      }
+
+      "for here api duration" should {
+        hereTests(
+          runAsyncMonix,
+          HereRoutingApi
+            .async[Task, DirectedPathWithModeAndSpeedAt](hereContext)(
+              RoutingMode.MinimalDurationMode
+            )
+        )
+      }
+
+      "for here api distance" should {
+        hereTests(
+          runAsyncMonix,
+          HereRoutingApi
+            .async[Task, DirectedPathWithModeAndSpeedAt](hereContext)(
+              RoutingMode.MinimalDistanceMode
             )
         )
       }
@@ -203,109 +248,6 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         trafficTime = None,
         run
       )
-    }
-  }
-
-  private def approximateTests[F[_]](
-      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
-      results: Map[(Point, Point), DistanceAndDuration],
-      trafficTime: Option[Instant],
-      run: RunSync[F]
-  ): Unit = {
-
-    "return approximate distance and duration from Paris 01 to Marseille 01 without traffic" in {
-      val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = marseille01,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = trafficTime
-      )
-      val distanceFrom01to02 = run(api.distance(driveFrom01to02))
-
-      distanceFrom01to02.distance shouldBe results(paris01 -> marseille01).distance +- 5
-      distanceFrom01to02.duration shouldBe results(paris01 -> marseille01).duration +- 600L
-    }
-
-    "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
-      val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = paris18,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = trafficTime
-      )
-      val distanceFrom01to18 = run(api.distance(driveFrom01to18))
-
-      distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 5
-      distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 600L
-    }
-  }
-
-  private def relativeTests[F[_]](
-      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
-      trafficTime: Option[Instant],
-      run: RunSync[F]
-  ): Unit = {
-
-    "return zero between the same points" in {
-      val path = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = paris01,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = trafficTime
-      )
-
-      val distance = run(api.distance(path))
-
-      distance shouldBe DistanceAndDuration.zero
-    }
-
-    "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Paris 18 to Marseille" in {
-      val driveFromP01toM01 = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = marseille01,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = trafficTime
-      )
-      val driveFromP18toM01 = DirectedPathWithModeAndSpeedAt(
-        origin = paris18,
-        destination = marseille01,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = trafficTime
-      )
-
-      val distanceFromP01toM01 = run(api.distance(driveFromP01toM01))
-      val distanceFromP18toM01 = run(api.distance(driveFromP18toM01))
-
-      distanceFromP01toM01.distance should be < distanceFromP18toM01.distance
-      distanceFromP01toM01.duration should be < distanceFromP18toM01.duration
-    }
-
-    // NB: Distance maybe longer, but Duration should be smaller
-    "return smaller or equal Duration with traffic in Paris" in {
-      val pathWithoutTraffic = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = paris18,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = None
-      )
-      val pathWithTraffic = DirectedPathWithModeAndSpeedAt(
-        origin = paris01,
-        destination = paris18,
-        travelMode = TravelMode.Driving,
-        speed = 50.0,
-        departureTime = Some(futureTime)
-      )
-
-      val distanceWithoutTraffic = run(api.distance(pathWithoutTraffic))
-      val distanceWithTraffic    = run(api.distance(pathWithTraffic))
-
-      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration
     }
   }
 
@@ -361,6 +303,162 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       approximateTests(
         distanceApi,
         birdResults,
+        trafficTime = Some(pastTime),
+        run
+      )
+    }
+
+  }
+
+  private def approximateTests[F[_]](
+      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      results: Map[(Point, Point), DistanceAndDuration],
+      trafficTime: Option[Instant],
+      run: RunSync[F]
+  ): Unit = {
+
+    "return approximate distance and duration from Paris 01 to Marseille 01 without traffic" in {
+      val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = marseille01,
+        travelMode = TravelMode.Car,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+      val distanceFrom01to02 = run(api.distance(driveFrom01to02))
+
+      distanceFrom01to02.distance shouldBe results(paris01 -> marseille01).distance +- 5
+      distanceFrom01to02.duration shouldBe results(paris01 -> marseille01).duration +- 600L
+    }
+
+    "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
+      val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Car,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+      val distanceFrom01to18 = run(api.distance(driveFrom01to18))
+
+      distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 5
+      distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 600L
+    }
+  }
+
+  private def relativeTests[F[_]](
+      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      trafficTime: Option[Instant],
+      run: RunSync[F]
+  ): Unit = {
+
+    "return zero between the same points" in {
+      val path = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris01,
+        travelMode = TravelMode.Car,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+
+      val distance = run(api.distance(path))
+
+      distance shouldBe DistanceAndDuration.zero
+    }
+
+    "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Paris 18 to Marseille" in {
+      val driveFromP01toM01 = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = marseille01,
+        travelMode = TravelMode.Car,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+      val driveFromP18toM01 = DirectedPathWithModeAndSpeedAt(
+        origin = paris18,
+        destination = marseille01,
+        travelMode = TravelMode.Car,
+        speed = 50.0,
+        departureTime = trafficTime
+      )
+
+      val distanceFromP01toM01 = run(api.distance(driveFromP01toM01))
+      val distanceFromP18toM01 = run(api.distance(driveFromP18toM01))
+
+      distanceFromP01toM01.distance should be < distanceFromP18toM01.distance
+      distanceFromP01toM01.duration should be < distanceFromP18toM01.duration
+    }
+
+    // NB: Distance maybe longer, but Duration should be smaller
+    "return smaller or equal Duration with traffic in Paris" in {
+      val pathWithoutTraffic = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Car,
+        speed = 50.0,
+        departureTime = None
+      )
+      val pathWithTraffic = DirectedPathWithModeAndSpeedAt(
+        origin = paris01,
+        destination = paris18,
+        travelMode = TravelMode.Car,
+        speed = 50.0,
+        departureTime = Some(futureTime)
+      )
+
+      val distanceWithoutTraffic = run(api.distance(pathWithoutTraffic))
+      val distanceWithTraffic    = run(api.distance(pathWithTraffic))
+
+      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration
+    }
+  }
+
+  private def hereTests[F[_]](
+      run: RunSync[F],
+      hereApi: DistanceApi[F, DirectedPathWithModeAndSpeedAt]
+  )(implicit
+      F: MonadError[F, Throwable],
+      mode: Mode[F]
+  ): Unit = {
+    "Here api only" should {
+      relativeTests(
+        hereApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        hereApi,
+        hereResults,
+        trafficTime = None,
+        run
+      )
+    }
+
+    "Here api with Caffeine cache" should {
+      val distanceApi = Distances
+        .from(hereApi)
+        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(futureTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        hereResults,
+        trafficTime = None,
+        run
+      )
+    }
+
+    "Here api with traffic in the past" should {
+      val distanceApi = Distances
+        .from(hereApi)
+        .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
+        .api
+      relativeTests(
+        distanceApi,
         trafficTime = Some(pastTime),
         run
       )
