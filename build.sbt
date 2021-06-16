@@ -100,30 +100,3 @@ lazy val noPublishSettings = Seq(
   publishLocal := {},
   publishArtifact := false
 )
-
-//// Aliases
-
-/**
-  * Copied from kantan.csv
-  */
-addCommandAlias("runBench", "benchmark/jmh:run -i 10 -wi 10 -f 2 -t 1")
-
-def compileWithMacroParadise: Command =
-  Command.command("compileWithMacroParadise") { state =>
-    import Project._
-    val extractedState = extract(state)
-    val stateWithMacroParadise = CrossVersion.partialVersion(extractedState.get(scalaVersion)) match {
-      case Some((2, n)) if n >= 13 => state
-      case _ =>
-        extractedState.appendWithSession(
-          addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
-          state
-        )
-    }
-    val (stateAfterCompileWithMacroParadise, _) =
-      extract(stateWithMacroParadise).runTask(Compile / compile, stateWithMacroParadise)
-    stateAfterCompileWithMacroParadise
-  }
-
-ThisBuild / commands ++= Seq(compileWithMacroParadise)
-addCommandAlias("compile", "compileWithMacroParadise")
