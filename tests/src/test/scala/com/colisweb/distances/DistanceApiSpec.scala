@@ -4,7 +4,7 @@ import cats.MonadError
 import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
-import com.colisweb.distances.model.path.DirectedPathWithModeAndSpeedAt
+import com.colisweb.distances.model.path.DirectedPathWithModeAt
 import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
 import com.colisweb.distances.providers.google._
 import com.colisweb.distances.providers.here.{HereRoutingApi, HereRoutingContext, RoutingMode}
@@ -125,14 +125,14 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       "for matrix api distance" should {
         googleTests(
           runAsyncIO,
-          GoogleDistanceMatrixApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+          GoogleDistanceMatrixApi.async[IO, DirectedPathWithModeAt](googleContext, TrafficModel.BestGuess)
         )
       }
 
       "for direction api distance" should {
         googleTests(
           runAsyncIO,
-          GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+          GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAt](googleContext, TrafficModel.BestGuess)(
             GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute
           )
         )
@@ -141,7 +141,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       "for direction api duration" should {
         googleTests(
           runAsyncIO,
-          GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+          GoogleDistanceDirectionsApi.async[IO, DirectedPathWithModeAt](googleContext, TrafficModel.BestGuess)(
             GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute
           )
         )
@@ -150,7 +150,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       "for here api duration" should {
         hereTests(
           runAsyncIO,
-          HereRoutingApi.async[IO, DirectedPathWithModeAndSpeedAt](hereContext)(
+          HereRoutingApi.async[IO, DirectedPathWithModeAt](hereContext)(
             RoutingMode.MinimalDurationMode
           )
         )
@@ -159,7 +159,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       "for here api distance" should {
         hereTests(
           runAsyncIO,
-          HereRoutingApi.async[IO, DirectedPathWithModeAndSpeedAt](hereContext)(
+          HereRoutingApi.async[IO, DirectedPathWithModeAt](hereContext)(
             RoutingMode.MinimalDistanceMode
           )
         )
@@ -176,7 +176,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       "for matrix api distance" should {
         googleTests(
           runAsyncMonix,
-          GoogleDistanceMatrixApi.async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)
+          GoogleDistanceMatrixApi.async[Task, DirectedPathWithModeAt](googleContext, TrafficModel.BestGuess)
         )
       }
 
@@ -184,7 +184,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         googleTests(
           runAsyncMonix,
           GoogleDistanceDirectionsApi
-            .async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+            .async[Task, DirectedPathWithModeAt](googleContext, TrafficModel.BestGuess)(
               GoogleDistanceDirectionsProvider.chooseMinimalDistanceRoute
             )
         )
@@ -194,7 +194,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         googleTests(
           runAsyncMonix,
           GoogleDistanceDirectionsApi
-            .async[Task, DirectedPathWithModeAndSpeedAt](googleContext, TrafficModel.BestGuess)(
+            .async[Task, DirectedPathWithModeAt](googleContext, TrafficModel.BestGuess)(
               GoogleDistanceDirectionsProvider.chooseMinimalDurationRoute
             )
         )
@@ -204,7 +204,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         hereTests(
           runAsyncMonix,
           HereRoutingApi
-            .async[Task, DirectedPathWithModeAndSpeedAt](hereContext)(
+            .async[Task, DirectedPathWithModeAt](hereContext)(
               RoutingMode.MinimalDurationMode
             )
         )
@@ -214,7 +214,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         hereTests(
           runAsyncMonix,
           HereRoutingApi
-            .async[Task, DirectedPathWithModeAndSpeedAt](hereContext)(
+            .async[Task, DirectedPathWithModeAt](hereContext)(
               RoutingMode.MinimalDistanceMode
             )
         )
@@ -236,7 +236,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       mode: Mode[F]
   ): Unit = {
     "Bird only" should {
-      val distanceApi = Distances.haversine[F, DirectedPathWithModeAndSpeedAt].api
+      val distanceApi = Distances.haversine[F, DirectedPathWithModeAt].api
       relativeTests(
         distanceApi,
         trafficTime = Some(futureTime),
@@ -252,7 +252,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
     "Bird with Caffeine cache" should {
       val distanceApi = Distances
-        .haversine[F, DirectedPathWithModeAndSpeedAt]
+        .haversine[F, DirectedPathWithModeAt]
         .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
         .api
       relativeTests(
@@ -271,7 +271,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
   private def googleTests[F[_]](
       run: RunSync[F],
-      googleApi: DistanceApi[F, DirectedPathWithModeAndSpeedAt]
+      googleApi: DistanceApi[F, DirectedPathWithModeAt]
   )(implicit
       F: MonadError[F, Throwable],
       mode: Mode[F]
@@ -311,7 +311,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "Google api with fallback on Bird, and traffic in the past" should {
       val distanceApi = Distances
         .from(googleApi)
-        .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
+        .fallback(Distances.haversine[F, DirectedPathWithModeAt])
         .api
       relativeTests(
         distanceApi,
@@ -329,18 +329,17 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   }
 
   private def approximateTests[F[_]](
-      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      api: DistanceApi[F, DirectedPathWithModeAt],
       results: Map[(Point, Point), DistanceAndDuration],
       trafficTime: Option[Instant],
       run: RunSync[F]
   ): Unit = {
 
     "return approximate distance and duration from Paris 01 to Marseille 01 without traffic" in {
-      val driveFrom01to02 = DirectedPathWithModeAndSpeedAt(
+      val driveFrom01to02 = DirectedPathWithModeAt(
         origin = paris01,
         destination = marseille01,
-        travelMode = TravelMode.Car,
-        speed = 50.0,
+        travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
       val distanceFrom01to02 = run(api.distance(driveFrom01to02))
@@ -350,11 +349,10 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
 
     "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
-      val driveFrom01to18 = DirectedPathWithModeAndSpeedAt(
+      val driveFrom01to18 = DirectedPathWithModeAt(
         origin = paris01,
         destination = paris18,
-        travelMode = TravelMode.Car,
-        speed = 50.0,
+        travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
       val distanceFrom01to18 = run(api.distance(driveFrom01to18))
@@ -365,17 +363,16 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   }
 
   private def relativeTests[F[_]](
-      api: DistanceApi[F, DirectedPathWithModeAndSpeedAt],
+      api: DistanceApi[F, DirectedPathWithModeAt],
       trafficTime: Option[Instant],
       run: RunSync[F]
   ): Unit = {
 
     "return zero between the same points" in {
-      val path = DirectedPathWithModeAndSpeedAt(
+      val path = DirectedPathWithModeAt(
         origin = paris01,
         destination = paris01,
-        travelMode = TravelMode.Car,
-        speed = 50.0,
+        travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
 
@@ -385,18 +382,16 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
 
     "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Paris 18 to Marseille" in {
-      val driveFromP01toM01 = DirectedPathWithModeAndSpeedAt(
+      val driveFromP01toM01 = DirectedPathWithModeAt(
         origin = paris01,
         destination = marseille01,
-        travelMode = TravelMode.Car,
-        speed = 50.0,
+        travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
-      val driveFromP18toM01 = DirectedPathWithModeAndSpeedAt(
+      val driveFromP18toM01 = DirectedPathWithModeAt(
         origin = paris18,
         destination = marseille01,
-        travelMode = TravelMode.Car,
-        speed = 50.0,
+        travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
 
@@ -409,18 +404,16 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
     // NB: Distance maybe longer, but Duration should be smaller
     "return smaller or equal Duration with traffic in Paris" in {
-      val pathWithoutTraffic = DirectedPathWithModeAndSpeedAt(
+      val pathWithoutTraffic = DirectedPathWithModeAt(
         origin = paris01,
         destination = paris18,
-        travelMode = TravelMode.Car,
-        speed = 50.0,
+        travelMode = TravelMode.Car(50.0),
         departureTime = None
       )
-      val pathWithTraffic = DirectedPathWithModeAndSpeedAt(
+      val pathWithTraffic = DirectedPathWithModeAt(
         origin = paris01,
         destination = paris18,
-        travelMode = TravelMode.Car,
-        speed = 50.0,
+        travelMode = TravelMode.Car(50.0),
         departureTime = Some(futureTime)
       )
 
@@ -433,7 +426,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
   private def hereTests[F[_]](
       run: RunSync[F],
-      hereApi: DistanceApi[F, DirectedPathWithModeAndSpeedAt]
+      hereApi: DistanceApi[F, DirectedPathWithModeAt]
   )(implicit
       F: MonadError[F, Throwable],
       mode: Mode[F]
@@ -473,7 +466,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "Here api with traffic in the past" should {
       val distanceApi = Distances
         .from(hereApi)
-        .fallback(Distances.haversine[F, DirectedPathWithModeAndSpeedAt])
+        .fallback(Distances.haversine[F, DirectedPathWithModeAt])
         .api
       relativeTests(
         distanceApi,
