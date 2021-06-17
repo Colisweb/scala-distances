@@ -1,6 +1,6 @@
 package com.colisweb.distances.providers.here
 
-import cats.effect.Sync
+import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.model.{DistanceAndDuration, Point, TravelMode}
 import com.colisweb.distances.providers.here.HereAdaptor._
@@ -9,7 +9,9 @@ import io.circe.jawn.decode
 
 import java.time.Instant
 
-class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext)(routingMode: RoutingMode)(implicit F: Sync[F]) {
+class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor: RequestExecutor[F])(
+    routingMode: RoutingMode
+)(implicit F: MonadError[F, Throwable]) {
   import HereRoutingProvider._
   private val baseUrl = "https://router.hereapi.com/v8/routes"
 
@@ -30,7 +32,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext)(routingM
       "alternative"   -> "2"
     )
     for {
-      response <- F.delay(
+      response <- executor.run(
         requests.get(
           url = baseUrl,
           headers = List(("Accept", "application/json")),
@@ -40,7 +42,6 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext)(routingM
           check = false
         )
       )
-      _ = println(s"${response.statusCode} : ${response.statusMessage}")
       result <- response match {
         case res if res.is2xx =>
           decode[Response](res.text()) match {
@@ -49,7 +50,10 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext)(routingM
               val results = r.routes.map(r =>
                 DistanceAndDuration(r.sections.map(_.summary.length).sum / 1000, r.sections.map(_.summary.duration).sum)
               )
-              F.pure(routingMode.best(results))
+              if (results.nonEmpty)
+                F.pure(routingMode.best(results))
+              else
+                F.raiseError(NoRouteFoundError(origin, destination))
           }
         case res if res.statusCode == 400 => F.raiseError(MalformedRequest(res.statusMessage))
         case res if res.statusCode == 401 => F.raiseError(UnauthorizedRequest(res.statusMessage))

@@ -95,6 +95,24 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
           )
         )
       }
+
+      "for here api distance" should {
+        hereTests(
+          runSyncTry,
+          HereRoutingApi.sync(hereContext)(
+            RoutingMode.MinimalDistanceMode
+          )
+        )
+      }
+
+      "for here api duration" should {
+        hereTests(
+          runSyncTry,
+          HereRoutingApi.sync(hereContext)(
+            RoutingMode.MinimalDurationMode
+          )
+        )
+      }
     }
 
     "async with IO" should {

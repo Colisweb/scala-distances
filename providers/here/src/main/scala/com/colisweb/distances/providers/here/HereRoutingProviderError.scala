@@ -1,6 +1,6 @@
 package com.colisweb.distances.providers.here
 
-import com.colisweb.distances.model.DistanceError
+import com.colisweb.distances.model.{DistanceError, Point}
 
 import scala.util.control.NoStackTrace
 
@@ -14,6 +14,8 @@ final case class MalformedRequest(message: String)    extends HereRoutingProvide
 final case class NonAllowedRequest(message: String)   extends HereRoutingProviderError(message)
 final case class UnknownHereError(message: String)    extends HereRoutingProviderError(message)
 final case class UnknownHereResponse(message: String) extends HereRoutingProviderError(message)
+final case class NoRouteFoundError(origin: Point, destination: Point)
+    extends HereRoutingProviderError(s"Here found no route between $origin and $destination")
 
 final case object TooManyRequestError
-    extends HereRoutingProviderError(s"You reached the maximum RPS for your current plan")
+    extends HereRoutingProviderError("You reached the maximum RPS for your current plan")
