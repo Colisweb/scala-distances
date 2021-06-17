@@ -22,7 +22,6 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       travelMode: TravelMode
   ): F[DistanceAndDuration] = {
     val query: Map[String, String] = Map(
-      "transportMode" -> travelMode.asHere,
       "origin"        -> s"${origin.latitude},${origin.longitude}",
       "destination"   -> s"${destination.latitude},${destination.longitude}",
       "departureTime" -> departure.map(_.toString).getOrElse("any"),
@@ -30,7 +29,8 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       "apiKey"        -> hereRoutingContext.apiKey,
       "routingMode"   -> routingMode.mode,
       "alternative"   -> "2"
-    )
+    ) ++ travelMode.asHere
+
     for {
       response <- executor.run(
         requests.get(

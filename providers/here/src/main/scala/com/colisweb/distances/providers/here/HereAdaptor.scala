@@ -5,13 +5,32 @@ import com.colisweb.distances.model.TravelMode
 object HereAdaptor {
 
   implicit final class HereTravelModeOps(mode: TravelMode) {
-    def asHere: String =
+    def asHere: Map[String, String] =
       mode match {
-        case TravelMode.Car        => "car"
-        case TravelMode.Truck      => "truck"
-        case TravelMode.Scooter    => "scooter"
-        case TravelMode.Pedestrian => "pedestrian"
-        case TravelMode.Bicycle    => "bicycle"
+        case mode: TravelMode.Car =>
+          Map("transportMode" -> "car", "vehicle[speedCap]" -> s"${mode.maxSpeed / 3.6}")
+        case mode: TravelMode.Truck =>
+          val weight = mode.weight.map(w => "truck[grossWeight]" -> w.toString)
+          val height = mode.height.map(h => "truck[height]" -> h.toString)
+          val length = mode.length.map(l => "truck[length]" -> l.toString)
+          val width  = mode.width.map(w => "truck[width]" -> w.toString)
+          Map(
+            "transportMode"     -> "truck",
+            "vehicle[speedCap]" -> s"${mode.maxSpeed / 3.6}"
+          ) ++ weight ++ height ++ width ++ length
+
+        case mode: TravelMode.Scooter =>
+          Map(
+            "transportMode"     -> "scooter",
+            "vehicle[speedCap]" -> s"${mode.maxSpeed / 3.6}"
+          )
+        case mode: TravelMode.Pedestrian =>
+          Map(
+            "transportMode"     -> "truck",
+            "pedestrian[speed]" -> s"${mode.maxSpeed / 3.6}"
+          )
+        case TravelMode.Bicycle =>
+          Map("transportMode" -> "bicycle")
       }
   }
 }

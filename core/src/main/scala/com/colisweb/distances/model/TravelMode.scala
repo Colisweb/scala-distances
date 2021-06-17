@@ -1,10 +1,16 @@
 package com.colisweb.distances.model
 
-sealed trait TravelMode
+sealed trait TravelMode { def maxSpeed: SpeedInKmH }
 object TravelMode {
-  case object Car        extends TravelMode
-  case object Truck      extends TravelMode
-  case object Scooter    extends TravelMode
-  case object Pedestrian extends TravelMode
-  case object Bicycle    extends TravelMode
+  case class Car(maxSpeed: SpeedInKmH) extends TravelMode
+  case class Truck(
+      maxSpeed: SpeedInKmH,
+      weight: Option[WeightInKg] = None,
+      length: Option[DimensionInCm] = None,
+      width: Option[DimensionInCm] = None,
+      height: Option[DimensionInCm] = None
+  )                                           extends TravelMode
+  case class Scooter(maxSpeed: SpeedInKmH)    extends TravelMode
+  case class Pedestrian(maxSpeed: SpeedInKmH) extends TravelMode
+  case class Bicycle(maxSpeed: SpeedInKmH)    extends TravelMode
 }

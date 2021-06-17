@@ -24,11 +24,11 @@ object GoogleModel {
   implicit final class GoogleTravelModeOps(mode: TravelMode) {
     def asGoogle: GoogleTravelMode =
       mode match {
-        case TravelMode.Car        => DRIVING
-        case TravelMode.Truck      => DRIVING
-        case TravelMode.Scooter    => DRIVING
-        case TravelMode.Pedestrian => WALKING
-        case TravelMode.Bicycle    => BICYCLING
+        case _: TravelMode.Car        => DRIVING
+        case _: TravelMode.Truck      => DRIVING
+        case _: TravelMode.Scooter    => DRIVING
+        case _: TravelMode.Pedestrian => WALKING
+        case _: TravelMode.Bicycle    => BICYCLING
       }
   }
 
