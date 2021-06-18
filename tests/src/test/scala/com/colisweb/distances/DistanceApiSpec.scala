@@ -60,8 +60,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   )
 
   private val hereResults = Map(
-    (paris01 -> paris18, DistanceAndDuration(4.5, 1075L)),
-    (paris01 -> marseille01, DistanceAndDuration(768.0, 38233L)),
+    (paris01 -> paris18, DistanceAndDuration(4.5, 700L)),
+    (paris01 -> marseille01, DistanceAndDuration(778.0, 58233L)),
     (paris18 -> marseille01, DistanceAndDuration(785.0, 29280L))
   )
 
@@ -343,9 +343,10 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         departureTime = trafficTime
       )
       val distanceFrom01to02 = run(api.distance(driveFrom01to02))
-
-      distanceFrom01to02.distance shouldBe results(paris01 -> marseille01).distance +- 5
-      distanceFrom01to02.duration shouldBe results(paris01 -> marseille01).duration +- 600L
+      val distance           = results(paris01 -> marseille01).distance
+      val duration           = results(paris01 -> marseille01).duration
+      distanceFrom01to02.distance shouldBe distance +- distance / 10
+      distanceFrom01to02.duration shouldBe duration +- duration / 10
     }
 
     "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
@@ -356,9 +357,10 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         departureTime = trafficTime
       )
       val distanceFrom01to18 = run(api.distance(driveFrom01to18))
-
-      distanceFrom01to18.distance shouldBe results(paris01 -> paris18).distance +- 5
-      distanceFrom01to18.duration shouldBe results(paris01 -> paris18).duration +- 600L
+      val distance           = results(paris01 -> paris18).distance
+      val duration           = results(paris01 -> paris18).duration
+      distanceFrom01to18.distance shouldBe distance +- distance / 10
+      distanceFrom01to18.duration shouldBe duration +- duration / 10
     }
   }
 

@@ -1,7 +1,7 @@
 package com.colisweb.distances.providers.here
 
 import cats.MonadError
-import cats.effect.Concurrent
+import cats.effect.Sync
 import requests.Response
 
 trait RequestExecutor[F[_]] {
@@ -12,6 +12,6 @@ class SyncRequestExecutor[F[_]](implicit F: MonadError[F, Throwable]) extends Re
   override def run(request: Response): F[Response] = F.catchNonFatal(request)
 }
 
-class AsyncRequestExecutor[F[_]](implicit F: Concurrent[F]) extends RequestExecutor[F] {
+class AsyncRequestExecutor[F[_]](implicit F: Sync[F]) extends RequestExecutor[F] {
   override def run(request: Response): F[Response] = F.delay(request)
 }
