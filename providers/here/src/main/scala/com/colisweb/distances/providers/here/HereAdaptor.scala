@@ -29,7 +29,7 @@ object HereAdaptor {
             "transportMode"     -> "truck",
             "pedestrian[speed]" -> s"${mode.maxSpeed / 3.6}"
           )
-        case TravelMode.Bicycle =>
+        case _: TravelMode.Bicycle =>
           Map("transportMode" -> "bicycle")
       }
   }
