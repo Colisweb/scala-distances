@@ -11,6 +11,7 @@ test scala-distances:
   extends:
   - .sbt-test-cross
   - .redis
+  - .rules-only-for-tags-and-main
   tags: []
 
 version:
