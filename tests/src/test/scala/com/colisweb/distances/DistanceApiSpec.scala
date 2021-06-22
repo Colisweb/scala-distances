@@ -46,23 +46,22 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
   private val paris01     = Point(48.8640493, 2.3310526)
   private val paris18     = Point(48.891305, 2.3529867)
+  private val rouen       = Point(49.443232, 1.099971)
   private val marseille01 = Point(43.2969901, 5.3789783)
+
   private val birdResults = Map(
     (paris01 -> paris18, DistanceAndDuration(3.4, 246L)),
-    (paris01 -> marseille01, DistanceAndDuration(661.91, 47665L)),
-    (paris18 -> marseille01, DistanceAndDuration(662.0, 29280L))
+    (paris01 -> marseille01, DistanceAndDuration(661.91, 47665L))
   )
 
   private val googleResults = Map(
     (paris01 -> paris18, DistanceAndDuration(4.5, 1075L)),
-    (paris01 -> marseille01, DistanceAndDuration(779.0, 27133L)),
-    (paris18 -> marseille01, DistanceAndDuration(785.0, 29280L))
+    (paris01 -> marseille01, DistanceAndDuration(779.0, 27133L))
   )
 
   private val hereResults = Map(
     (paris01 -> paris18, DistanceAndDuration(4.5, 700L)),
-    (paris01 -> marseille01, DistanceAndDuration(778.0, 58233L)),
-    (paris18 -> marseille01, DistanceAndDuration(785.0, 29280L))
+    (paris01 -> marseille01, DistanceAndDuration(778.0, 58233L))
   )
 
   "DistanceApi" should {
@@ -390,18 +389,18 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
-      val driveFromP18toM01 = DirectedPathWithModeAt(
-        origin = paris18,
+      val driveFromRouenToM01 = DirectedPathWithModeAt(
+        origin = rouen,
         destination = marseille01,
         travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
 
-      val distanceFromP01toM01 = run(api.distance(driveFromP01toM01))
-      val distanceFromP18toM01 = run(api.distance(driveFromP18toM01))
+      val distanceFromP01toM01   = run(api.distance(driveFromP01toM01))
+      val distanceFromRouenToM01 = run(api.distance(driveFromRouenToM01))
 
-      distanceFromP01toM01.distance should be < distanceFromP18toM01.distance
-      distanceFromP01toM01.duration should be < distanceFromP18toM01.duration
+      distanceFromP01toM01.distance should be < distanceFromRouenToM01.distance
+      distanceFromP01toM01.duration should be < distanceFromRouenToM01.duration
     }
 
     // NB: Distance maybe longer, but Duration should be smaller
