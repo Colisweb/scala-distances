@@ -1,16 +1,23 @@
 package com.colisweb.distances.model
 
-sealed trait TravelMode { def maxSpeed: SpeedInKmH }
-object TravelMode {
-  case class Car(maxSpeed: SpeedInKmH = 250) extends TravelMode
+import enumeratum.{Enum, EnumEntry}
+
+sealed trait TravelMode extends EnumEntry { def maxSpeed: SpeedInKmH }
+
+object TravelMode extends Enum[TravelMode] {
+  val values: IndexedSeq[TravelMode]      = findValues
+  private val defaultMaxSpeed: SpeedInKmH = 250d
+
+  case class Car(maxSpeed: SpeedInKmH = defaultMaxSpeed) extends TravelMode
   case class Truck(
-      maxSpeed: SpeedInKmH = 250,
+      maxSpeed: SpeedInKmH = defaultMaxSpeed,
       weight: Option[WeightInKg] = None,
       length: Option[DimensionInCm] = None,
       width: Option[DimensionInCm] = None,
       height: Option[DimensionInCm] = None
-  )                                                 extends TravelMode
-  case class Scooter(maxSpeed: SpeedInKmH = 250)    extends TravelMode
-  case class Pedestrian(maxSpeed: SpeedInKmH = 250) extends TravelMode
-  case class Bicycle(maxSpeed: SpeedInKmH = 250)    extends TravelMode
+  )                                                             extends TravelMode
+  case class Scooter(maxSpeed: SpeedInKmH = defaultMaxSpeed)    extends TravelMode
+  case class Pedestrian(maxSpeed: SpeedInKmH = defaultMaxSpeed) extends TravelMode
+  case class Bicycle(maxSpeed: SpeedInKmH = defaultMaxSpeed)    extends TravelMode
+
 }
