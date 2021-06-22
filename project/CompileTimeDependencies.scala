@@ -9,6 +9,7 @@ object Versions {
   lazy val loggingInterceptor = "4.9.1"
   lazy val monix              = "3.3.0"
   lazy val pureconfig         = "0.15.0"
+  lazy val refined            = "0.9.23"
   lazy val requests           = "0.6.9"
   lazy val scalaCache         = "0.28.0"
   lazy val scalaCompat        = "2.4.2"
@@ -30,6 +31,8 @@ object CompileTimeDependencies {
   lazy val loggingInterceptor = "com.squareup.okhttp3"   % "logging-interceptor"  % Versions.loggingInterceptor
   lazy val monix              = "io.monix"              %% "monix"                % Versions.monix
   lazy val pureconfig         = "com.github.pureconfig" %% "pureconfig"           % Versions.pureconfig
+  lazy val refinedPureconfig  = "eu.timepit"            %% "refined-pureconfig"   % Versions.refined
+
   lazy val requests           = "com.lihaoyi"           %% "requests"             % Versions.requests
 
   lazy val scalaCache           = "com.github.cb372"       %% "scalacache-core"         % Versions.scalaCache

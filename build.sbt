@@ -90,6 +90,7 @@ lazy val tests = project
   .settings(noPublishSettings)
   .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`)
   .settings(libraryDependencies += CompileTimeDependencies.pureconfig)
+  .settings(libraryDependencies += CompileTimeDependencies.refinedPureconfig)
 
 
 /**
