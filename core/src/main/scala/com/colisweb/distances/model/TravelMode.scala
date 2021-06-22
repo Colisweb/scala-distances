@@ -11,13 +11,12 @@ sealed trait TravelMode extends EnumEntry {
 
 object TravelMode extends Enum[TravelMode] {
   val values: immutable.IndexedSeq[TravelMode] = findValues
-  private val defaultMaxSpeed: SpeedInKmH      = 250d
 
-  case class Car(maxSpeed: SpeedInKmH = defaultMaxSpeed) extends TravelMode {
+  case class Car(maxSpeed: SpeedInKmH = 130d) extends TravelMode {
     override def copy(newSpeed: SpeedInKmH): TravelMode = Car(newSpeed)
   }
   case class Truck(
-      maxSpeed: SpeedInKmH = defaultMaxSpeed,
+      maxSpeed: SpeedInKmH = 110d,
       weight: Option[WeightInKg] = None,
       length: Option[DimensionInCm] = None,
       width: Option[DimensionInCm] = None,
@@ -25,13 +24,13 @@ object TravelMode extends Enum[TravelMode] {
   ) extends TravelMode {
     override def copy(newSpeed: SpeedInKmH): TravelMode = Truck(newSpeed, weight, length, width, height)
   }
-  case class Scooter(maxSpeed: SpeedInKmH = defaultMaxSpeed) extends TravelMode {
+  case class Scooter(maxSpeed: SpeedInKmH = 110d) extends TravelMode {
     override def copy(newSpeed: SpeedInKmH): TravelMode = Scooter(newSpeed)
   }
-  case class Pedestrian(maxSpeed: SpeedInKmH = defaultMaxSpeed) extends TravelMode {
+  case class Pedestrian(maxSpeed: SpeedInKmH = 10d) extends TravelMode {
     override def copy(newSpeed: SpeedInKmH): TravelMode = Pedestrian(newSpeed)
   }
-  case class Bicycle(maxSpeed: SpeedInKmH = defaultMaxSpeed) extends TravelMode {
+  case class Bicycle(maxSpeed: SpeedInKmH = 30d) extends TravelMode {
     override def copy(newSpeed: SpeedInKmH): TravelMode = Bicycle(newSpeed)
   }
 

@@ -26,9 +26,8 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       "destination"   -> s"${destination.latitude},${destination.longitude}",
       "departureTime" -> departure.map(_.toString).getOrElse("any"),
       "return"        -> "summary",
-      "apiKey"        -> hereRoutingContext.apiKey,
-      "routingMode"   -> routingMode.mode,
-      "alternative"   -> "2"
+      "apiKey"        -> hereRoutingContext.apiKey.value,
+      "routingMode"   -> routingMode.mode
     ) ++ travelMode.asHere
 
     for {

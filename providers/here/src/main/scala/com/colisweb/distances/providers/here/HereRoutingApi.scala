@@ -1,7 +1,7 @@
 package com.colisweb.distances.providers.here
 
 import cats.MonadError
-import cats.effect.Concurrent
+import cats.effect.Sync
 import com.colisweb.distances.DistanceApi
 import com.colisweb.distances.model._
 
@@ -24,14 +24,14 @@ class HereRoutingApi[F[_], P: OriginDestination: TravelModeTransportation: Depar
 object HereRoutingApi {
   def async[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
       hereContext: HereRoutingContext
-  )(chooseBestRoute: RoutingMode)(implicit C: Concurrent[F]) = {
+  )(chooseBestRoute: RoutingMode)(implicit C: Sync[F]): HereRoutingApi[F, P] = {
     val hereProvider = new HereRoutingProvider(hereContext, new AsyncRequestExecutor[F]())(chooseBestRoute)
     new HereRoutingApi[F, P](hereProvider)
   }
 
   def sync[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
       hereContext: HereRoutingContext
-  )(chooseBestRoute: RoutingMode)(implicit C: MonadError[F, Throwable]) = {
+  )(chooseBestRoute: RoutingMode)(implicit C: MonadError[F, Throwable]): HereRoutingApi[F, P] = {
     val hereProvider = new HereRoutingProvider(hereContext, new SyncRequestExecutor[F]())(chooseBestRoute)
     new HereRoutingApi[F, P](hereProvider)
   }

@@ -1,18 +1,16 @@
 package com.colisweb.distances.providers.here
 
-import scala.concurrent.duration.Duration
+import eu.timepit.refined.types.string.NonEmptyString
+
 import scala.concurrent.duration._
 
 final case class HereRoutingContext(
-    apiKey: String,
+    apiKey: NonEmptyString,
     connectTimeout: Duration,
     readTimeout: Duration
-) {
-  assert(apiKey.trim.nonEmpty, "apiKey must be a non empty String")
-
-}
+)
 
 object HereRoutingContext {
-  final def apply(hereApiKey: String): HereRoutingContext =
+  final def apply(hereApiKey: NonEmptyString): HereRoutingContext =
     new HereRoutingContext(hereApiKey, 1 second, 1 second)
 }
