@@ -5,7 +5,7 @@ object TestVersions {
   final lazy val scalacheck    = "1.15.4"
   final lazy val scalatest     = "3.2.5"
   final lazy val scalatestPlus = "3.1.0.0-RC2"
-  final lazy val enumeratum    = "1.6.1"
+  final lazy val enumeratum    = "1.7.0"
 }
 
 object TestDependencies {
