@@ -74,7 +74,6 @@ object GoogleDistanceDirectionsProvider {
         .units(GoogleDistanceUnit.METRIC)
         .alternatives(true)
 
-
     implicit class RequestSingle(request: DirectionsApiRequest) {
       def withOriginDestination(origin: Point, destination: Point): DirectionsApiRequest =
         request

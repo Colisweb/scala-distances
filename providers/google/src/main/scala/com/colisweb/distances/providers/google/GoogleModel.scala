@@ -1,8 +1,7 @@
 package com.colisweb.distances.providers.google
 
-import com.colisweb.distances.providers.google.TrafficModel.{BestGuess, Optimistic, Pessimistic}
-import com.colisweb.distances.model.TravelMode.{Bicycling, Driving, Transit, Unknown, Walking}
 import com.colisweb.distances.model.{Point, TravelMode}
+import com.colisweb.distances.providers.google.TrafficModel.{BestGuess, Optimistic, Pessimistic}
 import com.google.maps.model.TrafficModel.{BEST_GUESS, OPTIMISTIC, PESSIMISTIC}
 import com.google.maps.model.TravelMode._
 import com.google.maps.model.{
@@ -25,11 +24,11 @@ object GoogleModel {
   implicit final class GoogleTravelModeOps(mode: TravelMode) {
     def asGoogle: GoogleTravelMode =
       mode match {
-        case Driving   => DRIVING
-        case Bicycling => BICYCLING
-        case Walking   => WALKING
-        case Transit   => TRANSIT
-        case Unknown   => UNKNOWN
+        case _: TravelMode.Car        => DRIVING
+        case _: TravelMode.Truck      => DRIVING
+        case _: TravelMode.Scooter    => DRIVING
+        case _: TravelMode.Pedestrian => WALKING
+        case _: TravelMode.Bicycle    => BICYCLING
       }
   }
 

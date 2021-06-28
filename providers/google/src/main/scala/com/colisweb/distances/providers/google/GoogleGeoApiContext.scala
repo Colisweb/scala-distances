@@ -1,21 +1,20 @@
 package com.colisweb.distances.providers.google
 
-import java.util.concurrent.TimeUnit
-
 import com.google.maps.{GeoApiContext, OkHttpRequestHandler}
+import eu.timepit.refined.types.string.NonEmptyString
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 
 final case class GoogleGeoApiContext(
-    apiKey: String,
+    apiKey: NonEmptyString,
     connectTimeout: Duration,
     readTimeout: Duration,
     queryRateLimit: Int,
     loggingF: String => Unit
 ) {
-  assert(apiKey.trim.nonEmpty, "apiKey must be a non empty String")
 
   /** More infos about the rate limit:
     *   - https://developers.google.com/maps/documentation/distance-matrix/usage-and-billing
@@ -33,22 +32,23 @@ final case class GoogleGeoApiContext(
     *  - 1000 elements per second (EPS), calculated as the sum of client-side and server-side queries.
     * ```
     */
+  private val builder                         = new OkHttpRequestHandler.Builder()
   private val logging: HttpLoggingInterceptor = new HttpLoggingInterceptor((message: String) => loggingF(message))
-  logging.level(Level.BASIC)
-
-  private val builder = new OkHttpRequestHandler.Builder()
   builder.okHttpClientBuilder().addInterceptor(logging)
+
+  logging.level(Level.BASIC)
 
   val geoApiContext: GeoApiContext =
     new GeoApiContext.Builder(builder)
-      .apiKey(apiKey)
+      .apiKey(apiKey.value)
       .connectTimeout(connectTimeout.toMillis, TimeUnit.MILLISECONDS)
       .readTimeout(readTimeout.toMillis, TimeUnit.MILLISECONDS)
       .queryRateLimit(queryRateLimit)
       .build()
+
 }
 
 object GoogleGeoApiContext {
-  final def apply(googleApiKey: String, loggingF: String => Unit = _ => ()): GoogleGeoApiContext =
+  final def apply(googleApiKey: NonEmptyString, loggingF: String => Unit = _ => ()): GoogleGeoApiContext =
     new GoogleGeoApiContext(googleApiKey, 1 second, 1 second, 1000, loggingF)
 }

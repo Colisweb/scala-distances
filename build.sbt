@@ -22,8 +22,8 @@ ThisBuild / pushRemoteCacheTo := Some(
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core, `google-provider`, `redis-cache`, `caffeine-cache`, tests)
-  .dependsOn(core, `google-provider`, `redis-cache`, `caffeine-cache`, tests)
+  .aggregate(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
+  .dependsOn(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
@@ -64,6 +64,12 @@ lazy val `google-provider` = project
   .settings(libraryDependencies += CompileTimeDependencies.googleMaps)
   .dependsOn(core)
 
+lazy val `here-provider` = project
+  .in(file("providers/here"))
+  .settings(moduleName := "scala-distances-provider-here")
+  .settings(libraryDependencies += CompileTimeDependencies.requests)
+  .dependsOn(core)
+
 //// Caches
 
 lazy val `redis-cache` = project
@@ -82,8 +88,9 @@ lazy val `caffeine-cache` = project
 
 lazy val tests = project
   .settings(noPublishSettings)
-  .dependsOn(core % "test->test;compile->compile", `google-provider`, `redis-cache`, `caffeine-cache`)
+  .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`)
   .settings(libraryDependencies += CompileTimeDependencies.pureconfig)
+  .settings(libraryDependencies += CompileTimeDependencies.refinedPureconfig)
 
 
 /**
@@ -94,30 +101,3 @@ lazy val noPublishSettings = Seq(
   publishLocal := {},
   publishArtifact := false
 )
-
-//// Aliases
-
-/**
-  * Copied from kantan.csv
-  */
-addCommandAlias("runBench", "benchmark/jmh:run -i 10 -wi 10 -f 2 -t 1")
-
-def compileWithMacroParadise: Command =
-  Command.command("compileWithMacroParadise") { state =>
-    import Project._
-    val extractedState = extract(state)
-    val stateWithMacroParadise = CrossVersion.partialVersion(extractedState.get(scalaVersion)) match {
-      case Some((2, n)) if n >= 13 => state
-      case _ =>
-        extractedState.appendWithSession(
-          addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
-          state
-        )
-    }
-    val (stateAfterCompileWithMacroParadise, _) =
-      extract(stateWithMacroParadise).runTask(Compile / compile, stateWithMacroParadise)
-    stateAfterCompileWithMacroParadise
-  }
-
-ThisBuild / commands ++= Seq(compileWithMacroParadise)
-addCommandAlias("compile", "compileWithMacroParadise")

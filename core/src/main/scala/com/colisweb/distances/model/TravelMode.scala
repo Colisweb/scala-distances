@@ -1,28 +1,33 @@
 package com.colisweb.distances.model
 
-import cats.Show
-import enumeratum.{Enum, EnumEntry}
+sealed trait TravelMode {
+  def maxSpeed: SpeedInKmH
+  def copy(newSpeed: SpeedInKmH): TravelMode
+}
 
-import scala.collection.immutable
+object TravelMode {
 
-sealed trait TravelMode extends EnumEntry
-object TravelMode extends Enum[TravelMode] {
-  val values: immutable.IndexedSeq[TravelMode] = findValues
-
-  case object Driving   extends TravelMode
-  case object Bicycling extends TravelMode
-  case object Walking   extends TravelMode
-  case object Transit   extends TravelMode
-  case object Unknown   extends TravelMode
-
-  implicit final val show: Show[TravelMode] = new Show[TravelMode] {
-    override def show(travelMode: TravelMode): String =
-      travelMode match {
-        case Driving   => "driving"
-        case Bicycling => "bicycling"
-        case Walking   => "walking"
-        case Transit   => "transit"
-        case Unknown   => "unknown"
-      }
+  case class Car(maxSpeed: SpeedInKmH = 130d) extends TravelMode {
+    override def copy(newSpeed: SpeedInKmH): TravelMode = Car(newSpeed)
   }
+  case class Truck(
+      maxSpeed: SpeedInKmH = 110d,
+      weight: Option[WeightInKg] = None,
+      length: Option[DimensionInCm] = None,
+      width: Option[DimensionInCm] = None,
+      height: Option[DimensionInCm] = None
+  ) extends TravelMode {
+    override def copy(newSpeed: SpeedInKmH): TravelMode = Truck(newSpeed, weight, length, width, height)
+  }
+  case class Scooter(maxSpeed: SpeedInKmH = 110d) extends TravelMode {
+    override def copy(newSpeed: SpeedInKmH): TravelMode = Scooter(newSpeed)
+  }
+  case class Pedestrian(maxSpeed: SpeedInKmH = 10d) extends TravelMode {
+    override def copy(newSpeed: SpeedInKmH): TravelMode = Pedestrian(newSpeed)
+
+  }
+  case class Bicycle(maxSpeed: SpeedInKmH = 30d) extends TravelMode {
+    override def copy(newSpeed: SpeedInKmH): TravelMode = Bicycle(newSpeed)
+  }
+
 }
