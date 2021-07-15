@@ -6,6 +6,7 @@ object Versions {
   lazy val circeOptics        = "0.13.0"
   lazy val enumeratum         = "1.6.1"
   lazy val google             = "0.17.0"
+  final val logbackEncoder    = "6.6"
   lazy val loggingInterceptor = "4.9.1"
   lazy val monix              = "3.3.0"
   lazy val pureconfig         = "0.15.0"
@@ -26,14 +27,16 @@ object CompileTimeDependencies {
   lazy val circeParser        = "io.circe" %% "circe-parser"         % Versions.circe
   lazy val circeRefined       = "io.circe" %% "circe-refined"        % Versions.circe
 
-  lazy val enumeratum         = "com.beachape"          %% "enumeratum"           % Versions.enumeratum
-  lazy val googleMaps         = "com.google.maps"        % "google-maps-services" % Versions.google
-  lazy val loggingInterceptor = "com.squareup.okhttp3"   % "logging-interceptor"  % Versions.loggingInterceptor
-  lazy val monix              = "io.monix"              %% "monix"                % Versions.monix
-  lazy val pureconfig         = "com.github.pureconfig" %% "pureconfig"           % Versions.pureconfig
-  lazy val refinedPureconfig  = "eu.timepit"            %% "refined-pureconfig"   % Versions.refined
+  lazy val enumeratum            = "com.beachape"        %% "enumeratum"               % Versions.enumeratum
+  lazy val googleMaps            = "com.google.maps"      % "google-maps-services"     % Versions.google
+  lazy val loggingInterceptor    = "com.squareup.okhttp3" % "logging-interceptor"      % Versions.loggingInterceptor
+  lazy val logstashLogbackEncode = "net.logstash.logback" % "logstash-logback-encoder" % Versions.logbackEncoder
 
-  lazy val requests           = "com.lihaoyi"           %% "requests"             % Versions.requests
+  lazy val monix             = "io.monix"              %% "monix"              % Versions.monix
+  lazy val pureconfig        = "com.github.pureconfig" %% "pureconfig"         % Versions.pureconfig
+  lazy val refinedPureconfig = "eu.timepit"            %% "refined-pureconfig" % Versions.refined
+
+  lazy val requests = "com.lihaoyi" %% "requests" % Versions.requests
 
   lazy val scalaCache           = "com.github.cb372"       %% "scalacache-core"         % Versions.scalaCache
   lazy val scalaCacheCaffeine   = "com.github.cb372"       %% "scalacache-caffeine"     % Versions.scalaCache

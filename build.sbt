@@ -67,7 +67,9 @@ lazy val `google-provider` = project
 lazy val `here-provider` = project
   .in(file("providers/here"))
   .settings(moduleName := "scala-distances-provider-here")
-  .settings(libraryDependencies += CompileTimeDependencies.requests)
+  .settings(
+    libraryDependencies ++= List(CompileTimeDependencies.requests, CompileTimeDependencies.logstashLogbackEncode)
+  )
   .dependsOn(core)
 
 //// Caches
@@ -92,9 +94,7 @@ lazy val tests = project
   .settings(libraryDependencies += CompileTimeDependencies.pureconfig)
   .settings(libraryDependencies += CompileTimeDependencies.refinedPureconfig)
 
-
-/**
-  * Copied from Cats
+/** Copied from Cats
   */
 lazy val noPublishSettings = Seq(
   publish := {},
