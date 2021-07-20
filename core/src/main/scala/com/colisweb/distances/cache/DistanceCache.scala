@@ -1,9 +1,10 @@
 package com.colisweb.distances.cache
 
-import cats.implicits._
 import cats.MonadError
+import cats.implicits._
 import com.colisweb.distances.DistanceApi
 import com.colisweb.distances.model.DistanceAndDuration
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.control.NoStackTrace
 
@@ -24,8 +25,26 @@ final case class CacheMissError(key: Any) extends RuntimeException(s"No entry in
 case class DistanceWithCache[F[_], P](
     cache: Cache[F, P, DistanceAndDuration],
     api: DistanceApi[F, P]
-) extends DistanceApi[F, P] {
+)(implicit F: MonadError[F, Throwable])
+    extends DistanceApi[F, P] {
+  private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
+  override def distance(path: P): F[DistanceAndDuration] = {
+    cache.get(path).attempt.flatMap {
+      case Right(Some(distance)) => F.pure(distance)
+      case Right(None)           => computeAndCacheDistance(path)
+      case Left(error) =>
+        F.pure(logger.warn(s"Fail to get distance from cache for $path", error)) *>
+          computeAndCacheDistance(path)
+    }
+  }
 
-  override def distance(path: P): F[DistanceAndDuration] =
-    cache.caching(path, api.distance(path))
+  private def computeAndCacheDistance(path: P): F[DistanceAndDuration] = {
+    api
+      .distance(path)
+      .flatTap(
+        cache
+          .put(path, _)
+          .handleError(logger.warn(s"Fail to get distance from cache for $path", _))
+      )
+  }
 }

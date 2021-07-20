@@ -16,8 +16,6 @@ class ScalaCacheCache[F[_]: Mode, K: CacheKey, V](cache: CacheAlg[V], flags: Fla
   override def put(key: K, value: V): F[Any] =
     cache.put(key.parts)(value, ttl)
 
-  override def caching(key: K, value: => F[V]): F[V] =
-    cache.cachingF(key.parts)(ttl)(value)
 }
 
 object ScalaCacheCache {

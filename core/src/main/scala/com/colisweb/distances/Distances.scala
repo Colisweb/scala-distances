@@ -23,7 +23,7 @@ case class Distances[F[_], P](api: DistanceApi[F, P]) {
   )(when: PartialFunction[Throwable, F[Unit]])(implicit F: MonadError[F, Throwable]): Distances[F, P] =
     copy(api = Fallback(api, other.api, when))
 
-  def caching(cache: Cache[F, P, DistanceAndDuration]): Distances[F, P] =
+  def caching(cache: Cache[F, P, DistanceAndDuration])(implicit F: MonadError[F, Throwable]): Distances[F, P] =
     copy(api = DistanceWithCache(cache, api))
 }
 
