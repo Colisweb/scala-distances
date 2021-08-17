@@ -30,7 +30,8 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       "destination"   -> s"${destination.latitude},${destination.longitude}",
       "departureTime" -> departure.map(_.toString).getOrElse("any"),
       "return"        -> "summary",
-      "routingMode"   -> routingMode.mode
+      "routingMode"   -> "fast",
+      "alternatives"  -> "3"
     ) ++ travelMode.asHere
 
     val paramsWithAuthent: Map[String, String] = paramsNoAuthent + ("apiKey" -> hereRoutingContext.apiKey.value)
