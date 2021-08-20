@@ -26,10 +26,10 @@ final case class GoogleGeoApiContext(
     * ------------------
     * While you are no longer limited to a maximum number of elements per day (EPD), the following usage limits are still in place for the Distance Matrix API:
     *
-    *  - Maximum of 25 origins or 25 destinations per request.
-    *  - Maximum 100 elements that include Departure Time, per request.
-    *  - Maximum 100 elements per client-side request.
-    *  - 1000 elements per second (EPS), calculated as the sum of client-side and server-side queries.
+    * - Maximum of 25 origins or 25 destinations per request.
+    * - Maximum 100 elements that include Departure Time, per request.
+    * - Maximum 100 elements per client-side request.
+    * - 1000 elements per second (EPS), calculated as the sum of client-side and server-side queries.
     * ```
     */
   private val builder                         = new OkHttpRequestHandler.Builder()
