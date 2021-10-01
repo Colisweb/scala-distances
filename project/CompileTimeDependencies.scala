@@ -7,7 +7,7 @@ object Versions {
   lazy val enumeratum         = "1.6.1"
   lazy val google             = "0.17.0"
   final val logbackEncoder    = "6.6"
-  lazy val loggingInterceptor = "4.9.1"
+  lazy val loggingInterceptor = "4.9.2"
   lazy val monix              = "3.3.0"
   lazy val pureconfig         = "0.15.0"
   lazy val refined            = "0.9.23"
