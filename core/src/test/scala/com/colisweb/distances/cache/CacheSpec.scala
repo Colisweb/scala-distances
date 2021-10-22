@@ -13,8 +13,8 @@ class CacheSpec extends AnyWordSpec with Matchers {
 
   private val failingCache: Cache[Try, DirectedPath, DistanceAndDuration] =
     new Cache[Try, DirectedPath, DistanceAndDuration] {
-      private val failure: Failure[Nothing]                                     = Failure(new RuntimeException("failure"))
-      override def get(key: DirectedPath): Try[Option[DistanceAndDuration]]     = failure
+      private val failure: Failure[Nothing]                                 = Failure(new RuntimeException("failure"))
+      override def get(key: DirectedPath): Try[Option[DistanceAndDuration]] = failure
       override def put(key: DirectedPath, value: DistanceAndDuration): Try[Any] = failure
     }
 
