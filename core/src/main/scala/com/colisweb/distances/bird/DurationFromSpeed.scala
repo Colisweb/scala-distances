@@ -9,7 +9,7 @@ import scala.concurrent.duration.{FiniteDuration, _}
 object DurationFromSpeed {
 
   def durationForDistance(distance: DistanceInKm, speed: SpeedInKmH): DurationInSeconds =
-    ((3600.0 * distance) / speed).toLong
+    ((3600.0 * distance) / speed).round
 
   def durationForDistance(distance: Distance, speed: Velocity): FiniteDuration =
     durationForDistance(distance.toKilometers, speed.toKilometersPerHour).seconds

@@ -39,8 +39,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val configuration            = Configuration.load
   private val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
   private val googleContext: GoogleGeoApiContext =
-    new GoogleGeoApiContext(configuration.google.apiKey, 3 second, 3 second, 1000, loggingF)
-  private val hereContext: HereRoutingContext = HereRoutingContext(configuration.here.apiKey, 3 second, 3 second)
+    new GoogleGeoApiContext(configuration.google.apiKey, 10 second, 60 second, 1000, loggingF)
+  private val hereContext: HereRoutingContext = HereRoutingContext(configuration.here.apiKey, 10 second, 60 second)
   private val futureTime                      = ZonedDateTime.now().plusHours(1).toInstant
   private val pastTime                        = ZonedDateTime.now().minusHours(1).toInstant
 
@@ -382,7 +382,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       distance shouldBe DistanceAndDuration.zero
     }
 
-    "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Paris 18 to Marseille" in {
+    "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Rouen to Marseille" in {
       val driveFromP01toM01 = DirectedPathWithModeAt(
         origin = paris01,
         destination = marseille01,
