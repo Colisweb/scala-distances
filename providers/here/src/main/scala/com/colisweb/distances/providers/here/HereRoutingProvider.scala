@@ -37,7 +37,6 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
     val paramsWithAuthent: Map[String, String] = paramsNoAuthent + ("apiKey" -> hereRoutingContext.apiKey.value)
 
     for {
-      _ <- F.pure(logger.debug(paramsNoAuthent.toMarkers, s"--> GET $baseUrl"))
       response <- executor.run(
         requests.get(
           url = baseUrl,
@@ -48,8 +47,8 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
           check = false
         )
       )
-
-      _ <- F.pure(logger.debug(Map("body" -> response.text()).toMarkers, s"<-- ${response.statusCode} $baseUrl"))
+      logLevel = if(response.is2xx) (m: Marker, s: String) => logger.debug(m,s) else (m: Marker, s: String) => logger.warn(m,s)
+      _ <- F.pure(logLevel(Map("body" -> response.text()).toMarkers, s"<-- ${response.statusCode} $baseUrl"))
       result <- response match {
         case res if res.is2xx =>
           decode[Response](res.text()) match {
