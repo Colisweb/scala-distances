@@ -9,7 +9,7 @@ import io.circe.jawn.decode
 import net.logstash.logback.marker.Markers.append
 import net.logstash.logback.marker.{LogstashMarker, Markers}
 import org.slf4j.{Logger, LoggerFactory, Marker}
-
+import requests.{Response => RResponse}
 import java.time.Instant
 
 class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor: RequestExecutor[F])(
@@ -47,8 +47,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
           check = false
         )
       )
-      logLevel = if(response.is2xx) (m: Marker, s: String) => logger.debug(m,s) else (m: Marker, s: String) => logger.warn(m,s)
-      _ <- F.pure(logLevel(Map("body" -> response.text()).toMarkers, s"<-- ${response.statusCode} $baseUrl"))
+      _ <- F.pure(logOnResponse(response)(Map("body" -> response.text()).toMarkers, s"<-- ${response.statusCode} $baseUrl"))
       result <- response match {
         case res if res.is2xx =>
           decode[Response](res.text()) match {
@@ -72,6 +71,11 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
 
   }
 
+  def logOnResponse(response: RResponse)(marker: Marker, message: String): Unit =
+    if(response.is2xx)
+      logger.debug(marker, message)
+    else
+      logger.warn(marker, message)
 }
 
 private object HereRoutingProvider {
