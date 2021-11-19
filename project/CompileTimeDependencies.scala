@@ -6,7 +6,7 @@ object Versions {
   final val circeOptics        = "0.13.0"
   final val enumeratum         = "1.6.1"
   final val google             = "0.17.0"
-  final val logbackEncoder     = "6.6"
+  final val logbackEncoder     = "7.0.1"
   final val loggingInterceptor = "4.9.1"
   final val monix              = "3.3.0"
   final val pureconfig         = "0.15.0"
