@@ -7,7 +7,7 @@ object Versions {
   final val enumeratum         = "1.6.1"
   final val google             = "0.17.0"
   final val logbackEncoder     = "7.0.1"
-  final val loggingInterceptor = "4.9.1"
+  final val loggingInterceptor = "4.9.3"
   final val monix              = "3.3.0"
   final val pureconfig         = "0.17.1"
   final val refined            = "0.9.23"
