@@ -10,6 +10,7 @@ import net.logstash.logback.marker.Markers.append
 import net.logstash.logback.marker.{LogstashMarker, Markers}
 import org.slf4j.{Logger, LoggerFactory, Marker}
 import requests.{Response => RResponse}
+
 import java.time.Instant
 
 class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor: RequestExecutor[F])(
@@ -26,12 +27,13 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       travelMode: TravelMode
   ): F[DistanceAndDuration] = {
     val paramsNoAuthent: Map[String, String] = Map(
-      "origin"        -> s"${origin.latitude},${origin.longitude}",
-      "destination"   -> s"${destination.latitude},${destination.longitude}",
-      "departureTime" -> departure.map(_.toString).getOrElse("any"),
-      "return"        -> "summary",
-      "routingMode"   -> "fast",
-      "alternatives"  -> "3"
+      "origin"          -> s"${origin.latitude},${origin.longitude}",
+      "destination"     -> s"${destination.latitude},${destination.longitude}",
+      "departureTime"   -> departure.map(_.toString).getOrElse("any"),
+      "return"          -> "summary",
+      "routingMode"     -> "fast",
+      "alternatives"    -> "3",
+      "avoid[features]" -> "ferry,carShuttleTrain,dirtRoad"
     ) ++ travelMode.asHere
 
     val paramsWithAuthent: Map[String, String] = paramsNoAuthent + ("apiKey" -> hereRoutingContext.apiKey.value)
@@ -47,7 +49,9 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
           check = false
         )
       )
-      _ <- F.pure(logOnResponse(response)(Map("body" -> response.text()).toMarkers, s"<-- ${response.statusCode} $baseUrl"))
+      _ <- F.pure(
+        logOnResponse(response)(Map("body" -> response.text()).toMarkers, s"<-- ${response.statusCode} $baseUrl")
+      )
       result <- response match {
         case res if res.is2xx =>
           decode[Response](res.text()) match {
@@ -71,11 +75,11 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
 
   }
 
-  def logOnResponse(response: RResponse)(marker: Marker, message: String): Unit =
-    if(response.is2xx)
-      logger.debug(marker, message)
+  def logOnResponse(response: RResponse): (Marker, String) => Unit =
+    if (response.is2xx)
+      logger.debug
     else
-      logger.warn(marker, message)
+      logger.warn
 }
 
 private object HereRoutingProvider {
