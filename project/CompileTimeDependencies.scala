@@ -10,7 +10,7 @@ object Versions {
   final val loggingInterceptor = "4.9.1"
   final val monix              = "3.3.0"
   final val pureconfig         = "0.17.1"
-  final val refined            = "0.9.23"
+  final val refined            = "0.9.28"
   final val requests           = "0.7.0"
   final val scalaCache         = "0.28.0"
   final val scalaCompat        = "2.4.2"
