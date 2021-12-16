@@ -16,4 +16,6 @@ object DirectedPathWithModeAt {
   implicit val travelModeTransportation: TravelModeTransportation[DirectedPathWithModeAt] = _.travelMode
   implicit val departureTime: DepartureTime[DirectedPathWithModeAt]                       = _.departureTime
   implicit val travelModeSpeed: FixedSpeedTransportation[DirectedPathWithModeAt]          = _.travelMode.maxSpeed
+  implicit val departureTimeUpdatable: DepartureTimeUpdatable[DirectedPathWithModeAt] =
+    (path: DirectedPathWithModeAt, departureTime: Instant) => path.copy(departureTime = Some(departureTime))
 }

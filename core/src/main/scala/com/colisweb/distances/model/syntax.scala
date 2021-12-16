@@ -20,4 +20,8 @@ object syntax {
   implicit class DepartureTimeSyntax[P](path: P)(implicit DT: DepartureTime[P]) {
     def departureTime: Option[Instant] = DT.departureTime(path)
   }
+
+  implicit class DepartureTimUpdatableSyntax[P](path: P)(implicit DTU: DepartureTimeUpdatable[P]) {
+    def updatedDepartureTime(departureTime: Instant): P = DTU.updatedDepartureTime(path, departureTime)
+  }
 }
