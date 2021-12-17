@@ -11,7 +11,7 @@ object Versions {
   final val monix              = "3.3.0"
   final val pureconfig         = "0.17.1"
   final val refined            = "0.9.23"
-  final val requests           = "0.6.9"
+  final val requests           = "0.7.0"
   final val scalaCache         = "0.28.0"
   final val scalaCompat        = "2.4.2"
   final val squants            = "1.7.0"
