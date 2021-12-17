@@ -325,6 +325,24 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       )
     }
 
+    "Google api with departureTime correction and traffic in the past" should {
+      val distanceApi = Distances
+        .from(googleApi)
+        .correctPastDepartureTime(1.hour)
+        .api
+      relativeTests(
+        distanceApi,
+        trafficTime = Some(pastTime),
+        run
+      )
+      approximateTests(
+        distanceApi,
+        googleResults,
+        trafficTime = Some(pastTime),
+        run
+      )
+    }
+
   }
 
   private def approximateTests[F[_]](
@@ -334,7 +352,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       run: RunSync[F]
   ): Unit = {
 
-    "return approximate distance and duration from Paris 01 to Marseille 01 without traffic" in {
+    "return approximate distance and duration from Paris 01 to Marseille 01" in {
       val driveFrom01to02 = DirectedPathWithModeAt(
         origin = paris01,
         destination = marseille01,
@@ -346,20 +364,6 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       val duration           = results(paris01 -> marseille01).duration
       distanceFrom01to02.distance shouldBe distance +- distance / 10
       distanceFrom01to02.duration shouldBe duration +- duration / 10
-    }
-
-    "return approximate distance and duration from Paris 01 to Paris 18 without traffic" in {
-      val driveFrom01to18 = DirectedPathWithModeAt(
-        origin = paris01,
-        destination = paris18,
-        travelMode = TravelMode.Car(50.0),
-        departureTime = trafficTime
-      )
-      val distanceFrom01to18 = run(api.distance(driveFrom01to18))
-      val distance           = results(paris01 -> paris18).distance
-      val duration           = results(paris01 -> paris18).duration
-      distanceFrom01to18.distance shouldBe distance +- distance / 10
-      distanceFrom01to18.duration shouldBe duration +- duration / 10
     }
   }
 

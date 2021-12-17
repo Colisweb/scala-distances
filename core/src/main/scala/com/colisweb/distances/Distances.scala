@@ -3,7 +3,11 @@ package com.colisweb.distances
 import cats.{Applicative, MonadError}
 import com.colisweb.distances.bird.HaversineDistanceApi
 import com.colisweb.distances.cache.{Cache, DistanceFromCache, DistanceWithCache}
-import com.colisweb.distances.model.{DistanceAndDuration, FixedSpeedTransportation, OriginDestination}
+import com.colisweb.distances.correction.CorrectPastDepartureTime
+import com.colisweb.distances.model._
+
+import java.time.Clock
+import scala.concurrent.duration.FiniteDuration
 
 case class Distances[F[_], P](api: DistanceApi[F, P]) {
 
@@ -25,6 +29,12 @@ case class Distances[F[_], P](api: DistanceApi[F, P]) {
 
   def caching(cache: Cache[F, P, DistanceAndDuration])(implicit F: MonadError[F, Throwable]): Distances[F, P] =
     copy(api = DistanceWithCache(cache, api))
+
+  def correctPastDepartureTime(
+      margin: FiniteDuration,
+      clock: Clock = Clock.systemDefaultZone()
+  )(implicit DT: DepartureTime[P], DTU: DepartureTimeUpdatable[P]): Distances[F, P] =
+    copy(api = CorrectPastDepartureTime(api, margin, clock))
 }
 
 object Distances {

@@ -1,20 +1,22 @@
 import sbt._
 
 object TestVersions {
-  final lazy val kantan        = "0.6.1"
-  final lazy val scalacheck    = "1.15.4"
-  final lazy val scalatest     = "3.2.5"
-  final lazy val scalatestPlus = "3.1.0.0-RC2"
-  final lazy val enumeratum    = "1.6.1"
+  final val mockitoScala  = "1.16.46"
+  final val kantan        = "0.6.1"
+  final val scalacheck    = "1.15.4"
+  final val scalatest     = "3.2.5"
+  final val scalatestPlus = "3.1.0.0-RC2"
+  final val enumeratum    = "1.6.1"
 }
 
 object TestDependencies {
-  final lazy val kantan               = "com.nrinaudo"      %% "kantan.csv"               % TestVersions.kantan % Test
-  final lazy val kantanCats           = "com.nrinaudo"      %% "kantan.csv-cats"          % TestVersions.kantan % Test
-  final lazy val kantanGeneric        = "com.nrinaudo"      %% "kantan.csv-generic"       % TestVersions.kantan % Test
-  final lazy val circeLiteral         = "io.circe"          %% "circe-literal"            % Versions.circe % Test
-  final lazy val scalacheck           = "org.scalacheck"    %% "scalacheck"               % TestVersions.scalacheck % Test
-  final lazy val scalatestPlus        = "org.scalatestplus" %% "scalatestplus-scalacheck" % TestVersions.scalatestPlus % Test
-  final lazy val scalatest            = "org.scalatest"     %% "scalatest"                % TestVersions.scalatest % Test
-  final lazy val enumeratumScalacheck = "com.beachape"      %% "enumeratum-scalacheck"    % TestVersions.enumeratum % Test
+  final val mockitoScalaScalatest = "org.mockito"       %% "mockito-scala-scalatest"  % TestVersions.mockitoScala
+  final val kantan                = "com.nrinaudo"      %% "kantan.csv"               % TestVersions.kantan        % Test
+  final val kantanCats            = "com.nrinaudo"      %% "kantan.csv-cats"          % TestVersions.kantan        % Test
+  final val kantanGeneric         = "com.nrinaudo"      %% "kantan.csv-generic"       % TestVersions.kantan        % Test
+  final val circeLiteral          = "io.circe"          %% "circe-literal"            % Versions.circe             % Test
+  final val scalacheck            = "org.scalacheck"    %% "scalacheck"               % TestVersions.scalacheck    % Test
+  final val scalatestPlus         = "org.scalatestplus" %% "scalatestplus-scalacheck" % TestVersions.scalatestPlus % Test
+  final val scalatest             = "org.scalatest"     %% "scalatest"                % TestVersions.scalatest     % Test
+  final val enumeratumScalacheck  = "com.beachape"      %% "enumeratum-scalacheck"    % TestVersions.enumeratum    % Test
 }

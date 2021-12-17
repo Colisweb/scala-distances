@@ -13,3 +13,7 @@ trait TravelModeTransportation[P] {
 trait DepartureTime[P] {
   def departureTime(path: P): Option[Instant]
 }
+
+trait DepartureTimeUpdatable[P] {
+  def updatedDepartureTime(path: P, departureTime: Instant): P
+}

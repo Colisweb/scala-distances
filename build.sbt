@@ -48,6 +48,7 @@ lazy val core = project
       TestDependencies.kantan,
       TestDependencies.kantanCats,
       TestDependencies.kantanGeneric,
+      TestDependencies.mockitoScalaScalatest,
       TestDependencies.circeLiteral,
       TestDependencies.scalacheck,
       TestDependencies.scalatestPlus,
