@@ -3,7 +3,7 @@ import sbt._
 object Versions {
   final val catsEffect         = "2.3.3"
   final val circe              = "0.13.0"
-  final val circeOptics        = "0.13.0"
+  final val circeOptics        = "0.14.1"
   final val enumeratum         = "1.6.1"
   final val google             = "0.17.0"
   final val logbackEncoder     = "7.0.1"
@@ -32,9 +32,9 @@ object CompileTimeDependencies {
   final val loggingInterceptor    = "com.squareup.okhttp3" % "logging-interceptor"      % Versions.loggingInterceptor
   final val logstashLogbackEncode = "net.logstash.logback" % "logstash-logback-encoder" % Versions.logbackEncoder
 
-  final val monix                 = "io.monix"              %% "monix"                   % Versions.monix
-  final val pureconfig            = "com.github.pureconfig" %% "pureconfig"              % Versions.pureconfig
-  final val refinedPureconfig     = "eu.timepit"            %% "refined-pureconfig"      % Versions.refined
+  final val monix             = "io.monix"              %% "monix"              % Versions.monix
+  final val pureconfig        = "com.github.pureconfig" %% "pureconfig"         % Versions.pureconfig
+  final val refinedPureconfig = "eu.timepit"            %% "refined-pureconfig" % Versions.refined
 
   final val requests = "com.lihaoyi" %% "requests" % Versions.requests
 
