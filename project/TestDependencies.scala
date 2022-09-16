@@ -3,7 +3,7 @@ import sbt._
 object TestVersions {
   final val mockitoScala  = "1.16.55"
   final val kantan        = "0.6.1"
-  final val scalacheck    = "1.15.4"
+  final val scalacheck    = "1.17.0"
   final val scalatest     = "3.2.11"
   final val scalatestPlus = "3.1.0.0-RC2"
   final val enumeratum    = "1.6.1"
