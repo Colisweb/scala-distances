@@ -14,7 +14,8 @@ import requests.{Response => RResponse}
 import java.time.Instant
 
 class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor: RequestExecutor[F])(
-    routingMode: RoutingMode
+    routingMode: RoutingMode,
+    excludeCountriesIso: List[String] = Nil
 )(implicit F: MonadError[F, Throwable]) {
   import HereRoutingProvider._
   private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -26,6 +27,12 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       departure: Option[Instant],
       travelMode: TravelMode
   ): F[DistanceAndDuration] = {
+    val excludeCountriesParams =
+      if (excludeCountriesIso.isEmpty)
+        Map.empty
+      else
+        Map("exclude[countries]" -> excludeCountriesIso.mkString(","))
+
     val paramsNoAuthent: Map[String, String] = Map(
       "origin"          -> s"${origin.latitude},${origin.longitude}",
       "destination"     -> s"${destination.latitude},${destination.longitude}",
@@ -34,7 +41,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       "routingMode"     -> "fast",
       "alternatives"    -> "3",
       "avoid[features]" -> "ferry,carShuttleTrain,dirtRoad"
-    ) ++ travelMode.asHere
+    ) ++ travelMode.asHere ++ excludeCountriesParams
 
     val paramsWithAuthent: Map[String, String] = paramsNoAuthent + ("apiKey" -> hereRoutingContext.apiKey.value)
 

@@ -23,16 +23,20 @@ class HereRoutingApi[F[_], P: OriginDestination: TravelModeTransportation: Depar
 
 object HereRoutingApi {
   def async[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
-      hereContext: HereRoutingContext
+      hereContext: HereRoutingContext,
+      excludeCountriesIso: List[String] = Nil
   )(chooseBestRoute: RoutingMode)(implicit C: Sync[F]): HereRoutingApi[F, P] = {
-    val hereProvider = new HereRoutingProvider(hereContext, new AsyncRequestExecutor[F]())(chooseBestRoute)
+    val hereProvider =
+      new HereRoutingProvider(hereContext, new AsyncRequestExecutor[F]())(chooseBestRoute, excludeCountriesIso)
     new HereRoutingApi[F, P](hereProvider)
   }
 
   def sync[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
-      hereContext: HereRoutingContext
+      hereContext: HereRoutingContext,
+      excludeCountriesIso: List[String] = Nil
   )(chooseBestRoute: RoutingMode)(implicit C: MonadError[F, Throwable]): HereRoutingApi[F, P] = {
-    val hereProvider = new HereRoutingProvider(hereContext, new SyncRequestExecutor[F]())(chooseBestRoute)
+    val hereProvider =
+      new HereRoutingProvider(hereContext, new SyncRequestExecutor[F]())(chooseBestRoute, excludeCountriesIso)
     new HereRoutingApi[F, P](hereProvider)
   }
 }
