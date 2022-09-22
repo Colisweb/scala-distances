@@ -3,6 +3,7 @@ package com.colisweb.distances.providers.here
 import eu.timepit.refined.types.string.NonEmptyString
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 final case class HereRoutingContext(
     apiKey: NonEmptyString,

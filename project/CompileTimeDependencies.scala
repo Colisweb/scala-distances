@@ -2,19 +2,19 @@ import sbt._
 
 object Versions {
   final val catsEffect         = "2.3.3"
-  final val circe              = "0.13.0"
-  final val circeOptics        = "0.13.0"
-  final val enumeratum         = "1.6.1"
-  final val google             = "0.17.0"
-  final val logbackEncoder     = "7.0.1"
-  final val loggingInterceptor = "4.9.1"
-  final val monix              = "3.3.0"
+  final val circe              = "0.14.2"
+  final val circeOptics        = "0.14.1"
+  final val enumeratum         = "1.7.0"
+  final val google             = "2.0.0"
+  final val logbackEncoder     = "7.2"
+  final val loggingInterceptor = "4.10.0"
+  final val monix              = "3.4.1"
   final val pureconfig         = "0.17.1"
-  final val refined            = "0.9.23"
-  final val requests           = "0.7.0"
+  final val refined            = "0.10.1"
+  final val requests           = "0.7.1"
   final val scalaCache         = "0.28.0"
-  final val scalaCompat        = "2.4.2"
-  final val squants            = "1.7.0"
+  final val scalaCompat        = "2.8.1"
+  final val squants            = "1.8.3"
 }
 
 object CompileTimeDependencies {
@@ -32,9 +32,9 @@ object CompileTimeDependencies {
   final val loggingInterceptor    = "com.squareup.okhttp3" % "logging-interceptor"      % Versions.loggingInterceptor
   final val logstashLogbackEncode = "net.logstash.logback" % "logstash-logback-encoder" % Versions.logbackEncoder
 
-  final val monix                 = "io.monix"              %% "monix"                   % Versions.monix
-  final val pureconfig            = "com.github.pureconfig" %% "pureconfig"              % Versions.pureconfig
-  final val refinedPureconfig     = "eu.timepit"            %% "refined-pureconfig"      % Versions.refined
+  final val monix             = "io.monix"              %% "monix"              % Versions.monix
+  final val pureconfig        = "com.github.pureconfig" %% "pureconfig"         % Versions.pureconfig
+  final val refinedPureconfig = "eu.timepit"            %% "refined-pureconfig" % Versions.refined
 
   final val requests = "com.lihaoyi" %% "requests" % Versions.requests
 
