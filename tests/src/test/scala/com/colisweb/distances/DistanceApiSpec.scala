@@ -425,7 +425,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       val distanceWithoutTraffic = run(api.distance(pathWithoutTraffic))
       val distanceWithTraffic    = run(api.distance(pathWithTraffic))
 
-      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration
+      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration + 60
     }
   }
 
