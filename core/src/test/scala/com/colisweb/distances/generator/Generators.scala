@@ -35,6 +35,7 @@ object Generators {
               closerShift  <- Gen.chooseNum(min / 2, 0)
               fartherShift <- Gen.chooseNum(min / 2, closerShift)
             } yield (pointValue, pointValue + closerShift, pointValue + fartherShift)
+          case _ => Gen.chooseNum(min, max).map(middle => (min, middle, max)) // for compilation
         }
       )
 
