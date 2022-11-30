@@ -2,7 +2,7 @@ import CompileFlags._
 import sbt.Keys.crossScalaVersions
 
 lazy val scala212               = "2.12.13"
-lazy val scala213               = "2.13.2"
+lazy val scala213               = "2.13.10"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
