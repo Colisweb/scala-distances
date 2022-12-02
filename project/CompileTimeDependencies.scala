@@ -13,7 +13,7 @@ object Versions {
   final val refined            = "0.10.1"
   final val requests           = "0.7.1"
   final val scalaCache         = "0.28.0"
-  final val scalaCompat        = "2.8.1"
+  final val scalaCompat        = "2.9.0"
   final val squants            = "1.8.3"
 }
 
