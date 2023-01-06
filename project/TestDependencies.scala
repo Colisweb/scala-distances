@@ -4,7 +4,7 @@ object TestVersions {
   final val mockitoScala  = "1.17.12"
   final val kantan        = "0.7.0"
   final val scalacheck    = "1.17.0"
-  final val scalatest     = "3.2.13"
+  final val scalatest     = "3.2.15"
   final val scalatestPlus = "3.1.0.0-RC2"
   final val enumeratum    = "1.7.0"
 }
