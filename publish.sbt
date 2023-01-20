@@ -12,4 +12,3 @@ ThisBuild / developers := List(
   Developers.cyrilVerdier,
   Developers.colasMombrun
 )
-
