@@ -3,6 +3,7 @@ package com.colisweb.distances.providers.google
 import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.model._
+import com.colisweb.distances.model.path.DirectedPath
 import com.colisweb.distances.providers.google.GoogleDistanceDirectionsProvider.RequestBuilder._
 import com.colisweb.distances.providers.google.GoogleDistanceDirectionsProvider._
 import com.google.maps.model.{DirectionsRoute, Unit => GoogleDistanceUnit}
@@ -23,7 +24,7 @@ class GoogleDistanceDirectionsProvider[F[_]](
       origin: Point,
       destination: Point,
       departureTime: Option[Instant]
-  ): F[DistanceAndDuration] = {
+  ): F[PathResult] = {
 
     val request = RequestBuilder(googleContext, travelMode).withOriginDestination(origin, destination)
     for {
@@ -34,7 +35,7 @@ class GoogleDistanceDirectionsProvider[F[_]](
       )
       bestRoute            = chooseBestRoute(response.routes.toList)
       distancesAndDuration = extractResponse(bestRoute)
-    } yield distancesAndDuration
+    } yield PathResult(distancesAndDuration, List(DirectedPath(origin, destination)))
 
   }
 

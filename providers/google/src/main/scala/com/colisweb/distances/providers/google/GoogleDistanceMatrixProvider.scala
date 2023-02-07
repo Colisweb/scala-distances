@@ -1,10 +1,10 @@
 package com.colisweb.distances.providers.google
 
 import java.time.Instant
-
 import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.model._
+import com.colisweb.distances.model.path.DirectedPath
 import com.colisweb.distances.providers.google.GoogleDistanceMatrixProvider.RequestBuilder
 import com.google.maps.model.{
   DistanceMatrix,
@@ -28,13 +28,13 @@ class GoogleDistanceMatrixProvider[F[_]](
       origin: Point,
       destination: Point,
       departureTime: Option[Instant]
-  ): F[DistanceAndDuration] = {
+  ): F[PathResult] = {
     val request = RequestBuilder(googleContext, travelMode).withOriginDestination(origin, destination)
     for {
       requestMaybeWithTraffic <- requestWithPossibleTraffic(departureTime, request)
       response                <- requestExecutor.run(requestMaybeWithTraffic)
       distanceAndDuration     <- extractSingleResponse(response)
-    } yield distanceAndDuration
+    } yield PathResult(distanceAndDuration, List(DirectedPath(origin, destination)))
   }
 
   private def requestWithPossibleTraffic(

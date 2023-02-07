@@ -2,7 +2,7 @@ package com.colisweb.distances
 
 import cats.MonadError
 import cats.implicits._
-import com.colisweb.distances.model.{DistanceAndDuration, DistanceError}
+import com.colisweb.distances.model.{DistanceError, PathResult}
 
 case class Fallback[F[_], P](
     first: DistanceApi[F, P],
@@ -11,7 +11,7 @@ case class Fallback[F[_], P](
 )(implicit F: MonadError[F, Throwable])
     extends DistanceApi[F, P] {
 
-  override def distance(path: P): F[DistanceAndDuration] =
+  override def distance(path: P): F[PathResult] =
     first.distance(path).recoverWith(when.andThen(_ *> second.distance(path)))
 }
 

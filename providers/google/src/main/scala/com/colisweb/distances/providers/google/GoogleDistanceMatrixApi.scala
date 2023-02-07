@@ -3,14 +3,14 @@ package com.colisweb.distances.providers.google
 import cats.MonadError
 import cats.effect.Concurrent
 import com.colisweb.distances.DistanceApi
-import com.colisweb.distances.model.{DepartureTime, DistanceAndDuration, OriginDestination, TravelModeTransportation}
+import com.colisweb.distances.model.{DepartureTime, OriginDestination, PathResult, TravelModeTransportation}
 
 class GoogleDistanceMatrixApi[F[_], P: OriginDestination: TravelModeTransportation: DepartureTime](
     provider: GoogleDistanceMatrixProvider[F]
 ) extends DistanceApi[F, P] {
   import com.colisweb.distances.model.syntax._
 
-  override def distance(path: P): F[DistanceAndDuration] =
+  override def distance(path: P): F[PathResult] =
     provider.singleRequest(path.travelMode, path.origin, path.destination, path.departureTime)
 }
 

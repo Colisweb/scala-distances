@@ -27,7 +27,7 @@ case class Distances[F[_], P](api: DistanceApi[F, P]) {
   )(when: PartialFunction[Throwable, F[Unit]])(implicit F: MonadError[F, Throwable]): Distances[F, P] =
     copy(api = Fallback(api, other.api, when))
 
-  def caching(cache: Cache[F, P, DistanceAndDuration])(implicit F: MonadError[F, Throwable]): Distances[F, P] =
+  def caching(cache: Cache[F, P, PathResult])(implicit F: MonadError[F, Throwable]): Distances[F, P] =
     copy(api = DistanceWithCache(cache, api))
 
   def correctPastDepartureTime(
@@ -44,8 +44,8 @@ object Distances {
 
   implicit def from[F[_], P](api: DistanceApi[F, P]): Distances[F, P] = Distances(api)
 
-  implicit def fromCache[F[_], P](
-      cache: Cache[F, P, DistanceAndDuration]
-  )(implicit F: MonadError[F, Throwable]): Distances[F, P] =
+  implicit def fromCache[F[_], P](cache: Cache[F, P, PathResult])(implicit
+      F: MonadError[F, Throwable]
+  ): Distances[F, P] =
     from(DistanceFromCache(cache))
 }
