@@ -1,7 +1,6 @@
 package com.colisweb.distances.model
 
-// todo: unit of elevation in Here?
-case class Point(latitude: Latitude, longitude: Longitude, elevation: Option[Double] = None) {
+case class Point(latitude: Latitude, longitude: Longitude, elevation: Option[ElevationInMeters] = None) {
 
   def toRadians: Point = Point(math.toRadians(latitude), math.toRadians(longitude))
 

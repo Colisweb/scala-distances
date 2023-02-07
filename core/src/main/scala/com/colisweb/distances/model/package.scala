@@ -8,6 +8,7 @@ package object model {
 
   type DistanceInKm      = Double
   type DurationInSeconds = Long
+  type ElevationInMeters = Double
 
   type Latitude  = Double
   type Longitude = Double
