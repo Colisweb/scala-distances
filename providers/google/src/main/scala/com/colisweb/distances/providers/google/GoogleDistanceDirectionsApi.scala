@@ -11,7 +11,7 @@ class GoogleDistanceDirectionsApi[F[_], P: OriginDestination: TravelModeTranspor
 ) extends DistanceApi[F, P] {
   import com.colisweb.distances.model.syntax._
 
-  override def distance(path: P): F[PathResult] =
+  override def distance(path: P, segments: Int = 1): F[PathResult] =
     provider.singleRequest(path.travelMode, path.origin, path.destination, path.departureTime)
 }
 

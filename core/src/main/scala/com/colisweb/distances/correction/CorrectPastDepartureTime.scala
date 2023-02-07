@@ -12,11 +12,11 @@ case class CorrectPastDepartureTime[F[_], P: DepartureTime: DepartureTimeUpdatab
     margin: FiniteDuration,
     clock: Clock
 ) extends DistanceApi[F, P] {
-  override def distance(path: P): F[PathResult] = {
+  override def distance(path: P, segments: Int = 1): F[PathResult] = {
     val threshold = Instant.now(clock).plusSeconds(margin.toSeconds)
     if (path.departureTime.exists(_.isBefore(threshold)))
-      api.distance(path.updatedDepartureTime(threshold))
+      api.distance(path.updatedDepartureTime(threshold), segments)
     else
-      api.distance(path)
+      api.distance(path, segments)
   }
 }

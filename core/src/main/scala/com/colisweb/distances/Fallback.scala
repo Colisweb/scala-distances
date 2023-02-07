@@ -11,8 +11,8 @@ case class Fallback[F[_], P](
 )(implicit F: MonadError[F, Throwable])
     extends DistanceApi[F, P] {
 
-  override def distance(path: P): F[PathResult] =
-    first.distance(path).recoverWith(when.andThen(_ *> second.distance(path)))
+  override def distance(path: P, segments: Int = 1): F[PathResult] =
+    first.distance(path, segments).recoverWith(when.andThen(_ *> second.distance(path, segments)))
 }
 
 object Fallback {

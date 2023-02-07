@@ -35,7 +35,7 @@ class CorrectPastDepartureTimeSpec
 
   override protected def beforeEach(): Unit = {
     Mockito.reset(base)
-    base.distance(any[DirectedPathWithModeAt]) returns PathResult(DistanceAndDuration.zero, Nil)
+    base.distance(any[DirectedPathWithModeAt], any[Int]) returns PathResult(DistanceAndDuration.zero, Nil)
     ()
   }
 
@@ -46,7 +46,7 @@ class CorrectPastDepartureTimeSpec
       api.distance(path(Some(departureTime)))
 
       val expectedCorrection = Some(now.plusSeconds(margin.toSeconds))
-      base.distance(path(expectedCorrection)) wasCalled once
+      base.distance(path(expectedCorrection), 1) wasCalled once
     }
 
     "update a departureTime considered in the past within margin" in {
@@ -54,19 +54,19 @@ class CorrectPastDepartureTimeSpec
       api.distance(path(Some(departureTime)))
 
       val expectedCorrection = Some(now.plusSeconds(margin.toSeconds))
-      base.distance(path(expectedCorrection)) wasCalled once
+      base.distance(path(expectedCorrection), 1) wasCalled once
     }
 
     "do nothing for a departureTime in the future" in {
       val departureTime = now.plus(3, ChronoUnit.HOURS)
       api.distance(path(Some(departureTime)))
 
-      base.distance(path(Some(departureTime))) wasCalled once
+      base.distance(path(Some(departureTime)), 1) wasCalled once
     }
 
     "do nothing when no departureTime is given" in {
       api.distance(path(None))
-      base.distance(path(None)) wasCalled once
+      base.distance(path(None), 1) wasCalled once
     }
   }
 }
