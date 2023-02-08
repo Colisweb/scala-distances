@@ -10,13 +10,12 @@ class HereRoutingApi[F[_], P: OriginDestination: TravelModeTransportation: Depar
 ) extends DistanceApi[F, P] {
   import com.colisweb.distances.model.syntax._
 
-  override def distance(path: P, segments: Int = 1): F[PathResult] =
+  override def distance(path: P): F[PathResult] =
     hereRoutingProvider.singleRequest(
       origin = path.origin,
       destination = path.destination,
       departure = path.departureTime,
-      travelMode = path.travelMode,
-      segments = segments
+      travelMode = path.travelMode
     )
 
 }

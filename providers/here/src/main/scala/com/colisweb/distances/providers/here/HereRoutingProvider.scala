@@ -30,8 +30,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       origin: Point,
       destination: Point,
       departure: Option[Instant],
-      travelMode: TravelMode,
-      segments: Int = 1
+      travelMode: TravelMode
   ): F[PathResult] = {
     val excludeCountriesParams =
       if (excludeCountriesIso.isEmpty)
@@ -72,7 +71,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
             case Right(r) =>
               if (r.routes.nonEmpty) {
                 val bestRoute    = routingMode.best(r.routes)
-                val roadSegments = parseRoadSegments(origin, destination, bestRoute, segments)
+                val roadSegments = parseRoadSegments(origin, destination, bestRoute)
                 F.pure(PathResult(bestRoute.durationAndDistance, roadSegments))
               } else {
                 F.raiseError(NoRouteFoundError(origin, destination))
@@ -94,20 +93,17 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
     else
       logger.warn
 
-  private def parseRoadSegments(
-      origin: Point,
-      destination: Point,
-      bestRoute: Route,
-      segments: Int
-  ): List[DirectedPath] = {
+  private def parseRoadSegments(origin: Point, destination: Point, bestRoute: Route): List[DirectedPath] = {
     // in routes, sections is a list but there was always only one element in it so far
     val polyline: List[Point] =
       bestRoute.sections.flatMap(section => PolylineEncoderDecoder.decode(section.polyline).asScala.toList.map(toPoint))
 
+    // sometimes Here adapt the origin and the destination in the response and in the polyline
+    // so here we revert those changes in the polyline to keep our input coordinates
     val polylineWithOriginDestination =
       polyline.updated(0, origin).updated(polyline.size - 1, destination)
 
-    reducePolyline(polylineWithOriginDestination, segments)
+    polylineWithOriginDestination
       .sliding(2)
       .toList
       .flatMap {
@@ -115,16 +111,6 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
         case _              => None
       }
   }
-
-  private def reducePolyline(polyline: List[Point], segments: Int): List[Point] =
-    if (segments >= polyline.size)
-      polyline
-    else if (polyline.isEmpty)
-      Nil
-    else if (segments == 1)
-      List(polyline.head, polyline.last)
-    else
-      (0 to segments).toList.flatMap(i => polyline.lift(i * polyline.size / segments))
 }
 
 private[here] object HereRoutingProvider {

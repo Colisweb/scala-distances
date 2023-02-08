@@ -13,7 +13,7 @@ case class DistanceFromCache[F[_], P](
 )(implicit F: MonadError[F, Throwable])
     extends DistanceApi[F, P] {
 
-  override def distance(path: P, segments: Int = 1): F[PathResult] =
+  override def distance(path: P): F[PathResult] =
     cache.get(path).flatMap {
       case Some(value) => F.pure(value)
       case None        => F.raiseError(CacheMissError(path))
@@ -28,7 +28,7 @@ case class DistanceWithCache[F[_], P](
 )(implicit F: MonadError[F, Throwable])
     extends DistanceApi[F, P] {
   private lazy val logger: Logger = LoggerFactory.getLogger(getClass)
-  override def distance(path: P, segments: Int = 1): F[PathResult] = {
+  override def distance(path: P): F[PathResult] = {
     cache.get(path).attempt.flatMap {
       case Right(Some(distance)) => F.pure(distance)
       case Right(None)           => computeAndCacheDistance(path)
@@ -38,9 +38,9 @@ case class DistanceWithCache[F[_], P](
     }
   }
 
-  private def computeAndCacheDistance(path: P, segments: Int = 1): F[PathResult] = {
+  private def computeAndCacheDistance(path: P): F[PathResult] = {
     api
-      .distance(path, segments)
+      .distance(path)
       .flatTap(
         cache
           .put(path, _)

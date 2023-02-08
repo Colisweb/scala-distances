@@ -9,7 +9,7 @@ class HaversineDistanceApi[F[_]: Applicative, P: OriginDestination: FixedSpeedTr
     extends DistanceApi[F, P] {
   import com.colisweb.distances.model.syntax._
 
-  override def distance(path: P, segments: Int = 1): F[PathResult] = {
+  override def distance(path: P): F[PathResult] = {
     val distanceInKilometers = Haversine.distanceInKm(path.origin, path.destination)
     val timeInSeconds        = DurationFromSpeed.durationForDistance(distanceInKilometers, path.speed)
     val distanceAndDuration  = DistanceAndDuration(distanceInKilometers, timeInSeconds)

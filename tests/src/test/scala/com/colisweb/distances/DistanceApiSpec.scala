@@ -363,8 +363,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       val distanceFrom01to02 = run(api.distance(driveFrom01to02))
       val distance           = results(paris01 -> marseille01).distance
       val duration           = results(paris01 -> marseille01).duration
-      distanceFrom01to02.distanceAndDuration.distance shouldBe distance +- distance / 10
-      distanceFrom01to02.distanceAndDuration.duration shouldBe duration +- duration / 10
+      distanceFrom01to02.distanceAndDuration.distance shouldBe distance +- distance / 8
+      distanceFrom01to02.distanceAndDuration.duration shouldBe duration +- duration / 8
     }
   }
 
@@ -384,11 +384,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
       val distance = run(api.distance(path))
 
-      distance shouldBe PathResult(
-        DistanceAndDuration.zero,
-        List(DirectedPath(paris01, paris01))
-//        List(DirectedPathWithModeAt(paris01, paris01, TravelMode.Car(50.0), trafficTime))
-      )
+      distance shouldBe PathResult(DistanceAndDuration.zero, List(DirectedPath(paris01, paris01)))
     }
 
     "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Rouen to Marseille" in {

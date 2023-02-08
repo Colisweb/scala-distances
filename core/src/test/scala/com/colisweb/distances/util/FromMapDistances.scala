@@ -28,7 +28,7 @@ class FromMapDistanceApi[F[_]](data: Map[DirectedPath, PathResult], error: => Di
     F: MonadError[F, Throwable]
 ) extends DistanceApi[F, DirectedPath] {
 
-  override def distance(path: DirectedPath, segments: Int = 1): F[PathResult] =
+  override def distance(path: DirectedPath): F[PathResult] =
     data.get(path) match {
       case Some(pathResult) => F.pure(pathResult)
       case None             => F.raiseError(error)

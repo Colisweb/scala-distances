@@ -11,7 +11,7 @@ trait OriginDestinationData {
   def origin: Point
   def destination: Point
 
-  lazy val vector: Vector                      = Vector(destination - origin)
+  private lazy val vector: Vector              = Vector(destination - origin)
   private lazy val vectorSameElevation: Vector = Vector(destination.copy(elevation = origin.elevation) - origin)
 
   lazy val elevationAngleInRadians: Double = vectorSameElevation.angleInRadians(vector)

@@ -31,5 +31,6 @@ final case class Vector(coordinates: Point) {
   }
 
   def angleInRadians(other: Vector): Double = math.acos(dotProduct(other))
+
   def angleInDegrees(other: Vector): Double = math.toDegrees(angleInRadians(other))
 }
