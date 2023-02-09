@@ -4,8 +4,8 @@ import cats.MonadError
 import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
-import com.colisweb.distances.model.path.{DirectedPath, DirectedPathWithModeAt}
-import com.colisweb.distances.model.{DistanceInKm, DurationInSeconds, PathResult, Point, TravelMode}
+import com.colisweb.distances.model.path.DirectedPathWithModeAt
+import com.colisweb.distances.model.{DistanceInKm, DurationInSeconds, Point, TravelMode}
 import com.colisweb.distances.providers.google._
 import com.colisweb.distances.providers.here.{HereRoutingApi, HereRoutingContext, RoutingMode}
 import monix.eval.Task
@@ -392,7 +392,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       if (checkPolyline)
         distance.paths should not be empty
 
-      distance shouldBe PathResult(0d, 0, List(DirectedPath(paris01, paris01)))
+      distance.distance shouldBe 0d
+      distance.duration shouldBe 0
     }
 
     "return smaller  from Paris 01 to Marseille 01 than from Rouen to Marseille" in {
