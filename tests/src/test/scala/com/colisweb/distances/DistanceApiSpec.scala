@@ -5,7 +5,7 @@ import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.RunSync
 import com.colisweb.distances.caches.CaffeineCache
 import com.colisweb.distances.model.path.{DirectedPath, DirectedPathWithModeAt}
-import com.colisweb.distances.model.{DistanceAndDuration, PathResult, Point, TravelMode}
+import com.colisweb.distances.model.{DistanceInKm, DurationInSeconds, PathResult, Point, TravelMode}
 import com.colisweb.distances.providers.google._
 import com.colisweb.distances.providers.here.{HereRoutingApi, HereRoutingContext, RoutingMode}
 import monix.eval.Task
@@ -51,18 +51,18 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val marseille01 = Point(43.2969901, 5.3789783)
 
   private val birdResults = Map(
-    (paris01 -> paris18, DistanceAndDuration(3.4, 246L)),
-    (paris01 -> marseille01, DistanceAndDuration(661.91, 47665L))
+    (paris01 -> paris18, (3.4, 246L)),
+    (paris01 -> marseille01, (661.91, 47665L))
   )
 
   private val googleResults = Map(
-    (paris01 -> paris18, DistanceAndDuration(4.5, 1075L)),
-    (paris01 -> marseille01, DistanceAndDuration(779.0, 27133L))
+    (paris01 -> paris18, (4.5, 1075L)),
+    (paris01 -> marseille01, (779.0, 27133L))
   )
 
   private val hereResults = Map(
-    (paris01 -> paris18, DistanceAndDuration(4.5, 700L)),
-    (paris01 -> marseille01, DistanceAndDuration(778.0, 58233L))
+    (paris01 -> paris18, (4.5, 700L)),
+    (paris01 -> marseille01, (778.0, 58233L))
   )
 
   "DistanceApi" should {
@@ -348,9 +348,10 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
   private def approximateTests[F[_]](
       api: DistanceApi[F, DirectedPathWithModeAt],
-      results: Map[(Point, Point), DistanceAndDuration],
+      results: Map[(Point, Point), (DistanceInKm, DurationInSeconds)],
       trafficTime: Option[Instant],
-      run: RunSync[F]
+      run: RunSync[F],
+      checkPolyline: Boolean = false
   ): Unit = {
 
     "return approximate distance and duration from Paris 01 to Marseille 01" in {
@@ -360,18 +361,22 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         travelMode = TravelMode.Car(50.0),
         departureTime = trafficTime
       )
-      val distanceFrom01to02 = run(api.distance(driveFrom01to02))
-      val distance           = results(paris01 -> marseille01).distance
-      val duration           = results(paris01 -> marseille01).duration
-      distanceFrom01to02.distanceAndDuration.distance shouldBe distance +- distance / 8
-      distanceFrom01to02.distanceAndDuration.duration shouldBe duration +- duration / 8
+      val distanceFrom01to02   = run(api.distance(driveFrom01to02))
+      val (distance, duration) = results(paris01 -> marseille01)
+
+      if (checkPolyline)
+        distanceFrom01to02.paths should not be empty
+
+      distanceFrom01to02.distance shouldBe distance +- distance / 8
+      distanceFrom01to02.duration shouldBe duration +- duration / 8
     }
   }
 
   private def relativeTests[F[_]](
       api: DistanceApi[F, DirectedPathWithModeAt],
       trafficTime: Option[Instant],
-      run: RunSync[F]
+      run: RunSync[F],
+      checkPolyline: Boolean = false
   ): Unit = {
 
     "return zero between the same points" in {
@@ -384,10 +389,13 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
       val distance = run(api.distance(path))
 
-      distance shouldBe PathResult(DistanceAndDuration.zero, List(DirectedPath(paris01, paris01)))
+      if (checkPolyline)
+        distance.paths should not be empty
+
+      distance shouldBe PathResult(0d, 0, List(DirectedPath(paris01, paris01)))
     }
 
-    "return smaller DistanceAndDuration from Paris 01 to Marseille 01 than from Rouen to Marseille" in {
+    "return smaller  from Paris 01 to Marseille 01 than from Rouen to Marseille" in {
       val driveFromP01toM01 = DirectedPathWithModeAt(
         origin = paris01,
         destination = marseille01,
@@ -404,8 +412,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       val distanceFromP01toM01   = run(api.distance(driveFromP01toM01))
       val distanceFromRouenToM01 = run(api.distance(driveFromRouenToM01))
 
-      distanceFromP01toM01.distanceAndDuration.distance should be < distanceFromRouenToM01.distanceAndDuration.distance
-      distanceFromP01toM01.distanceAndDuration.duration should be < distanceFromRouenToM01.distanceAndDuration.duration
+      distanceFromP01toM01.distance should be < distanceFromRouenToM01.distance
+      distanceFromP01toM01.duration should be < distanceFromRouenToM01.duration
     }
 
     // NB: Distance maybe longer, but Duration should be smaller
@@ -426,7 +434,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       val distanceWithoutTraffic = run(api.distance(pathWithoutTraffic))
       val distanceWithTraffic    = run(api.distance(pathWithTraffic))
 
-      distanceWithoutTraffic.distanceAndDuration.duration should be <= distanceWithTraffic.distanceAndDuration.duration + 60
+      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration + 60
     }
   }
 
@@ -441,13 +449,15 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       relativeTests(
         hereApi,
         trafficTime = Some(futureTime),
-        run
+        run,
+        checkPolyline = true
       )
       approximateTests(
         hereApi,
         hereResults,
         trafficTime = None,
-        run
+        run,
+        checkPolyline = true
       )
     }
 

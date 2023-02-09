@@ -3,7 +3,6 @@ package com.colisweb.distances.providers.google
 import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.model._
-import com.colisweb.distances.model.path.DirectedPath
 import com.colisweb.distances.providers.google.GoogleDistanceDirectionsProvider.RequestBuilder._
 import com.colisweb.distances.providers.google.GoogleDistanceDirectionsProvider._
 import com.google.maps.model.{DirectionsRoute, Unit => GoogleDistanceUnit}
@@ -35,14 +34,15 @@ class GoogleDistanceDirectionsProvider[F[_]](
       )
       bestRoute            = chooseBestRoute(response.routes.toList)
       distancesAndDuration = extractResponse(bestRoute)
-    } yield PathResult(distancesAndDuration, List(DirectedPath(origin, destination)))
+      (distance, duration) = distancesAndDuration
+    } yield PathResult(distance, duration, Nil)
 
   }
 
-  private def extractResponse(route: DirectionsRoute): DistanceAndDuration = {
+  private def extractResponse(route: DirectionsRoute): (DistanceInKm, DurationInSeconds) = {
     val totalLegDuration = route.legs.map(e => Option(e.durationInTraffic).getOrElse(e.duration).inSeconds).sum
     val totalLegDistance = route.legs.map(e => e.distance.inMeters.toDouble / 1000).sum
-    DistanceAndDuration(totalLegDistance, totalLegDuration)
+    (totalLegDistance, totalLegDuration)
   }
 
   private def requestWithPossibleTraffic(

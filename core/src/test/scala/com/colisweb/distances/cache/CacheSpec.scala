@@ -2,7 +2,7 @@ package com.colisweb.distances.cache
 
 import com.colisweb.distances.Distances
 import com.colisweb.distances.model.path.DirectedPath
-import com.colisweb.distances.model.{DistanceAndDuration, PathResult, Point}
+import com.colisweb.distances.model.{PathResult, Point}
 import com.colisweb.distances.util.FromMapDistances
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -19,7 +19,7 @@ class CacheSpec extends AnyWordSpec with Matchers {
     }
 
   private val path: DirectedPath     = DirectedPath(Point(0, 0), Point(0, 0))
-  private val pathResult: PathResult = PathResult(DistanceAndDuration(1, 1), List(path))
+  private val pathResult: PathResult = PathResult(1, 1, List(path))
 
   private val distanceMap: Distances[Try, DirectedPath] =
     FromMapDistances[Try]

@@ -3,9 +3,9 @@ package com.colisweb.distances.providers.here
 import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.model.path.DirectedPath
-import com.colisweb.distances.model.{DistanceAndDuration, PathResult, Point, TravelMode}
+import com.colisweb.distances.model._
 import com.colisweb.distances.providers.here.HereAdaptor._
-import com.colisweb.distances.providers.here.polyline.PolylineEncoderDecoder
+import com.colisweb.distances.providers.here.polyline.PolylineDecoder
 import io.circe.Codec
 import io.circe.generic.extras.Configuration
 import io.circe.jawn.decode
@@ -16,6 +16,7 @@ import requests.{Response => RResponse}
 
 import java.time.Instant
 import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
 
 class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor: RequestExecutor[F])(
     routingMode: RoutingMode,
@@ -67,15 +68,8 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       result <- response match {
         case res if res.is2xx =>
           decode[Response](res.text()) match {
-            case Left(err) => F.raiseError(UnknownHereResponse(err.getMessage))
-            case Right(r) =>
-              if (r.routes.nonEmpty) {
-                val bestRoute    = routingMode.best(r.routes)
-                val roadSegments = parseRoadSegments(origin, destination, bestRoute)
-                F.pure(PathResult(bestRoute.durationAndDistance, roadSegments))
-              } else {
-                F.raiseError(NoRouteFoundError(origin, destination))
-              }
+            case Left(err)   => F.raiseError(UnknownHereResponse(err.getMessage))
+            case Right(resp) => parseResult(origin, destination, resp)
           }
         case res if res.statusCode == 400 => F.raiseError(MalformedRequest(res.statusMessage))
         case res if res.statusCode == 401 => F.raiseError(UnauthorizedRequest(res.statusMessage))
@@ -87,6 +81,15 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
 
   }
 
+  private def parseResult(origin: Point, destination: Point, r: Response): F[PathResult] =
+    if (r.routes.nonEmpty) {
+      val bestRoute    = routingMode.best(r.routes)
+      val roadSegments = parseRoadSegments(origin, destination, bestRoute)
+      F.pure(PathResult(bestRoute.distance, bestRoute.duration, roadSegments))
+    } else {
+      F.raiseError(NoRouteFoundError(origin, destination))
+    }
+
   def logOnResponse(response: RResponse): (Marker, String) => Unit =
     if (response.is2xx)
       logger.debug
@@ -95,8 +98,20 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
 
   private def parseRoadSegments(origin: Point, destination: Point, bestRoute: Route): List[DirectedPath] = {
     // in routes, sections is a list but there was always only one element in it so far
+    // there will be multiple elements if we use the 'via' parameter or if we have multiple travel modes
     val polyline: List[Point] =
-      bestRoute.sections.flatMap(section => PolylineEncoderDecoder.decode(section.polyline).asScala.toList.map(toPoint))
+      bestRoute.sections.flatMap { section =>
+        Try(PolylineDecoder.decode(section.polyline)) match {
+          case Failure(exception) =>
+            logger.warn(
+              s"Error while decoding Here polyline from $origin to $destination: ${exception.getMessage}",
+              exception
+            )
+            Nil
+          case Success(polylinePoints) =>
+            polylinePoints.asScala.toList.map(toPoint)
+        }
+      }
 
     // sometimes Here adapt the origin and the destination in the response and in the polyline
     // so here we revert those changes in the polyline to keep our input coordinates
@@ -118,8 +133,8 @@ private[here] object HereRoutingProvider {
 
   case class Response(routes: List[Route])
   case class Route(sections: List[Section]) {
-    val durationAndDistance: DistanceAndDuration =
-      DistanceAndDuration(sections.map(_.summary.length).sum / 1000, sections.map(_.summary.duration).sum)
+    val distance: DistanceInKm      = sections.map(_.summary.length).sum / 1000
+    val duration: DurationInSeconds = sections.map(_.summary.duration).sum
   }
   case class Section(summary: Summary, polyline: String)
   case class Summary(duration: Long, length: Double)
@@ -131,7 +146,7 @@ private[here] object HereRoutingProvider {
   implicit val sectionCodec: Codec[Section]   = deriveConfiguredCodec
   implicit val summaryCodec: Codec[Summary]   = deriveConfiguredCodec
 
-  def toPoint(herePoint: PolylineEncoderDecoder.LatLngZ): Point =
+  def toPoint(herePoint: PolylineDecoder.LatLngZ): Point =
     Point(herePoint.lat, herePoint.lng, Some(herePoint.z))
 
   implicit class MapToMarkers(params: Map[String, String]) {

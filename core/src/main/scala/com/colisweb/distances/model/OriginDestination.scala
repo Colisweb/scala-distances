@@ -1,6 +1,6 @@
 package com.colisweb.distances.model
 
-import com.colisweb.distances.model.path.Vector
+import com.colisweb.distances.model.path.Vector3D
 
 trait OriginDestination[-P] {
   def origin(path: P): Point
@@ -11,8 +11,14 @@ trait OriginDestinationData {
   def origin: Point
   def destination: Point
 
-  private lazy val vector: Vector              = Vector(destination - origin)
-  private lazy val vectorSameElevation: Vector = Vector(destination.copy(elevation = origin.elevation) - origin)
+  def descendingSlope: Option[Boolean] =
+    for {
+      originElevation      <- origin.elevation
+      destinationElevation <- destination.elevation
+    } yield destinationElevation < originElevation
+
+  private lazy val vector: Vector3D              = Vector3D(destination - origin)
+  private lazy val vectorSameElevation: Vector3D = Vector3D(destination.copy(elevation = origin.elevation) - origin)
 
   lazy val elevationAngleInRadians: Double = vectorSameElevation.angleInRadians(vector)
   lazy val elevationAngleInDegrees: Double = vectorSameElevation.angleInDegrees(vector)

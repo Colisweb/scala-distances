@@ -48,11 +48,11 @@ object Generators {
   def genDuration: Gen[DurationInSeconds] =
     Gen.chooseNum(0, maxDurationSeconds)
 
-  def genDistanceAndDurationUnrelated: Gen[DistanceAndDuration] =
+  def genDistanceAndDurationUnrelated: Gen[(DistanceInKm, DurationInSeconds)] =
     for {
       distance <- genDistance
       duration <- genDuration
-    } yield DistanceAndDuration(distance, duration)
+    } yield (distance, duration)
 
   def genPathBetween: Gen[DirectedPath] =
     for {
@@ -64,7 +64,8 @@ object Generators {
     for {
       path                <- genPathBetween
       distanceAndDuration <- genDistanceAndDurationUnrelated
-    } yield (path, PathResult(distanceAndDuration, List(DirectedPath(path.origin, path.destination))))
+      (distance, duration) = distanceAndDuration
+    } yield (path, PathResult(distance, duration, List(DirectedPath(path.origin, path.destination))))
 
   def genPathSimpleAndDistanceUnrelatedSet: Gen[Map[DirectedPath, PathResult]] =
     Gen.listOf(genPathSimpleAndDistanceUnrelated).map(_.toMap)
