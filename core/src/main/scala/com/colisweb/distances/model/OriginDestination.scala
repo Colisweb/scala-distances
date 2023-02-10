@@ -1,5 +1,6 @@
 package com.colisweb.distances.model
 
+import com.colisweb.distances.bird.Haversine
 import com.colisweb.distances.model.path.Vector3D
 
 trait OriginDestination[-P] {
@@ -22,6 +23,8 @@ trait OriginDestinationData {
 
   lazy val elevationAngleInRadians: Double = vectorSameElevation.angleInRadians(vector)
   lazy val elevationAngleInDegrees: Double = vectorSameElevation.angleInDegrees(vector)
+
+  lazy val birdDistanceInKm: DistanceInKm = Haversine.distanceInKm(origin, destination)
 }
 
 object OriginDestination {
