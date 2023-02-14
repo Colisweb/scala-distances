@@ -1,3 +1,5 @@
 package com.colisweb.distances.model
 
-final case class PathResult(distance: DistanceInKm, duration: DurationInSeconds, paths: List[OriginDestinationData])
+import com.colisweb.distances.model.path.DirectedPath
+
+final case class PathResult(distance: DistanceInKm, duration: DurationInSeconds, paths: List[DirectedPath])
