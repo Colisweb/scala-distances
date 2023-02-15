@@ -1,7 +1,6 @@
 package com.colisweb.distances.model
 
 import com.colisweb.distances.bird.Haversine
-import com.colisweb.distances.model.path.Vector3D
 
 trait OriginDestination[-P] {
   def origin(path: P): Point
@@ -12,19 +11,19 @@ trait OriginDestinationData {
   def origin: Point
   def destination: Point
 
-  def descendingSlope: Option[Boolean] =
-    for {
-      originElevation      <- origin.elevation
-      destinationElevation <- destination.elevation
-    } yield destinationElevation < originElevation
+  lazy val birdDistanceInKm: DistanceInKm       = Haversine.distanceInKm(origin, destination)
+  private lazy val birdDistanceInMeters: Double = birdDistanceInKm * 1000
 
-  private lazy val vector: Vector3D              = Vector3D(destination - origin)
-  private lazy val vectorSameElevation: Vector3D = Vector3D(destination.copy(elevation = origin.elevation) - origin)
+  private lazy val elevationDifference: Option[Double] = for {
+    destElev <- destination.elevation
+    origElev <- origin.elevation
+  } yield destElev - origElev
 
-  lazy val elevationAngleInRadians: Double = vectorSameElevation.angleInRadians(vector)
-  lazy val elevationAngleInDegrees: Double = vectorSameElevation.angleInDegrees(vector)
+  lazy val elevationAngleInRadians: Double =
+    if (origin == destination) 0d // otherwise we get NaN in atan
+    else elevationDifference.map(elevDiff => math.atan(elevDiff / birdDistanceInMeters)).getOrElse(0d)
 
-  lazy val birdDistanceInKm: DistanceInKm = Haversine.distanceInKm(origin, destination)
+  lazy val elevationAngleInDegrees: Double = math.toDegrees(elevationAngleInRadians)
 }
 
 object OriginDestination {

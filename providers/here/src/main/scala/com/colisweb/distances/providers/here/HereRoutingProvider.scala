@@ -99,24 +99,30 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
   private def parseRoadSegments(origin: Point, destination: Point, bestRoute: Route): List[DirectedPath] = {
     // in routes, sections is a list but there was always only one element in it so far
     // there will be multiple elements if we use the 'via' parameter or if we have multiple travel modes
-    val polyline: List[Point] =
-      bestRoute.sections.flatMap { section =>
-        Try(PolylineDecoder.decode(section.polyline)) match {
-          case Failure(exception) =>
-            logger.warn(
-              s"Error while decoding Here polyline from $origin to $destination: ${exception.getMessage}",
-              exception
-            )
-            Nil
-          case Success(polylinePoints) =>
-            polylinePoints.asScala.toList.map(toPoint)
-        }
+    bestRoute.sections.flatMap { section =>
+      Try(PolylineDecoder.decode(section.polyline)) match {
+        case Failure(exception) =>
+          logger.warn(
+            s"Error while decoding Here polyline from $origin to $destination: ${exception.getMessage}",
+            exception
+          )
+          Nil
+        case Success(polylinePoints) =>
+          buildSubPaths(polylinePoints.asScala.toList.map(toPoint), origin, destination)
       }
+    }
+  }
+
+  private def buildSubPaths(polyline: List[Point], origin: Point, destination: Point): List[DirectedPath] = {
+    val lastIndex = polyline.size - 1
 
     // sometimes Here adapt the origin and the destination in the response and in the polyline
     // so here we revert those changes in the polyline to keep our input coordinates
+    // we also add the elevation as we didn't have it in the input parameters
     val polylineWithOriginDestination =
-      polyline.updated(0, origin).updated(polyline.size - 1, destination)
+      polyline
+        .updated(0, origin.copy(elevation = polyline(1).elevation))
+        .updated(lastIndex, destination.copy(elevation = polyline(lastIndex - 1).elevation))
 
     polylineWithOriginDestination
       .sliding(2)
