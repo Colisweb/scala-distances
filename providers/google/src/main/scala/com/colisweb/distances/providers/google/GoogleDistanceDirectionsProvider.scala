@@ -23,7 +23,7 @@ class GoogleDistanceDirectionsProvider[F[_]](
       origin: Point,
       destination: Point,
       departureTime: Option[Instant]
-  ): F[DistanceAndDuration] = {
+  ): F[PathResult] = {
 
     val request = RequestBuilder(googleContext, travelMode).withOriginDestination(origin, destination)
     for {
@@ -34,14 +34,15 @@ class GoogleDistanceDirectionsProvider[F[_]](
       )
       bestRoute            = chooseBestRoute(response.routes.toList)
       distancesAndDuration = extractResponse(bestRoute)
-    } yield distancesAndDuration
+      (distance, duration) = distancesAndDuration
+    } yield PathResult(distance, duration, Nil)
 
   }
 
-  private def extractResponse(route: DirectionsRoute): DistanceAndDuration = {
+  private def extractResponse(route: DirectionsRoute): (DistanceInKm, DurationInSeconds) = {
     val totalLegDuration = route.legs.map(e => Option(e.durationInTraffic).getOrElse(e.duration).inSeconds).sum
     val totalLegDistance = route.legs.map(e => e.distance.inMeters.toDouble / 1000).sum
-    DistanceAndDuration(totalLegDistance, totalLegDuration)
+    (totalLegDistance, totalLegDuration)
   }
 
   private def requestWithPossibleTraffic(

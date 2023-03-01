@@ -5,13 +5,13 @@ lazy val scala212               = "2.12.13"
 lazy val scala213               = "2.13.10"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
-Global / onChangedBuildSource := ReloadOnSourceChanges
-ThisBuild / organization := "com.colisweb"
-ThisBuild / scalaVersion := scala213
+Global / onChangedBuildSource  := ReloadOnSourceChanges
+ThisBuild / organization       := "com.colisweb"
+ThisBuild / scalaVersion       := scala213
 ThisBuild / crossScalaVersions := supportedScalaVersions
-ThisBuild / scalafmtOnCompile := true
-ThisBuild / scalafmtCheck := true
-ThisBuild / scalafmtSbtCheck := true
+ThisBuild / scalafmtOnCompile  := true
+ThisBuild / scalafmtCheck      := true
+ThisBuild / scalafmtSbtCheck   := true
 ThisBuild / scalacOptions ++= crossScalacOptions(scalaVersion.value)
 
 ThisBuild / pushRemoteCacheTo := Some(
@@ -98,7 +98,7 @@ lazy val tests = project
 /** Copied from Cats
   */
 lazy val noPublishSettings = Seq(
-  publish := {},
-  publishLocal := {},
+  publish         := {},
+  publishLocal    := {},
   publishArtifact := false
 )

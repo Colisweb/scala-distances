@@ -48,11 +48,11 @@ object Generators {
   def genDuration: Gen[DurationInSeconds] =
     Gen.chooseNum(0, maxDurationSeconds)
 
-  def genDistanceAndDurationUnrelated: Gen[DistanceAndDuration] =
+  def genDistanceAndDurationUnrelated: Gen[(DistanceInKm, DurationInSeconds)] =
     for {
       distance <- genDistance
       duration <- genDuration
-    } yield DistanceAndDuration(distance, duration)
+    } yield (distance, duration)
 
   def genPathBetween: Gen[DirectedPath] =
     for {
@@ -60,13 +60,14 @@ object Generators {
       destination <- genPoint(World)
     } yield DirectedPath(origin, destination)
 
-  def genPathSimpleAndDistanceUnrelated: Gen[(DirectedPath, DistanceAndDuration)] =
+  def genPathSimpleAndDistanceUnrelated: Gen[(DirectedPath, PathResult)] =
     for {
       path                <- genPathBetween
       distanceAndDuration <- genDistanceAndDurationUnrelated
-    } yield (path, distanceAndDuration)
+      (distance, duration) = distanceAndDuration
+    } yield (path, PathResult(distance, duration, List(DirectedPath(path.origin, path.destination))))
 
-  def genPathSimpleAndDistanceUnrelatedSet: Gen[Map[DirectedPath, DistanceAndDuration]] =
+  def genPathSimpleAndDistanceUnrelatedSet: Gen[Map[DirectedPath, PathResult]] =
     Gen.listOf(genPathSimpleAndDistanceUnrelated).map(_.toMap)
 
   case class BatchSlice(index: Int, size: Int)

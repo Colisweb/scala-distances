@@ -1,7 +1,5 @@
 package com.colisweb.distances.providers.google
 
-import java.time.Instant
-
 import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.model._
@@ -13,6 +11,8 @@ import com.google.maps.model.{
   Unit => GoogleDistanceUnit
 }
 import com.google.maps.{DistanceMatrixApi, DistanceMatrixApiRequest}
+
+import java.time.Instant
 
 class GoogleDistanceMatrixProvider[F[_]](
     googleContext: GoogleGeoApiContext,
@@ -28,13 +28,14 @@ class GoogleDistanceMatrixProvider[F[_]](
       origin: Point,
       destination: Point,
       departureTime: Option[Instant]
-  ): F[DistanceAndDuration] = {
+  ): F[PathResult] = {
     val request = RequestBuilder(googleContext, travelMode).withOriginDestination(origin, destination)
     for {
       requestMaybeWithTraffic <- requestWithPossibleTraffic(departureTime, request)
       response                <- requestExecutor.run(requestMaybeWithTraffic)
       distanceAndDuration     <- extractSingleResponse(response)
-    } yield distanceAndDuration
+      (distance, duration) = distanceAndDuration
+    } yield PathResult(distance, duration, Nil)
   }
 
   private def requestWithPossibleTraffic(
@@ -50,20 +51,20 @@ class GoogleDistanceMatrixProvider[F[_]](
 
   private def extractSingleResponse(
       matrix: DistanceMatrix
-  ): F[DistanceAndDuration] = {
+  ): F[(DistanceInKm, DurationInSeconds)] = {
     val element = matrix.rows(0).elements(0)
     extractMatrixResponseElement(element)
   }
 
   private def extractMatrixResponseElement(
       element: DistanceMatrixElement
-  ): F[DistanceAndDuration] =
+  ): F[(DistanceInKm, DurationInSeconds)] =
     element.status match {
       case DistanceMatrixElementStatus.OK =>
         val durationInSeconds: DurationInSeconds =
           Option(element.durationInTraffic).getOrElse(element.duration).inSeconds
         val distanceInKilometers: DistanceInKm = element.distance.inMeters.toDouble / 1000
-        F.pure(DistanceAndDuration(distanceInKilometers, durationInSeconds))
+        F.pure((distanceInKilometers, durationInSeconds))
 
       case DistanceMatrixElementStatus.NOT_FOUND =>
         F.raiseError(DistanceNotFound("origin and/or destination of this pairing could not be geocoded"))

@@ -1,21 +1,19 @@
 package com.colisweb.distances.providers.here
 
-import com.colisweb.distances.model.DistanceAndDuration
+import com.colisweb.distances.providers.here.HereRoutingProvider.Route
 
 sealed trait RoutingMode {
-  def best: List[DistanceAndDuration] => DistanceAndDuration
+  def best: List[Route] => Route
 }
 case object RoutingMode {
   case object MinimalDurationMode extends RoutingMode {
-
-    override def best: List[DistanceAndDuration] => DistanceAndDuration = (results: List[DistanceAndDuration]) =>
-      results.minBy(_.duration)
+    override def best: List[Route] => Route =
+      (results: List[Route]) => results.minBy(_.duration)
   }
 
   case object MinimalDistanceMode extends RoutingMode {
-
-    override def best: List[DistanceAndDuration] => DistanceAndDuration = (results: List[DistanceAndDuration]) =>
-      results.minBy(_.distance)
+    override def best: List[Route] => Route =
+      (results: List[Route]) => results.minBy(_.distance)
   }
 
 }

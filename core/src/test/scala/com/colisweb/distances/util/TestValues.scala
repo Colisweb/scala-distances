@@ -1,6 +1,6 @@
 package com.colisweb.distances.util
 
-import com.colisweb.distances.model.{DistanceAndDuration, Point}
+import com.colisweb.distances.model.Point
 
 object TestValues {
 
@@ -8,6 +8,4 @@ object TestValues {
   val p2 = Point(33.3, 44.4)
 
   val pp = TestTypes.IdParam("a")
-
-  val d12 = DistanceAndDuration(distance = 10, duration = 11)
 }

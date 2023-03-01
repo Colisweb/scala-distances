@@ -1,8 +1,8 @@
 package com.colisweb.distances.correction
 
 import cats.Id
+import com.colisweb.distances.model.{PathResult, TravelMode}
 import com.colisweb.distances.model.path.DirectedPathWithModeAt
-import com.colisweb.distances.model.{DistanceAndDuration, TravelMode}
 import com.colisweb.distances.util.TestValues._
 import com.colisweb.distances.{DistanceApi, Distances}
 import org.mockito.scalatest.IdiomaticMockito
@@ -35,7 +35,7 @@ class CorrectPastDepartureTimeSpec
 
   override protected def beforeEach(): Unit = {
     Mockito.reset(base)
-    base.distance(any[DirectedPathWithModeAt]) returns DistanceAndDuration.zero
+    base.distance(any[DirectedPathWithModeAt]) returns PathResult(0d, 0, Nil)
     ()
   }
 
