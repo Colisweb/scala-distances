@@ -7,6 +7,9 @@ compile scala-distances:
     - .sbt-compile-cross
   tags: []
 
+unused-dependencies:
+  extends: .sbt-unused-dependencies
+
 test scala-distances:
   extends:
   - .sbt-test-cross
