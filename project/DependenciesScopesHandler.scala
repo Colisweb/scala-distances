@@ -1,0 +1,1 @@
+../scala-common/scala/DependenciesScopesHandler.scala
