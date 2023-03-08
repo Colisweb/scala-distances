@@ -15,9 +15,15 @@ object Versions {
   final val scalaCache         = "0.28.0"
   final val scalaCompat        = "2.8.1"
   final val squants            = "1.8.3"
+
+  final val mockitoScala  = "1.17.12"
+  final val kantan        = "0.7.0"
+  final val scalacheck    = "1.17.0"
+  final val scalatest     = "3.2.13"
+  final val scalatestPlus = "3.1.0.0-RC2"
 }
 
-object CompileTimeDependencies {
+object Dependencies {
   final val catsEffect = "org.typelevel" %% "cats-effect" % Versions.catsEffect
 
   final val circe              = "io.circe" %% "circe-core"           % Versions.circe
@@ -46,5 +52,15 @@ object CompileTimeDependencies {
   final val scalaCompat          = "org.scala-lang.modules" %% "scala-collection-compat" % Versions.scalaCompat
 
   final val squants = "org.typelevel" %% "squants" % Versions.squants
+
+  final val mockitoScalaScalatest = "org.mockito"       %% "mockito-scala-scalatest"  % Versions.mockitoScala
+  final val kantan                = "com.nrinaudo"      %% "kantan.csv"               % Versions.kantan
+  final val kantanCats            = "com.nrinaudo"      %% "kantan.csv-cats"          % Versions.kantan
+  final val kantanGeneric         = "com.nrinaudo"      %% "kantan.csv-generic"       % Versions.kantan
+  final val circeLiteral          = "io.circe"          %% "circe-literal"            % Versions.circe
+  final val scalacheck            = "org.scalacheck"    %% "scalacheck"               % Versions.scalacheck
+  final val scalatestPlus         = "org.scalatestplus" %% "scalatestplus-scalacheck" % Versions.scalatestPlus
+  final val scalatest             = "org.scalatest"     %% "scalatest"                % Versions.scalatest
+  final val enumeratumScalacheck  = "com.beachape"      %% "enumeratum-scalacheck"    % Versions.enumeratum
 
 }

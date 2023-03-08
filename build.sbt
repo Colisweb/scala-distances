@@ -1,5 +1,7 @@
 import CompileFlags._
 import sbt.Keys.crossScalaVersions
+import DependenciesScopesHandler._
+import Dependencies._
 
 lazy val scala212               = "2.12.13"
 lazy val scala213               = "2.13.10"
@@ -28,32 +30,22 @@ lazy val root = Project(id = "scala-distances", base = file("."))
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
   .settings(
-    libraryDependencies ++= Seq(
-      CompileTimeDependencies.catsEffect,
-      CompileTimeDependencies.circe,
-      CompileTimeDependencies.circeGeneric,
-      CompileTimeDependencies.circeGenericExtras,
-      CompileTimeDependencies.circeOptics,
-      CompileTimeDependencies.circeParser,
-      CompileTimeDependencies.circeRefined,
-      CompileTimeDependencies.enumeratum,
-      CompileTimeDependencies.loggingInterceptor,
-      CompileTimeDependencies.scalaCache,
-      CompileTimeDependencies.scalaCacheCatsEffect,
-      CompileTimeDependencies.scalaCacheCirce,
-      CompileTimeDependencies.scalaCompat,
-      CompileTimeDependencies.squants
-    ) ++ Seq(
-      CompileTimeDependencies.monix % Test,
-      TestDependencies.kantan,
-      TestDependencies.kantanCats,
-      TestDependencies.kantanGeneric,
-      TestDependencies.mockitoScalaScalatest,
-      TestDependencies.circeLiteral,
-      TestDependencies.scalacheck,
-      TestDependencies.scalatestPlus,
-      TestDependencies.scalatest,
-      TestDependencies.enumeratumScalacheck
+    libraryDependencies ++= compileDependencies(
+      catsEffect,
+      scalaCache,
+      scalaCompat,
+      squants
+    ) ++ testDependencies(
+      monix,
+      kantan,
+      kantanCats,
+      kantanGeneric,
+      mockitoScalaScalatest,
+      circeLiteral,
+      scalacheck,
+      scalatestPlus,
+      scalatest,
+      enumeratumScalacheck
     )
   )
 
@@ -62,14 +54,41 @@ lazy val core = project
 lazy val `google-provider` = project
   .in(file("providers/google"))
   .settings(moduleName := "scala-distances-provider-google")
-  .settings(libraryDependencies += CompileTimeDependencies.googleMaps)
+  .settings(
+    libraryDependencies ++= compileDependencies(
+      googleMaps,
+      circe,
+      circeGeneric,
+      circeGenericExtras,
+      circeOptics,
+      circeParser,
+      circeRefined,
+      enumeratum,
+      loggingInterceptor,
+      scalaCacheCatsEffect,
+      scalaCacheCirce
+    )
+  )
   .dependsOn(core)
 
 lazy val `here-provider` = project
   .in(file("providers/here"))
   .settings(moduleName := "scala-distances-provider-here")
   .settings(
-    libraryDependencies ++= List(CompileTimeDependencies.requests, CompileTimeDependencies.logstashLogbackEncode)
+    libraryDependencies ++= compileDependencies(
+      requests,
+      logstashLogbackEncode,
+      circe,
+      circeGeneric,
+      circeGenericExtras,
+      circeOptics,
+      circeParser,
+      circeRefined,
+      enumeratum,
+      loggingInterceptor,
+      scalaCacheCatsEffect,
+      scalaCacheCirce
+    )
   )
   .dependsOn(core)
 
@@ -78,13 +97,13 @@ lazy val `here-provider` = project
 lazy val `redis-cache` = project
   .in(file("caches/redis"))
   .settings(moduleName := "scala-distances-cache-redis")
-  .settings(libraryDependencies += CompileTimeDependencies.scalaCacheRedis)
+  .settings(libraryDependencies ++= compileDependencies(scalaCacheRedis))
   .dependsOn(core)
 
 lazy val `caffeine-cache` = project
   .in(file("caches/caffeine"))
   .settings(moduleName := "scala-distances-cache-caffeine")
-  .settings(libraryDependencies += CompileTimeDependencies.scalaCacheCaffeine)
+  .settings(libraryDependencies ++= compileDependencies(scalaCacheCaffeine))
   .dependsOn(core)
 
 //// Meta projects
@@ -92,8 +111,7 @@ lazy val `caffeine-cache` = project
 lazy val tests = project
   .settings(noPublishSettings)
   .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`)
-  .settings(libraryDependencies += CompileTimeDependencies.pureconfig)
-  .settings(libraryDependencies += CompileTimeDependencies.refinedPureconfig)
+  .settings(libraryDependencies ++= compileDependencies(pureconfig, refinedPureconfig))
 
 /** Copied from Cats
   */
