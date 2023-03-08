@@ -31,9 +31,8 @@ lazy val core = project
   .settings(moduleName := "scala-distances-core")
   .settings(
     libraryDependencies ++= compileDependencies(
-      catsEffect,
+      cats,
       scalaCache,
-      scalaCompat,
       squants
     ) ++ testDependencies(
       monix,
@@ -56,6 +55,8 @@ lazy val `google-provider` = project
   .settings(moduleName := "scala-distances-provider-google")
   .settings(
     libraryDependencies ++= compileDependencies(
+      scalaCompat,
+      catsEffect,
       googleMaps,
       enumeratum,
       loggingInterceptor,
@@ -69,6 +70,8 @@ lazy val `here-provider` = project
   .settings(moduleName := "scala-distances-provider-here")
   .settings(
     libraryDependencies ++= compileDependencies(
+      scalaCompat,
+      catsEffect,
       circeJawn,
       requests,
       refined,
