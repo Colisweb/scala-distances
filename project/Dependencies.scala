@@ -6,7 +6,6 @@ object Versions {
   final val circe              = "0.14.2"
   final val enumeratum         = "1.7.0"
   final val google             = "2.0.0"
-  final val kantan             = "0.7.0"
   final val logbackEncoder     = "7.2"
   final val loggingInterceptor = "4.10.0"
   final val mockitoScala       = "1.17.12"
@@ -30,13 +29,8 @@ object Dependencies {
   final val circeGeneric          = "io.circe"               %% "circe-generic"            % Versions.circe
   final val circeGenericExtras    = "io.circe"               %% "circe-generic-extras"     % Versions.circe
   final val circeJawn             = "io.circe"               %% "circe-jawn"               % Versions.circe
-  final val circeLiteral          = "io.circe"               %% "circe-literal"            % Versions.circe
   final val enumeratum            = "com.beachape"           %% "enumeratum"               % Versions.enumeratum
-  final val enumeratumScalacheck  = "com.beachape"           %% "enumeratum-scalacheck"    % Versions.enumeratum
   final val googleMaps            = "com.google.maps"         % "google-maps-services"     % Versions.google
-  final val kantan                = "com.nrinaudo"           %% "kantan.csv"               % Versions.kantan
-  final val kantanCats            = "com.nrinaudo"           %% "kantan.csv-cats"          % Versions.kantan
-  final val kantanGeneric         = "com.nrinaudo"           %% "kantan.csv-generic"       % Versions.kantan
   final val loggingInterceptor    = "com.squareup.okhttp3"    % "logging-interceptor"      % Versions.loggingInterceptor
   final val logstashLogbackEncode = "net.logstash.logback"    % "logstash-logback-encoder" % Versions.logbackEncoder
   final val mockitoScalaScalatest = "org.mockito"            %% "mockito-scala-scalatest"  % Versions.mockitoScala

@@ -35,12 +35,7 @@ lazy val core = project
       scalaCache,
       squants
     ) ++ testDependencies(
-      circeLiteral,
-      enumeratumScalacheck,
       monix,
-      kantan,
-      kantanCats,
-      kantanGeneric,
       mockitoScalaScalatest,
       scalacheck,
       scalatest,
