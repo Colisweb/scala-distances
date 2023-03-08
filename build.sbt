@@ -35,16 +35,16 @@ lazy val core = project
       scalaCache,
       squants
     ) ++ testDependencies(
+      circeLiteral,
+      enumeratumScalacheck,
       monix,
       kantan,
       kantanCats,
       kantanGeneric,
       mockitoScalaScalatest,
-      circeLiteral,
       scalacheck,
-      scalatestPlus,
       scalatest,
-      enumeratumScalacheck
+      scalatestPlus
     )
   )
 
@@ -56,8 +56,8 @@ lazy val `google-provider` = project
   .settings(
     libraryDependencies ++= compileDependencies(
       catsEffect,
-      googleMaps,
       enumeratum,
+      googleMaps,
       loggingInterceptor,
       refined
     )
@@ -69,15 +69,15 @@ lazy val `here-provider` = project
   .settings(moduleName := "scala-distances-provider-here")
   .settings(
     libraryDependencies ++= compileDependencies(
-      scalaCompat,
       catsEffect,
-      circeJawn,
-      requests,
-      refined,
-      logstashLogbackEncode,
       circe,
       circeGeneric,
       circeGenericExtras,
+      circeJawn,
+      logstashLogbackEncode,
+      refined,
+      requests,
+      scalaCompat
     )
   )
   .dependsOn(core)
