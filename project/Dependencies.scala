@@ -28,6 +28,7 @@ object Dependencies {
 
   final val circe              = "io.circe" %% "circe-core"           % Versions.circe
   final val circeGeneric       = "io.circe" %% "circe-generic"        % Versions.circe
+  final val circeJawn          = "io.circe" %% "circe-jawn"           % Versions.circe
   final val circeGenericExtras = "io.circe" %% "circe-generic-extras" % Versions.circe
   final val circeOptics        = "io.circe" %% "circe-optics"         % Versions.circeOptics
   final val circeParser        = "io.circe" %% "circe-parser"         % Versions.circe
@@ -40,6 +41,7 @@ object Dependencies {
 
   final val monix             = "io.monix"              %% "monix"              % Versions.monix
   final val pureconfig        = "com.github.pureconfig" %% "pureconfig"         % Versions.pureconfig
+  final val refined           = "eu.timepit"            %% "refined"            % Versions.refined
   final val refinedPureconfig = "eu.timepit"            %% "refined-pureconfig" % Versions.refined
 
   final val requests = "com.lihaoyi" %% "requests" % Versions.requests

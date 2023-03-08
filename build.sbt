@@ -57,16 +57,9 @@ lazy val `google-provider` = project
   .settings(
     libraryDependencies ++= compileDependencies(
       googleMaps,
-      circe,
-      circeGeneric,
-      circeGenericExtras,
-      circeOptics,
-      circeParser,
-      circeRefined,
       enumeratum,
       loggingInterceptor,
-      scalaCacheCatsEffect,
-      scalaCacheCirce
+      refined
     )
   )
   .dependsOn(core)
@@ -76,18 +69,13 @@ lazy val `here-provider` = project
   .settings(moduleName := "scala-distances-provider-here")
   .settings(
     libraryDependencies ++= compileDependencies(
+      circeJawn,
       requests,
+      refined,
       logstashLogbackEncode,
       circe,
       circeGeneric,
       circeGenericExtras,
-      circeOptics,
-      circeParser,
-      circeRefined,
-      enumeratum,
-      loggingInterceptor,
-      scalaCacheCatsEffect,
-      scalaCacheCirce
     )
   )
   .dependsOn(core)
@@ -111,7 +99,7 @@ lazy val `caffeine-cache` = project
 lazy val tests = project
   .settings(noPublishSettings)
   .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`)
-  .settings(libraryDependencies ++= compileDependencies(pureconfig, refinedPureconfig))
+  .settings(libraryDependencies ++= testDependencies(pureconfig, refinedPureconfig, scalaCacheCatsEffect))
 
 /** Copied from Cats
   */
