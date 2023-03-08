@@ -55,7 +55,6 @@ lazy val `google-provider` = project
   .settings(moduleName := "scala-distances-provider-google")
   .settings(
     libraryDependencies ++= compileDependencies(
-      scalaCompat,
       catsEffect,
       googleMaps,
       enumeratum,
