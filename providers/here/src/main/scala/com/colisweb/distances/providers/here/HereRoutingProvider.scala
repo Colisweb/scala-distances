@@ -137,18 +137,30 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
   // unit is in seconds
   // it is part of a modified version of the formula from:
   // A new model and approach to electric and diesel-powered vehicle routing, Murakami (2017)
+  // todo: write this without totalDuration, this method should return S_ab * v_ab and not just S_ab
   private[here] def computeElevationProfile(
       subPaths: List[DirectedPath],
       totalDuration: DurationInSeconds,
       totalDistance: DistanceInKm
   ): Double = {
     val averageSpeedInMS             = totalDistance * 1000 / totalDuration
+    val totalBirdDistanceInKm        = subPaths.map(_.birdDistanceInKm).sum
     val rollingResistanceCoefficient = 0.0125
 
+    println(s"total distance $totalDistance")
+    println(s"total bird distance $totalBirdDistanceInKm")
+
     subPaths.foldLeft(0d) { case (acc, path) =>
-      val subPathTravelTimeInSeconds = path.birdDistanceInKm * 1000 / averageSpeedInMS
+      val approxSubPathDistanceInKm  = totalDistance * (path.birdDistanceInKm / totalBirdDistanceInKm)
+      val subPathTravelTimeInSeconds = approxSubPathDistanceInKm * 1000 / averageSpeedInMS
       val angle                      = path.elevationAngleInRadians
-      acc + (subPathTravelTimeInSeconds * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
+      val result =
+        acc + (subPathTravelTimeInSeconds * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
+      println(s"path $path")
+      println(s"approxSubPathDistanceInKm $approxSubPathDistanceInKm")
+      println(s"subPathTravelTimeInSeconds $subPathTravelTimeInSeconds")
+      println(s"result $result")
+      result
     }
   }
 }

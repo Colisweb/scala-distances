@@ -14,6 +14,7 @@ ThisBuild / crossScalaVersions := supportedScalaVersions
 ThisBuild / scalafmtOnCompile  := true
 ThisBuild / scalafmtCheck      := true
 ThisBuild / scalafmtSbtCheck   := true
+ThisBuild / Test / fork        := true
 ThisBuild / scalacOptions ++= crossScalacOptions(scalaVersion.value)
 
 ThisBuild / pushRemoteCacheTo := Some(
