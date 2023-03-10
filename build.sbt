@@ -64,6 +64,7 @@ lazy val `here-provider` = project
   .settings(moduleName := "scala-distances-provider-here")
   .settings(
     libraryDependencies ++= compileDependencies(
+      approvals,
       catsEffect,
       circe,
       circeGeneric,

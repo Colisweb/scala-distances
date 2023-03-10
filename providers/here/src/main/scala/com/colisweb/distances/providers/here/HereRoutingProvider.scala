@@ -134,7 +134,10 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       }
   }
 
-  private def computeElevationProfile(
+  // unit is in seconds
+  // it is part of a modified version of the formula from:
+  // A new model and approach to electric and diesel-powered vehicle routing, Murakami (2017)
+  private[here] def computeElevationProfile(
       subPaths: List[DirectedPath],
       totalDuration: DurationInSeconds,
       totalDistance: DistanceInKm

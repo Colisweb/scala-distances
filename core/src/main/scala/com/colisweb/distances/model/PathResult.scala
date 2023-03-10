@@ -5,6 +5,6 @@ final case class PathResult(
     duration: DurationInSeconds,
     elevationProfile: Option[Double] = None
 ) {
-  val speedInKmPerHour: SpeedInKmH = distance / (duration / 3600)
-  val speedInMS: Double            = distance * 1000 / duration
+  val speedInKmPerHour: SpeedInKmH   = distance / (duration / 3600)
+  val speedInMetersPerSecond: Double = distance * 1000 / duration
 }
