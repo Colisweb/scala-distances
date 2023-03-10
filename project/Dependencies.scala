@@ -1,7 +1,7 @@
 import sbt._
 
 object Versions {
-  final val cats               = "2.7.0"
+  final val cats               = "2.9.0"
   final val catsEffect         = "2.3.3"
   final val circe              = "0.14.2"
   final val enumeratum         = "1.7.0"
