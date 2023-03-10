@@ -147,20 +147,11 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
     val totalBirdDistanceInKm        = subPaths.map(_.birdDistanceInKm).sum
     val rollingResistanceCoefficient = 0.0125
 
-    println(s"total distance $totalDistance")
-    println(s"total bird distance $totalBirdDistanceInKm")
-
     subPaths.foldLeft(0d) { case (acc, path) =>
       val approxSubPathDistanceInKm  = totalDistance * (path.birdDistanceInKm / totalBirdDistanceInKm)
       val subPathTravelTimeInSeconds = approxSubPathDistanceInKm * 1000 / averageSpeedInMS
       val angle                      = path.elevationAngleInRadians
-      val result =
-        acc + (subPathTravelTimeInSeconds * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
-      println(s"path $path")
-      println(s"approxSubPathDistanceInKm $approxSubPathDistanceInKm")
-      println(s"subPathTravelTimeInSeconds $subPathTravelTimeInSeconds")
-      println(s"result $result")
-      result
+      acc + (subPathTravelTimeInSeconds * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
     }
   }
 }
