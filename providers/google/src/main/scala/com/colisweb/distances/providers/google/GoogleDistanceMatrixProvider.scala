@@ -35,7 +35,7 @@ class GoogleDistanceMatrixProvider[F[_]](
       response                <- requestExecutor.run(requestMaybeWithTraffic)
       distanceAndDuration     <- extractSingleResponse(response)
       (distance, duration) = distanceAndDuration
-    } yield PathResult(distance, duration, Nil)
+    } yield PathResult(distance, duration)
   }
 
   private def requestWithPossibleTraffic(

@@ -65,7 +65,7 @@ object Generators {
       path                <- genPathBetween
       distanceAndDuration <- genDistanceAndDurationUnrelated
       (distance, duration) = distanceAndDuration
-    } yield (path, PathResult(distance, duration, List(DirectedPath(path.origin, path.destination))))
+    } yield (path, PathResult(distance, duration))
 
   def genPathSimpleAndDistanceUnrelatedSet: Gen[Map[DirectedPath, PathResult]] =
     Gen.listOf(genPathSimpleAndDistanceUnrelated).map(_.toMap)

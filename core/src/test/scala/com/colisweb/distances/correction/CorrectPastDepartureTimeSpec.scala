@@ -35,7 +35,7 @@ class CorrectPastDepartureTimeSpec
 
   override protected def beforeEach(): Unit = {
     Mockito.reset(base)
-    base.distance(any[DirectedPathWithModeAt]) returns PathResult(0d, 0, Nil)
+    base.distance(any[DirectedPathWithModeAt]) returns PathResult(0d, 0)
     ()
   }
 

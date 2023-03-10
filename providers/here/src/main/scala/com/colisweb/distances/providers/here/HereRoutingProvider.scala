@@ -83,9 +83,10 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
 
   private def parseResult(origin: Point, destination: Point, r: Response): F[PathResult] =
     if (r.routes.nonEmpty) {
-      val bestRoute    = routingMode.best(r.routes)
-      val roadSegments = parseRoadSegments(origin, destination, bestRoute)
-      F.pure(PathResult(bestRoute.distance, bestRoute.duration, roadSegments))
+      val bestRoute        = routingMode.best(r.routes)
+      val roadSegments     = parseRoadSegments(origin, destination, bestRoute)
+      val elevationProfile = computeElevationProfile(roadSegments, bestRoute.duration, bestRoute.distance)
+      F.pure(PathResult(bestRoute.distance, bestRoute.duration, Some(elevationProfile)))
     } else {
       F.raiseError(NoRouteFoundError(origin, destination))
     }
@@ -131,6 +132,21 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
         case List(from, to) => Some(DirectedPath(from, to))
         case _              => None
       }
+  }
+
+  private def computeElevationProfile(
+      subPaths: List[DirectedPath],
+      totalDuration: DurationInSeconds,
+      totalDistance: DistanceInKm
+  ): Double = {
+    val averageSpeedInMS             = totalDistance * 1000 / totalDuration
+    val rollingResistanceCoefficient = 0.0125
+
+    subPaths.foldLeft(0d) { case (acc, path) =>
+      val subPathTravelTimeInSeconds = path.birdDistanceInKm * 1000 / averageSpeedInMS
+      val angle                      = path.elevationAngleInRadians
+      acc + (subPathTravelTimeInSeconds * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
+    }
   }
 }
 

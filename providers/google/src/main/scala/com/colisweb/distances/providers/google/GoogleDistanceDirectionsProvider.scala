@@ -35,7 +35,7 @@ class GoogleDistanceDirectionsProvider[F[_]](
       bestRoute            = chooseBestRoute(response.routes.toList)
       distancesAndDuration = extractResponse(bestRoute)
       (distance, duration) = distancesAndDuration
-    } yield PathResult(distance, duration, Nil)
+    } yield PathResult(distance, duration)
 
   }
 

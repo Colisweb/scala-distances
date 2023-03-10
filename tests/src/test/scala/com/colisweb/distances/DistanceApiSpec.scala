@@ -351,7 +351,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       results: Map[(Point, Point), (DistanceInKm, DurationInSeconds)],
       trafficTime: Option[Instant],
       run: RunSync[F],
-      checkPolyline: Boolean = false
+      checkElevationProfile: Boolean = false
   ): Unit = {
 
     "return approximate distance and duration from Paris 01 to Marseille 01" in {
@@ -364,8 +364,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       val distanceFrom01to02   = run(api.distance(driveFrom01to02))
       val (distance, duration) = results(paris01 -> marseille01)
 
-      if (checkPolyline)
-        distanceFrom01to02.paths should not be empty
+      if (checkElevationProfile)
+        distanceFrom01to02.elevationProfile should not be empty
 
       distanceFrom01to02.distance shouldBe distance +- distance / 8
       distanceFrom01to02.duration shouldBe duration +- duration / 8
@@ -376,7 +376,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       api: DistanceApi[F, DirectedPathWithModeAt],
       trafficTime: Option[Instant],
       run: RunSync[F],
-      checkPolyline: Boolean = false
+      checkElevationProfile: Boolean = false
   ): Unit = {
 
     "return zero between the same points" in {
@@ -389,8 +389,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
       val distance = run(api.distance(path))
 
-      if (checkPolyline)
-        distance.paths should not be empty
+      if (checkElevationProfile)
+        distance.elevationProfile should not be empty
 
       distance.distance shouldBe 0d
       distance.duration shouldBe 0
@@ -451,14 +451,14 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         hereApi,
         trafficTime = Some(futureTime),
         run,
-        checkPolyline = true
+        checkElevationProfile = true
       )
       approximateTests(
         hereApi,
         hereResults,
         trafficTime = None,
         run,
-        checkPolyline = true
+        checkElevationProfile = true
       )
     }
 
