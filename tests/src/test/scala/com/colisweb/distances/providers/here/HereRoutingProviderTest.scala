@@ -9,7 +9,7 @@ import org.scalatest.flatspec.FixtureAnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.annotation.tailrec
-import scala.jdk.CollectionConverters.IterableHasAsJava
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 class HereRoutingProviderTest extends FixtureAnyFlatSpec with Matchers with Approbation {
