@@ -85,7 +85,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
     if (r.routes.nonEmpty) {
       val bestRoute        = routingMode.best(r.routes)
       val roadSegments     = parseRoadSegments(origin, destination, bestRoute)
-      val elevationProfile = computeElevationProfile(roadSegments, bestRoute.duration, bestRoute.distance)
+      val elevationProfile = computeElevationProfile(roadSegments, bestRoute.distance)
       F.pure(PathResult(bestRoute.distance, bestRoute.duration, Some(elevationProfile)))
     } else {
       F.raiseError(NoRouteFoundError(origin, destination))
@@ -134,24 +134,17 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
       }
   }
 
-  // unit is in seconds
+  // unit is in meters
   // it is part of a modified version of the formula from:
   // A new model and approach to electric and diesel-powered vehicle routing, Murakami (2017)
-  // todo: write this without totalDuration, this method should return S_ab * v_ab and not just S_ab
-  private[here] def computeElevationProfile(
-      subPaths: List[DirectedPath],
-      totalDuration: DurationInSeconds,
-      totalDistance: DistanceInKm
-  ): Double = {
-    val averageSpeedInMS             = totalDistance * 1000 / totalDuration
-    val totalBirdDistanceInKm        = subPaths.map(_.birdDistanceInKm).sum
+  private[here] def computeElevationProfile(subPaths: List[DirectedPath], totalDistance: DistanceInKm): Double = {
+    val totalBirdDistanceInKm        = subPaths.foldLeft(0d) { case (acc, path) => acc + path.birdDistanceInKm }
     val rollingResistanceCoefficient = 0.0125
 
     subPaths.foldLeft(0d) { case (acc, path) =>
-      val approxSubPathDistanceInKm  = totalDistance * (path.birdDistanceInKm / totalBirdDistanceInKm)
-      val subPathTravelTimeInSeconds = approxSubPathDistanceInKm * 1000 / averageSpeedInMS
-      val angle                      = path.elevationAngleInRadians
-      acc + (subPathTravelTimeInSeconds * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
+      val approxSubPathDistanceInKm = totalDistance * (path.birdDistanceInKm / totalBirdDistanceInKm)
+      val angle                     = path.elevationAngleInRadians
+      acc + (approxSubPathDistanceInKm * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
     }
   }
 }

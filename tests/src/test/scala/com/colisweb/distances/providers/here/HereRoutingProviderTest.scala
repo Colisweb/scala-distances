@@ -19,8 +19,6 @@ class HereRoutingProviderTest extends FixtureAnyFlatSpec with Matchers with Appr
 
     val latOffsetFor10Km = 0.09
     val origin           = Point(0, 0, Some(0))
-    val speedInKmH       = 60d
-    val speedInMPerS     = speedInKmH * 1000 / 3600d
 
     val angles: List[List[Double]] = List(
       Nil,
@@ -66,16 +64,21 @@ class HereRoutingProviderTest extends FixtureAnyFlatSpec with Matchers with Appr
         path.birdDistanceInKm / math.cos(path.elevationAngleInRadians)
       }.sum
 
-      hereProvider.computeElevationProfile(
-        subPaths = subPaths,
-        totalDuration = (totalDistanceInKm * 1000 / speedInMPerS).round,
-        totalDistance = totalDistanceInKm
-      )
+      hereProvider
+        .computeElevationProfile(subPaths, totalDistanceInKm)
+        .roundUp(5)
     }
 
     val result = FunctionUtils.applyCombinations(angles.asJava, compute)
 
     approver.verify(s"""elevation profile - angles
          |$result""".stripMargin)
+  }
+
+  implicit class DoubleOps(d: Double) {
+    def roundUp(precision: Int): Double = {
+      if (d.isNaN || d.isInfinite) d
+      else BigDecimal(d).setScale(precision, BigDecimal.RoundingMode.HALF_UP).toDouble
+    }
   }
 }
