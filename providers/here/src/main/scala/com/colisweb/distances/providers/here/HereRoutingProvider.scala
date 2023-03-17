@@ -144,7 +144,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
     subPaths.foldLeft(0d) { case (acc, path) =>
       val approxSubPathDistanceInKm = totalDistance * (path.birdDistanceInKm / totalBirdDistanceInKm)
       val angle                     = path.elevationAngleInRadians
-      acc + (approxSubPathDistanceInKm * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
+      acc + (approxSubPathDistanceInKm * 1000 * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
     }
   }
 }
