@@ -9,8 +9,11 @@ class HaversineDistanceApi[F[_]: Applicative, P: OriginDestination: FixedSpeedTr
   import com.colisweb.distances.model.syntax._
 
   override def distance(path: P): F[PathResult] = {
-    val distanceInKilometers = Haversine.distanceInKm(path.origin, path.destination)
-    val timeInSeconds        = DurationFromSpeed.durationForDistance(distanceInKilometers, path.speed)
-    Applicative[F].pure(PathResult(distanceInKilometers, timeInSeconds))
+    val distanceInKilometers         = Haversine.distanceInKm(path.origin, path.destination)
+    val timeInSeconds                = DurationFromSpeed.durationForDistance(distanceInKilometers, path.speed)
+    val rollingResistanceCoefficient = 0.0125
+    // we don't know the elevation so only the distance is taken into account
+    val elevationProfile = distanceInKilometers * 1000 * rollingResistanceCoefficient
+    Applicative[F].pure(PathResult(distanceInKilometers, timeInSeconds, Some(elevationProfile)))
   }
 }
