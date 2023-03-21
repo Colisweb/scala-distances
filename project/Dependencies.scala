@@ -2,7 +2,7 @@ import sbt._
 
 object Versions {
   final val approvals          = "1.3.1"
-  final val cats               = "2.7.0"
+  final val cats               = "2.9.0"
   final val catsEffect         = "2.3.3"
   final val circe              = "0.14.2"
   final val enumeratum         = "1.7.0"
@@ -12,7 +12,7 @@ object Versions {
   final val mockitoScala       = "1.17.12"
   final val monix              = "3.4.1"
   final val pureconfig         = "0.17.1"
-  final val refined            = "0.10.1"
+  final val refined            = "0.10.2"
   final val requests           = "0.7.1"
   final val scalaCache         = "0.28.0"
   final val scalacheck         = "1.17.0"
