@@ -83,9 +83,10 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
 
   private def parseResult(origin: Point, destination: Point, r: Response): F[PathResult] =
     if (r.routes.nonEmpty) {
-      val bestRoute    = routingMode.best(r.routes)
-      val roadSegments = parseRoadSegments(origin, destination, bestRoute)
-      F.pure(PathResult(bestRoute.distance, bestRoute.duration, roadSegments))
+      val bestRoute        = routingMode.best(r.routes)
+      val roadSegments     = parseRoadSegments(origin, destination, bestRoute)
+      val elevationProfile = computeElevationProfile(roadSegments, bestRoute.distance)
+      F.pure(PathResult(bestRoute.distance, bestRoute.duration, Some(elevationProfile)))
     } else {
       F.raiseError(NoRouteFoundError(origin, destination))
     }
@@ -131,6 +132,20 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
         case List(from, to) => Some(DirectedPath(from, to))
         case _              => None
       }
+  }
+
+  // unit is in meters
+  // it is part of a modified version of the formula from:
+  // A new model and approach to electric and diesel-powered vehicle routing, Murakami (2017)
+  private[here] def computeElevationProfile(subPaths: List[DirectedPath], totalDistance: DistanceInKm): Double = {
+    val totalBirdDistanceInKm        = subPaths.foldLeft(0d) { case (acc, path) => acc + path.birdDistanceInKm }
+    val rollingResistanceCoefficient = 0.0125
+
+    subPaths.foldLeft(0d) { case (acc, path) =>
+      val approxSubPathDistanceInKm = totalDistance * (path.birdDistanceInKm / totalBirdDistanceInKm)
+      val angle                     = path.elevationAngleInRadians
+      acc + (approxSubPathDistanceInKm * 1000 * (math.sin(angle) + rollingResistanceCoefficient * math.cos(angle)))
+    }
   }
 }
 

@@ -19,7 +19,7 @@ class CacheSpec extends AnyWordSpec with Matchers {
     }
 
   private val path: DirectedPath     = DirectedPath(Point(0, 0), Point(0, 0))
-  private val pathResult: PathResult = PathResult(1, 1, List(path))
+  private val pathResult: PathResult = PathResult(1, 1)
 
   private val distanceMap: Distances[Try, DirectedPath] =
     FromMapDistances[Try]

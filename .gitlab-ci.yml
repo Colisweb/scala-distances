@@ -5,7 +5,6 @@ include:
 compile scala-distances:
   extends:
     - .sbt-compile-cross
-  tags: []
 
 unused-dependencies:
   extends: .sbt-unused-dependencies
@@ -14,12 +13,9 @@ test scala-distances:
   extends:
   - .sbt-test-cross
   - .redis
-  tags: []
 
 version:
   extends: .version
-  tags: []
 
 publish on sonatype:
   extends: .sonatype-publish
-  tags: []

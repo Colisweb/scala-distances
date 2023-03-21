@@ -1,5 +1,10 @@
 package com.colisweb.distances.model
 
-import com.colisweb.distances.model.path.DirectedPath
-
-final case class PathResult(distance: DistanceInKm, duration: DurationInSeconds, paths: List[DirectedPath])
+final case class PathResult(
+    distance: DistanceInKm,
+    duration: DurationInSeconds,
+    elevationProfile: Option[Double] = None
+) {
+  val speedInKmPerHour: SpeedInKmH   = distance / (duration / 3600)
+  val speedInMetersPerSecond: Double = distance * 1000 / duration
+}
