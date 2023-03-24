@@ -9,7 +9,7 @@ object Versions {
   final val google             = "2.2.0"
   final val logbackEncoder     = "7.2"
   final val loggingInterceptor = "4.10.0"
-  final val mockitoScala       = "1.17.12"
+  final val mockitoScala       = "1.17.14"
   final val monix              = "3.4.1"
   final val pureconfig         = "0.17.3"
   final val refined            = "0.10.2"
