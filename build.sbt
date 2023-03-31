@@ -8,13 +8,12 @@ lazy val scala212               = "2.12.13"
 lazy val scala213               = "2.13.10"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
-
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 inThisBuild {
   List(
     organization       := "com.colisweb",
-    scalaVersion      := scala213,
+    scalaVersion       := scala213,
     crossScalaVersions := supportedScalaVersions,
     scalafmtOnCompile  := true,
     scalafmtCheck      := true,
