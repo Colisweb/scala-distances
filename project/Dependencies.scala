@@ -6,7 +6,7 @@ object Versions {
   final val catsEffect         = "2.3.3"
   final val circe              = "0.14.2"
   final val enumeratum         = "1.7.0"
-  final val google             = "2.0.0"
+  final val google             = "2.2.0"
   final val logbackEncoder     = "7.2"
   final val loggingInterceptor = "4.10.0"
   final val mockitoScala       = "1.17.12"
