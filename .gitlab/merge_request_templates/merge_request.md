@@ -9,7 +9,7 @@
 ## Checklist pour l'auteur
 
  - [ ] Le titre de la MR est clair
- - [ ] Le lien vers la carte Notion est présent
+ - [ ] Le lien vers la [tâche]() est présent
  - [ ] Les tests sont clairs et au bon niveau de la pyramide
  - [ ] Les changements sont relus
  - [ ] Le code est formaté (scalafmt)
