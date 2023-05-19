@@ -4,4 +4,4 @@ addSbtPlugin("com.timushev.sbt"          % "sbt-updates"               % "0.5.3"
 addSbtPlugin("org.scalameta"             % "sbt-scalafmt"              % "2.4.5")
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"              % "0.4.1")
 addSbtPlugin("pl.project13.scala"        % "sbt-jmh"                   % "0.4.0")
-addSbtPlugin("com.github.cb372"          % "sbt-explicit-dependencies" % "0.2.16")
+addSbtPlugin("com.github.cb372"          % "sbt-explicit-dependencies" % "0.3.1")
