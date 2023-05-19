@@ -17,7 +17,7 @@ object Versions {
   final val scalaCache         = "0.28.0"
   final val scalacheck         = "1.17.0"
   final val scalaCompat        = "2.10.0"
-  final val scalatest          = "3.2.13"
+  final val scalatest          = "3.2.16"
   final val scalatestPlus      = "3.1.0.0-RC2"
   final val squants            = "1.8.3"
 }
