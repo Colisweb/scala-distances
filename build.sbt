@@ -4,7 +4,7 @@ import DependenciesScopesHandler._
 import Dependencies._
 import PublishSettings.localCacheSettings
 
-lazy val scala212               = "2.12.13"
+lazy val scala212               = "2.12.18"
 lazy val scala213               = "2.13.10"
 lazy val supportedScalaVersions = List(scala213, scala212)
 
