@@ -12,7 +12,7 @@ object Versions {
   final val mockitoScala       = "1.17.14"
   final val monix              = "3.4.1"
   final val pureconfig         = "0.17.4"
-  final val refined            = "0.10.3"
+  final val refined            = "0.11.0"
   final val requests           = "0.7.1"
   final val scalaCache         = "0.28.0"
   final val scalacheck         = "1.17.0"
