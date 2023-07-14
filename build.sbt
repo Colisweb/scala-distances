@@ -33,6 +33,7 @@ lazy val root = Project(id = "scala-distances", base = file("."))
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
+  .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
   .settings(libraryDependencies ++= compileDependencies(cats, scalaCache, squants))
   .settings(
     libraryDependencies ++= testDependencies(
@@ -90,6 +91,7 @@ lazy val `caffeine-cache` = project
 
 lazy val tests = project
   .settings(noPublishSettings)
+  .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
   .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`)
   .settings(libraryDependencies ++= testDependencies(pureconfig, refinedPureconfig, scalaCacheCatsEffect, approvals))
 

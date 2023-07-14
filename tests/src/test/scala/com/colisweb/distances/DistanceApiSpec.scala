@@ -20,7 +20,6 @@ import scalacache.{Flags, Mode}
 import java.time.{Instant, ZonedDateTime}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.language.postfixOps
 import scala.util.Try
 
 class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterEach {
