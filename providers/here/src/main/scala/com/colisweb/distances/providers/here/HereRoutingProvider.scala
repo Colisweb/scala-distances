@@ -52,6 +52,7 @@ class HereRoutingProvider[F[_]](hereRoutingContext: HereRoutingContext, executor
     val paramsWithAuthent: Map[String, String] = paramsNoAuthent + ("apiKey" -> hereRoutingContext.apiKey.value)
 
     for {
+      _ <- F.pure(logger.debug(paramsNoAuthent.toMarkers, s"--> $baseUrl"))
       response <- executor.run(
         requests.get(
           url = baseUrl,
