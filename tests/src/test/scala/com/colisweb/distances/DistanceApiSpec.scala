@@ -3,19 +3,21 @@ package com.colisweb.distances
 import cats.MonadError
 import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.RunSync
-import com.colisweb.distances.caches.CaffeineCache
+import com.colisweb.distances.caches.RedisCache
+import com.colisweb.simplecache.redis.RedisCache
 import com.colisweb.distances.model.path.DirectedPathWithModeAt
-import com.colisweb.distances.model.{DistanceInKm, DurationInSeconds, Point, TravelMode}
+import com.colisweb.distances.model.{DistanceInKm, DurationInSeconds, PathResult, Point, TravelMode}
 import com.colisweb.distances.providers.google._
 import com.colisweb.distances.providers.here.{HereRoutingApi, HereRoutingContext, RoutingMode}
+import com.colisweb.simplecache.redis.RedisConfiguration.pool
+import com.colisweb.simplecache.wrapper.cats.CatsCache
+import io.circe.generic.codec.DerivedAsObjectCodec.deriveCodec
 import monix.eval.Task
 import monix.execution.Scheduler
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import scalacache.caffeine.{CaffeineCache => CaffeineScalaCache}
-import scalacache.{Flags, Mode}
 
 import java.time.{Instant, ZonedDateTime}
 import scala.concurrent.ExecutionContext
@@ -35,8 +37,9 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     implicit val monixScheduler: Scheduler = Scheduler.global
     override def apply[A](fa: Task[A]): A  = fa.runSyncUnsafe()
   }
-  private val caffeineInstance         = CaffeineScalaCache.apply[Nothing]
-  private val configuration            = Configuration.load
+  private val configuration = Configuration.load
+//  private val redisCache1Day           = new RedisCache[String](configuration.redis.asConfiguration, Some(1 days))
+//  private val catsRedisCache1Day       = CatsCache[IO, Any, String](redisCache1Day)
   private val loggingF: String => Unit = (s: String) => println(s.replaceAll("key=([^&]*)&", "key=REDACTED&"))
   private val googleContext: GoogleGeoApiContext =
     new GoogleGeoApiContext(configuration.google.apiKey, 10 second, 60 second, 1000, loggingF)
@@ -68,7 +71,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
     "sync with Try" should {
       import cats.implicits.catsStdInstancesForTry
-      import scalacache.modes.try_._
+
       "for bird distance" should {
         birdTests(runSyncTry)
       }
@@ -115,7 +118,6 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
 
     "async with IO" should {
-      import scalacache.CatsEffect.modes.async
 
       "for bird distance" should {
         birdTests(runAsyncIO)
@@ -166,7 +168,6 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
 
     "async with Monix Task" should {
-      import scalacache.CatsEffect.modes.async
 
       "for bird distance" should {
         birdTests(runAsyncMonix)
@@ -223,16 +224,14 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    import scalacache.modes.try_._
 
     // clear caches
-    caffeineInstance.doRemoveAll().get
+    // catsRedisCache1Day.clear().unsafeRunSync()
     ()
   }
 
   private def birdTests[F[_]](run: RunSync[F])(implicit
-      F: MonadError[F, Throwable],
-      mode: Mode[F]
+      F: MonadError[F, Throwable]
   ): Unit = {
     "Bird only" should {
       val distanceApi = Distances.haversine[F, DirectedPathWithModeAt].api
@@ -250,9 +249,15 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     }
 
     "Bird with Caffeine cache" should {
+      val redisCache1DayB =
+        RedisCache[PathResult](configuration.redis.asConfiguration, Some(1 days))
+
+      val catsRedisCache1DayB: CatsCache[F, DirectedPathWithModeAt, PathResult] =
+        CatsCache[F, Any, PathResult](redisCache1DayB)
+
       val distanceApi = Distances
         .haversine[F, DirectedPathWithModeAt]
-        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .caching(catsRedisCache1DayB)
         .api
       relativeTests(
         distanceApi,
@@ -272,8 +277,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       run: RunSync[F],
       googleApi: DistanceApi[F, DirectedPathWithModeAt]
   )(implicit
-      F: MonadError[F, Throwable],
-      mode: Mode[F]
+      F: MonadError[F, Throwable]
   ): Unit = {
     "Google api only" should {
       relativeTests(
@@ -292,7 +296,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "Google api with Caffeine cache" should {
       val distanceApi = Distances
         .from(googleApi)
-        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .caching(catsRedisCache1Day)
         .api
       relativeTests(
         distanceApi,
@@ -442,8 +446,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       run: RunSync[F],
       hereApi: DistanceApi[F, DirectedPathWithModeAt]
   )(implicit
-      F: MonadError[F, Throwable],
-      mode: Mode[F]
+      F: MonadError[F, Throwable]
   ): Unit = {
     "Here api only" should {
       relativeTests(
@@ -464,7 +467,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     "Here api with Caffeine cache" should {
       val distanceApi = Distances
         .from(hereApi)
-        .caching(CaffeineCache.apply(Flags.defaultFlags, Some(1 days)))
+        .caching(catsRedisCache1Day)
         .api
       relativeTests(
         distanceApi,

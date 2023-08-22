@@ -1,4 +1,5 @@
-import sbt._
+import Dependencies.slf4j
+import sbt.*
 
 object Versions {
   final val approvals          = "1.3.1"
@@ -20,6 +21,8 @@ object Versions {
   final val scalatest          = "3.2.16"
   final val scalatestPlus      = "3.1.0.0-RC2"
   final val squants            = "1.8.3"
+  final val simplecache        = "0.0.1-SNAPSHOT"
+  final val slf4j              = "1.7.36"
 }
 
 object Dependencies {
@@ -41,14 +44,14 @@ object Dependencies {
   final val refined               = "eu.timepit"             %% "refined"                  % Versions.refined
   final val refinedPureconfig     = "eu.timepit"             %% "refined-pureconfig"       % Versions.refined
   final val requests              = "com.lihaoyi"            %% "requests"                 % Versions.requests
-  final val scalaCache            = "com.github.cb372"       %% "scalacache-core"          % Versions.scalaCache
-  final val scalaCacheCaffeine    = "com.github.cb372"       %% "scalacache-caffeine"      % Versions.scalaCache
-  final val scalaCacheCatsEffect  = "com.github.cb372"       %% "scalacache-cats-effect"   % Versions.scalaCache
-  final val scalaCacheRedis       = "com.github.cb372"       %% "scalacache-redis"         % Versions.scalaCache
   final val scalacheck            = "org.scalacheck"         %% "scalacheck"               % Versions.scalacheck
   final val scalaCompat           = "org.scala-lang.modules" %% "scala-collection-compat"  % Versions.scalaCompat
   final val scalatest             = "org.scalatest"          %% "scalatest"                % Versions.scalatest
   final val scalatestPlus         = "org.scalatestplus"      %% "scalatestplus-scalacheck" % Versions.scalatestPlus
   final val squants               = "org.typelevel"          %% "squants"                  % Versions.squants
+  final val slf4j                 = "org.slf4j"               % "slf4j-api"                % Versions.slf4j
+  final val simplecacheWrapperCats = "com.colisweb" %% "simplecache-wrapper-cats" % Versions.simplecache
+  final val simplecacheRedisCirce  = "com.colisweb" %% "simplecache-redis-circe"  % Versions.simplecache
+  final val simplecacheMemory      = "com.colisweb" %% "simplecache-memory"       % Versions.simplecache
 
 }

@@ -1,20 +1,22 @@
 package com.colisweb.distances.caches
 
-import com.colisweb.distances.cache.{CacheKey, ScalaCacheCache}
-import scalacache.serialization.Codec
-import scalacache.{Flags, Mode}
+import com.colisweb.simplecache.core.Cache
+import com.colisweb.simplecache.redis.RedisConfiguration
+import com.colisweb.simplecache.redis.RedisConfiguration.pool
+import com.colisweb.simplecache.redis.codec._
+import com.colisweb.simplecache.redis.circe.RedisCirceCache
+import io.circe.Codec
 
 import scala.concurrent.duration.FiniteDuration
 
 object RedisCache {
-  import scalacache.redis.{RedisCache => RedisScalaCache}
 
-  def apply[F[_]: Mode, K: CacheKey, V: Codec](
-      config: RedisConfiguration,
-      flags: Flags,
-      ttl: Option[FiniteDuration]
-  ): ScalaCacheCache[F, K, V] = {
-    val redis = RedisScalaCache[V](config.jedisPool)
-    ScalaCacheCache(redis, flags, ttl)
+  def apply[V](configuration: RedisConfiguration, ttl: Option[FiniteDuration])(implicit
+      codec: Codec[V]
+  ): Cache[Any, V] = {
+    new RedisCirceCache[Any, V](pool(configuration), ttl)(
+      keyEncoder = AnyEncoder(),
+      codec
+    )
   }
 }

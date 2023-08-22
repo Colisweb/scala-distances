@@ -29,20 +29,21 @@ inThisBuild {
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
-  .dependsOn(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
+  .aggregate(core, `google-provider`, `here-provider`, tests)
+  .dependsOn(core, `google-provider`, `here-provider`, tests)
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
   .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
-  .settings(libraryDependencies ++= compileDependencies(cats, scalaCache, squants))
+  .settings(libraryDependencies ++= compileDependencies(cats, squants, simplecacheWrapperCats, slf4j))
   .settings(
     libraryDependencies ++= testDependencies(
       monix,
       mockitoScalaScalatest,
       scalacheck,
       scalatest,
-      scalatestPlus
+      scalatestPlus,
+      simplecacheMemory
     )
   )
 
@@ -79,13 +80,7 @@ lazy val `here-provider` = project
 lazy val `redis-cache` = project
   .in(file("caches/redis"))
   .settings(moduleName := "scala-distances-cache-redis")
-  .settings(libraryDependencies ++= compileDependencies(scalaCacheRedis))
-  .dependsOn(core)
-
-lazy val `caffeine-cache` = project
-  .in(file("caches/caffeine"))
-  .settings(moduleName := "scala-distances-cache-caffeine")
-  .settings(libraryDependencies ++= compileDependencies(scalaCacheCaffeine))
+  .settings(libraryDependencies ++= compileDependencies(simplecacheRedisCirce))
   .dependsOn(core)
 
 //// Meta projects
@@ -93,8 +88,8 @@ lazy val `caffeine-cache` = project
 lazy val tests = project
   .settings(noPublishSettings)
   .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
-  .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`)
-  .settings(libraryDependencies ++= testDependencies(pureconfig, refinedPureconfig, scalaCacheCatsEffect, approvals))
+  .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`)
+  .settings(libraryDependencies ++= testDependencies(pureconfig, refinedPureconfig, simplecacheRedisCirce, approvals))
 
 /** Copied from Cats */
 lazy val noPublishSettings = Seq(

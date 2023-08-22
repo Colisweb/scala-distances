@@ -4,12 +4,13 @@ import cats.MonadError
 import cats.implicits._
 import com.colisweb.distances.DistanceApi
 import com.colisweb.distances.model.PathResult
+import com.colisweb.simplecache.wrapper.cats.CatsCache
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.control.NoStackTrace
 
 case class DistanceFromCache[F[_], P](
-    cache: Cache[F, P, PathResult]
+    cache: CatsCache[F, P, PathResult]
 )(implicit F: MonadError[F, Throwable])
     extends DistanceApi[F, P] {
 
@@ -23,7 +24,7 @@ case class DistanceFromCache[F[_], P](
 final case class CacheMissError(key: Any) extends RuntimeException(s"No entry in cache for $key") with NoStackTrace
 
 case class DistanceWithCache[F[_], P](
-    cache: Cache[F, P, PathResult],
+    cache: CatsCache[F, P, PathResult],
     api: DistanceApi[F, P]
 )(implicit F: MonadError[F, Throwable])
     extends DistanceApi[F, P] {
@@ -43,7 +44,7 @@ case class DistanceWithCache[F[_], P](
       .distance(path)
       .flatTap(
         cache
-          .put(path, _)
+          .update(path, _)
           .handleError(logger.warn(s"Fail to get distance from cache for $path", _))
       )
   }
