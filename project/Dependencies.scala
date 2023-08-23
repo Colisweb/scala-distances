@@ -1,4 +1,3 @@
-import Dependencies.slf4j
 import sbt.*
 
 object Versions {
