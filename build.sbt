@@ -4,18 +4,18 @@ import Dependencies._
 import PublishSettings.localCacheSettings
 import org.typelevel.scalacoptions.ScalacOptions
 
-lazy val scala213               = "2.13.11"
+lazy val scala213 = "2.13.11"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 inThisBuild {
   List(
-    organization       := "com.colisweb",
-    scalaVersion       := scala213,
-    scalafmtOnCompile  := true,
-    scalafmtCheck      := true,
-    scalafmtSbtCheck   := true,
-    Test / fork        := true,
+    organization      := "com.colisweb",
+    scalaVersion      := scala213,
+    scalafmtOnCompile := true,
+    scalafmtCheck     := true,
+    scalafmtSbtCheck  := true,
+    Test / fork       := true,
     scalacOptions ++= crossScalacOptions(scalaVersion.value),
     localCacheSettings
   )
@@ -79,12 +79,18 @@ lazy val `redis-cache` = project
   .settings(libraryDependencies ++= compileDependencies(simplecacheRedisCirce))
   .dependsOn(core)
 
+lazy val `memory-guava` = project
+  .in(file("caches/memory-guava"))
+  .settings(moduleName := "scala-distances-memory-guava")
+  .settings(libraryDependencies ++= compileDependencies(simplecacheMemoryGuava))
+  .dependsOn(core)
+
 //// Meta projects
 
 lazy val tests = project
   .settings(noPublishSettings)
   .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
-  .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`)
+  .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `memory-guava`)
   .settings(libraryDependencies ++= testDependencies(pureconfig, refinedPureconfig, simplecacheRedisCirce, approvals))
 
 /** Copied from Cats */

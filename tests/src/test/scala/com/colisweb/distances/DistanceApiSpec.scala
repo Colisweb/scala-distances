@@ -3,7 +3,7 @@ package com.colisweb.distances
 import cats.implicits._
 import cats.effect.{ContextShift, IO}
 import com.colisweb.distances.DistanceApiSpec.pathResultCodec
-import com.colisweb.distances.caches.RedisCache
+import com.colisweb.distances.caches.{CatsGuavaCache, CatsRedisCache}
 import com.colisweb.distances.model.path.DirectedPathWithModeAt
 import com.colisweb.distances.model.{DistanceInKm, DurationInSeconds, PathResult, Point, TravelMode}
 import com.colisweb.distances.providers.google._
@@ -38,9 +38,9 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val rouen       = Point(49.443232, 1.099971)
   private val marseille01 = Point(43.2969901, 5.3789783)
 
-  private val redisCache1Day =
-    RedisCache[DirectedPathWithModeAt, PathResult](configuration.redis.asConfiguration, Some(1 days))
-  private val catsRedisCache1Day: CatsCache[IO, DirectedPathWithModeAt, PathResult] = CatsCache(redisCache1Day)
+  private val catsRedisCache =
+    CatsRedisCache[IO, DirectedPathWithModeAt, PathResult](configuration.redis.asConfiguration, Some(1 days))
+  private val catsGuavaCache = CatsGuavaCache[IO, DirectedPathWithModeAt, PathResult](Some(1 days))
 
   private val birdResults = Map(
     (paris01 -> paris18, (3.4, 246L)),
@@ -109,7 +109,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     super.beforeEach()
 
     // clear caches
-    // catsRedisCache1Day.clear().unsafeRunSync()
+    catsRedisCache.clear().unsafeRunSync()
+    catsGuavaCache.clear().unsafeRunSync()
     ()
   }
 
@@ -127,21 +128,25 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       )
     }
 
-    "Bird with Redis cache" should {
-      val distanceApi = Distances
-        .haversine[IO, DirectedPathWithModeAt]
-        .caching(catsRedisCache1Day)
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(futureTime)
-      )
-      approximateTests(
-        distanceApi,
-        birdResults,
-        trafficTime = None
-      )
-    }
+    def birdWithCache(cacheName: String, cache: CatsCache[IO, DirectedPathWithModeAt, PathResult]): Unit =
+      s"Bird with $cacheName cache" should {
+        val distanceApi = Distances
+          .haversine[IO, DirectedPathWithModeAt]
+          .caching(cache)
+          .api
+        relativeTests(
+          distanceApi,
+          trafficTime = Some(futureTime)
+        )
+        approximateTests(
+          distanceApi,
+          birdResults,
+          trafficTime = None
+        )
+      }
+
+    birdWithCache("Redis", catsRedisCache)
+    birdWithCache("Guava", catsGuavaCache)
   }
 
   private def googleTests(googleApi: DistanceApi[IO, DirectedPathWithModeAt]): Unit = {
@@ -157,21 +162,25 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       )
     }
 
-    "Google api with Caffeine cache" should {
-      val distanceApi = Distances
-        .from(googleApi)
-        .caching(catsRedisCache1Day)
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(futureTime)
-      )
-      approximateTests(
-        distanceApi,
-        googleResults,
-        trafficTime = None
-      )
-    }
+    def googleApiWithCache(cacheName: String, cache: CatsCache[IO, DirectedPathWithModeAt, PathResult]): Unit =
+      s"Google api with $cacheName cache" should {
+        val distanceApi = Distances
+          .from(googleApi)
+          .caching(cache)
+          .api
+        relativeTests(
+          distanceApi,
+          trafficTime = Some(futureTime)
+        )
+        approximateTests(
+          distanceApi,
+          googleResults,
+          trafficTime = None
+        )
+      }
+
+    googleApiWithCache("Redis", catsRedisCache)
+    googleApiWithCache("Guava", catsGuavaCache)
 
     "Google api with fallback on Bird, and traffic in the past" should {
       val distanceApi = Distances
@@ -313,21 +322,25 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
       )
     }
 
-    "Here api with Caffeine cache" should {
-      val distanceApi = Distances
-        .from(hereApi)
-        .caching(catsRedisCache1Day)
-        .api
-      relativeTests(
-        distanceApi,
-        trafficTime = Some(futureTime)
-      )
-      approximateTests(
-        distanceApi,
-        hereResults,
-        trafficTime = None
-      )
-    }
+    def hereApiWithCache(cacheName: String, cache: CatsCache[IO, DirectedPathWithModeAt, PathResult]): Unit =
+      s"Here api with $cacheName cache" should {
+        val distanceApi = Distances
+          .from(hereApi)
+          .caching(cache)
+          .api
+        relativeTests(
+          distanceApi,
+          trafficTime = Some(futureTime)
+        )
+        approximateTests(
+          distanceApi,
+          hereResults,
+          trafficTime = None
+        )
+      }
+
+    hereApiWithCache("Redis", catsRedisCache)
+    hereApiWithCache("Guava", catsGuavaCache)
 
     "Here api with traffic in the past" should {
       val distanceApi = Distances
