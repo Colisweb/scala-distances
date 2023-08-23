@@ -38,7 +38,8 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val rouen       = Point(49.443232, 1.099971)
   private val marseille01 = Point(43.2969901, 5.3789783)
 
-  private val redisCache1Day = RedisCache[PathResult](configuration.redis.asConfiguration, Some(1 days))
+  private val redisCache1Day =
+    RedisCache[DirectedPathWithModeAt, PathResult](configuration.redis.asConfiguration, Some(1 days))
   private val catsRedisCache1Day: CatsCache[IO, DirectedPathWithModeAt, PathResult] = CatsCache(redisCache1Day)
 
   private val birdResults = Map(

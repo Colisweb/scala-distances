@@ -11,10 +11,10 @@ import scala.concurrent.duration.FiniteDuration
 
 object RedisCache {
 
-  def apply[V](configuration: RedisConfiguration, ttl: Option[FiniteDuration])(implicit
+  def apply[K, V](configuration: RedisConfiguration, ttl: Option[FiniteDuration])(implicit
       codec: Codec[V]
-  ): Cache[Any, V] = {
-    new RedisCirceCache[Any, V](pool(configuration), ttl)(
+  ): Cache[K, V] = {
+    new RedisCirceCache[K, V](pool(configuration), ttl)(
       keyEncoder = AnyEncoder(),
       codec
     )

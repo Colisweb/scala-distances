@@ -21,7 +21,7 @@ object Versions {
   final val scalatest          = "3.2.16"
   final val scalatestPlus      = "3.1.0.0-RC2"
   final val squants            = "1.8.3"
-  final val simplecache        = "0.0.1-SNAPSHOT"
+  final val simplecache        = "2.1.0"
   final val slf4j              = "1.7.36"
 }
 
