@@ -17,7 +17,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.lang.Thread.sleep
 import java.time.{Instant, ZonedDateTime}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -110,7 +109,6 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
     super.beforeEach()
 
     // clear caches
-    sleep(3000)
     catsRedisCache.clear().unsafeRunSync()
     catsGuavaCache.clear().unsafeRunSync()
     ()
