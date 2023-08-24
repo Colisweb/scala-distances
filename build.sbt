@@ -49,7 +49,7 @@ lazy val `google-provider` = project
   .in(file("providers/google"))
   .settings(moduleName := "scala-distances-provider-google")
   .settings(
-    libraryDependencies ++= compileDependencies(catsEffect, enumeratum, googleMaps, loggingInterceptor, refined)
+    libraryDependencies ++= compileDependencies(enumeratum, googleMaps, loggingInterceptor, refined)
   )
   .dependsOn(core)
 
@@ -58,15 +58,13 @@ lazy val `here-provider` = project
   .settings(moduleName := "scala-distances-provider-here")
   .settings(
     libraryDependencies ++= compileDependencies(
-      catsEffect,
       circe,
       circeGeneric,
       circeGenericExtras,
       circeJawn,
       logstashLogbackEncode,
       refined,
-      requests,
-      scalaCompat
+      requests
     )
   )
   .dependsOn(core)
