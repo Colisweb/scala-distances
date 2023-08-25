@@ -34,7 +34,6 @@ lazy val core = project
   .settings(libraryDependencies ++= compileDependencies(cats, squants, simplecacheWrapperCats))
   .settings(
     libraryDependencies ++= testDependencies(
-      monix,
       mockitoScalaScalatest,
       scalacheck,
       scalatest,

@@ -10,11 +10,9 @@ object Versions {
   final val logbackEncoder     = "7.4"
   final val loggingInterceptor = "4.11.0"
   final val mockitoScala       = "1.17.14"
-  final val monix              = "3.4.1"
   final val pureconfig         = "0.17.4"
   final val refined            = "0.11.0"
   final val requests           = "0.7.1"
-  final val scalaCache         = "0.28.0"
   final val scalacheck         = "1.17.0"
   final val scalaCompat        = "2.11.0"
   final val scalatest          = "3.2.16"
@@ -37,7 +35,6 @@ object Dependencies {
   final val loggingInterceptor    = "com.squareup.okhttp3"    % "logging-interceptor"      % Versions.loggingInterceptor
   final val logstashLogbackEncode = "net.logstash.logback"    % "logstash-logback-encoder" % Versions.logbackEncoder
   final val mockitoScalaScalatest = "org.mockito"            %% "mockito-scala-scalatest"  % Versions.mockitoScala
-  final val monix                 = "io.monix"               %% "monix"                    % Versions.monix
   final val pureconfig            = "com.github.pureconfig"  %% "pureconfig"               % Versions.pureconfig
   final val refined               = "eu.timepit"             %% "refined"                  % Versions.refined
   final val refinedPureconfig     = "eu.timepit"             %% "refined-pureconfig"       % Versions.refined
