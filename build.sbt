@@ -31,7 +31,7 @@ lazy val root = Project(id = "scala-distances", base = file("."))
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
   .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
-  .settings(libraryDependencies ++= compileDependencies(cats, squants, simplecacheWrapperCats, slf4j))
+  .settings(libraryDependencies ++= compileDependencies(cats, squants, simplecacheWrapperCats))
   .settings(
     libraryDependencies ++= testDependencies(
       monix,

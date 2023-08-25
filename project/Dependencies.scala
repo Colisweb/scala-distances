@@ -21,7 +21,6 @@ object Versions {
   final val scalatestPlus      = "3.1.0.0-RC2"
   final val squants            = "1.8.3"
   final val simplecache        = "2.1.1"
-  final val slf4j              = "1.7.36"
 }
 
 object Dependencies {
@@ -48,7 +47,6 @@ object Dependencies {
   final val scalatest             = "org.scalatest"          %% "scalatest"                % Versions.scalatest
   final val scalatestPlus         = "org.scalatestplus"      %% "scalatestplus-scalacheck" % Versions.scalatestPlus
   final val squants               = "org.typelevel"          %% "squants"                  % Versions.squants
-  final val slf4j                 = "org.slf4j"               % "slf4j-api"                % Versions.slf4j
   final val simplecacheWrapperCats = "com.colisweb" %% "simplecache-wrapper-cats" % Versions.simplecache
   final val simplecacheRedisCirce  = "com.colisweb" %% "simplecache-redis-circe"  % Versions.simplecache
   final val simplecacheMemoryGuava = "com.colisweb" %% "simplecache-memory-guava" % Versions.simplecache
