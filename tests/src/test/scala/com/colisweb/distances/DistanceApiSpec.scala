@@ -30,6 +30,7 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val googleContext: GoogleGeoApiContext =
     new GoogleGeoApiContext(configuration.google.apiKey, 10 second, 60 second, 1000, loggingF)
   private val hereContext: HereRoutingContext = HereRoutingContext(configuration.here.apiKey, 10 second, 60 second)
+  private val fixedHourFutureTime             = ZonedDateTime.now().plusDays(1).withHour(18).withMinute(0).toInstant
   private val futureTime                      = ZonedDateTime.now().plusHours(1).toInstant
   private val pastTime                        = ZonedDateTime.now().minusHours(1).toInstant
 
@@ -297,13 +298,13 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
         origin = paris01,
         destination = paris18,
         travelMode = TravelMode.Car(50.0),
-        departureTime = Some(futureTime)
+        departureTime = Some(fixedHourFutureTime)
       )
 
       val distanceWithoutTraffic = api.distance(pathWithoutTraffic).unsafeRunSync()
       val distanceWithTraffic    = api.distance(pathWithTraffic).unsafeRunSync()
 
-      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration + 100
+      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration + 60
     }
   }
 
