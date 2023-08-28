@@ -2,8 +2,6 @@ import sbt.*
 
 object Versions {
   final val approvals          = "1.3.1"
-  final val cats               = "2.9.0"
-  final val catsEffect         = "2.3.3"
   final val circe              = "0.14.2"
   final val enumeratum         = "1.7.3"
   final val google             = "2.2.0"
@@ -24,8 +22,6 @@ object Versions {
 object Dependencies {
 
   final val approvals             = "com.colisweb"           %% "approvals-scala"          % Versions.approvals
-  final val cats                  = "org.typelevel"          %% "cats-core"                % Versions.cats
-  final val catsEffect            = "org.typelevel"          %% "cats-effect"              % Versions.catsEffect
   final val circe                 = "io.circe"               %% "circe-core"               % Versions.circe
   final val circeGeneric          = "io.circe"               %% "circe-generic"            % Versions.circe
   final val circeGenericExtras    = "io.circe"               %% "circe-generic-extras"     % Versions.circe
