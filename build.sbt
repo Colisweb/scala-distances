@@ -25,8 +25,7 @@ inThisBuild {
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core, `google-provider`, `here-provider`, tests)
-  .dependsOn(core, `google-provider`, `here-provider`, tests)
+  .aggregate(core, `google-provider`, `here-provider`, `memory-guava`, `redis-cache`, tests)
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
