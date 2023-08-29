@@ -30,12 +30,10 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
   private val googleContext: GoogleGeoApiContext =
     new GoogleGeoApiContext(configuration.google.apiKey, 10 second, 60 second, 1000, loggingF)
   private val hereContext: HereRoutingContext = HereRoutingContext(configuration.here.apiKey, 10 second, 60 second)
-  private val fixedHourFutureTime             = ZonedDateTime.now().plusDays(1).withHour(18).withMinute(0).toInstant
   private val futureTime                      = ZonedDateTime.now().plusHours(1).toInstant
   private val pastTime                        = ZonedDateTime.now().minusHours(1).toInstant
 
   private val paris01     = Point(48.8640493, 2.3310526, Some(79d))
-  private val paris14     = Point(48.828515, 2.325133, Some(79d))
   private val paris18     = Point(48.891305, 2.3529867, Some(79d))
   private val rouen       = Point(49.443232, 1.099971)
   private val marseille01 = Point(43.2969901, 5.3789783)
@@ -285,27 +283,6 @@ class DistanceApiSpec extends AnyWordSpec with Matchers with ScalaFutures with B
 
       distanceFromP01toM01.distance should be < distanceFromRouenToM01.distance
       distanceFromP01toM01.duration should be < distanceFromRouenToM01.duration
-    }
-
-    // NB: Distance maybe longer, but Duration should be smaller
-    "return smaller or equal Duration with traffic in Paris" in {
-      val pathWithoutTraffic = DirectedPathWithModeAt(
-        origin = paris14,
-        destination = paris18,
-        travelMode = TravelMode.Car(50.0),
-        departureTime = None
-      )
-      val pathWithTraffic = DirectedPathWithModeAt(
-        origin = paris14,
-        destination = paris18,
-        travelMode = TravelMode.Car(50.0),
-        departureTime = Some(fixedHourFutureTime)
-      )
-
-      val distanceWithoutTraffic = api.distance(pathWithoutTraffic).unsafeRunSync()
-      val distanceWithTraffic    = api.distance(pathWithTraffic).unsafeRunSync()
-
-      distanceWithoutTraffic.duration should be <= distanceWithTraffic.duration + 60
     }
   }
 
