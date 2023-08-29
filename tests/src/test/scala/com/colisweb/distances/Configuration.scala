@@ -1,7 +1,7 @@
 package com.colisweb.distances
 
 import com.colisweb.distances.Configuration.{Google, Here, Redis}
-import com.colisweb.distances.caches.RedisConfiguration
+import com.colisweb.simplecache.redis.RedisConfiguration
 import eu.timepit.refined.pureconfig._
 import eu.timepit.refined.types.string.NonEmptyString
 import pureconfig.generic.auto._

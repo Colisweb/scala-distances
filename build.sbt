@@ -1,25 +1,21 @@
 import CompileFlags._
-import sbt.Keys.crossScalaVersions
 import DependenciesScopesHandler._
 import Dependencies._
 import PublishSettings.localCacheSettings
 import org.typelevel.scalacoptions.ScalacOptions
 
-lazy val scala212               = "2.12.13"
-lazy val scala213               = "2.13.11"
-lazy val supportedScalaVersions = List(scala213, scala212)
+lazy val scala213 = "2.13.11"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 inThisBuild {
   List(
-    organization       := "com.colisweb",
-    scalaVersion       := scala213,
-    crossScalaVersions := supportedScalaVersions,
-    scalafmtOnCompile  := true,
-    scalafmtCheck      := true,
-    scalafmtSbtCheck   := true,
-    Test / fork        := true,
+    organization      := "com.colisweb",
+    scalaVersion      := scala213,
+    scalafmtOnCompile := true,
+    scalafmtCheck     := true,
+    scalafmtSbtCheck  := true,
+    Test / fork       := true,
     scalacOptions ++= crossScalacOptions(scalaVersion.value),
     localCacheSettings
   )
@@ -29,20 +25,20 @@ inThisBuild {
 lazy val root = Project(id = "scala-distances", base = file("."))
   .settings(moduleName := "root")
   .settings(noPublishSettings)
-  .aggregate(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
-  .dependsOn(core, `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`, tests)
+  .aggregate(core, `google-provider`, `here-provider`, tests)
+  .dependsOn(core, `google-provider`, `here-provider`, tests)
 
 lazy val core = project
   .settings(moduleName := "scala-distances-core")
   .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
-  .settings(libraryDependencies ++= compileDependencies(cats, scalaCache, squants))
+  .settings(libraryDependencies ++= compileDependencies(squants, simplecacheWrapperCats))
   .settings(
     libraryDependencies ++= testDependencies(
-      monix,
       mockitoScalaScalatest,
       scalacheck,
       scalatest,
-      scalatestPlus
+      scalatestPlus,
+      simplecacheMemory
     )
   )
 
@@ -52,7 +48,7 @@ lazy val `google-provider` = project
   .in(file("providers/google"))
   .settings(moduleName := "scala-distances-provider-google")
   .settings(
-    libraryDependencies ++= compileDependencies(catsEffect, enumeratum, googleMaps, loggingInterceptor, refined)
+    libraryDependencies ++= compileDependencies(enumeratum, googleMaps, loggingInterceptor, refined)
   )
   .dependsOn(core)
 
@@ -61,15 +57,13 @@ lazy val `here-provider` = project
   .settings(moduleName := "scala-distances-provider-here")
   .settings(
     libraryDependencies ++= compileDependencies(
-      catsEffect,
       circe,
       circeGeneric,
       circeGenericExtras,
       circeJawn,
       logstashLogbackEncode,
       refined,
-      requests,
-      scalaCompat
+      requests
     )
   )
   .dependsOn(core)
@@ -79,13 +73,13 @@ lazy val `here-provider` = project
 lazy val `redis-cache` = project
   .in(file("caches/redis"))
   .settings(moduleName := "scala-distances-cache-redis")
-  .settings(libraryDependencies ++= compileDependencies(scalaCacheRedis))
+  .settings(libraryDependencies ++= compileDependencies(simplecacheRedisCirce))
   .dependsOn(core)
 
-lazy val `caffeine-cache` = project
-  .in(file("caches/caffeine"))
-  .settings(moduleName := "scala-distances-cache-caffeine")
-  .settings(libraryDependencies ++= compileDependencies(scalaCacheCaffeine))
+lazy val `memory-guava` = project
+  .in(file("caches/memory-guava"))
+  .settings(moduleName := "scala-distances-memory-guava")
+  .settings(libraryDependencies ++= compileDependencies(simplecacheMemoryGuava))
   .dependsOn(core)
 
 //// Meta projects
@@ -93,8 +87,8 @@ lazy val `caffeine-cache` = project
 lazy val tests = project
   .settings(noPublishSettings)
   .settings(Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement)
-  .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `caffeine-cache`)
-  .settings(libraryDependencies ++= testDependencies(pureconfig, refinedPureconfig, scalaCacheCatsEffect, approvals))
+  .dependsOn(core % "test->test;compile->compile", `google-provider`, `here-provider`, `redis-cache`, `memory-guava`)
+  .settings(libraryDependencies ++= testDependencies(pureconfig, refinedPureconfig, simplecacheRedisCirce, approvals))
 
 /** Copied from Cats */
 lazy val noPublishSettings = Seq(
