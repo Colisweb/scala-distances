@@ -2,7 +2,7 @@ import sbt.*
 
 object Versions {
   final val approvals          = "1.3.1"
-  final val circe              = "0.14.2"
+  final val circe              = "0.14.6"
   final val enumeratum         = "1.7.3"
   final val google             = "2.2.0"
   final val logbackEncoder     = "7.4"
