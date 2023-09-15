@@ -16,7 +16,7 @@ object Versions {
   final val scalatest          = "3.2.17"
   final val scalatestPlus      = "3.1.0.0-RC2"
   final val squants            = "1.8.3"
-  final val simplecache        = "2.1.1"
+  final val simplecache        = "2.1.2-teta"
 }
 
 object Dependencies {
