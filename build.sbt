@@ -4,7 +4,7 @@ import Dependencies._
 import PublishSettings.localCacheSettings
 import org.typelevel.scalacoptions.ScalacOptions
 
-lazy val scala213 = "2.13.11"
+lazy val scala213 = "2.13.12"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
